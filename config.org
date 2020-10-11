@@ -1,0 +1,1366 @@
+#+TITLE: Emacs Configuration
+#+STARTUP: inlineimages
+
+* Table of contents                                                     :TOC_3:
+- [[#introduction][Introduction]]
+  - [[#what-is-this-and-who-is-it-for][What is this and who is it for?]]
+  - [[#dependencies][Dependencies]]
+  - [[#installation][Installation]]
+  - [[#custom-keybindings][Custom Keybindings]]
+  - [[#list][list]]
+- [[#early-init-file][Early Init file]]
+  - [[#lexical-binding][Lexical Binding]]
+  - [[#start-time-optimizations][Start time optimizations]]
+  - [[#gui-changes-that-deserve-to-be-in-early-init][GUI changes that deserve to be in early-init]]
+- [[#configuration-file][Configuration file]]
+  - [[#lexical-binding-1][Lexical binding]]
+  - [[#initial-setup][Initial Setup]]
+  - [[#package-management][Package management]]
+  - [[#features][Features]]
+    - [[#icons][Icons]]
+    - [[#auto-update-packages][Auto update packages]]
+    - [[#project-management][Project Management]]
+    - [[#file-explorer][File Explorer]]
+    - [[#dashboard][Dashboard]]
+    - [[#modeline][Modeline]]
+    - [[#keyboard-layout][Keyboard layout]]
+    - [[#search-tool][Search tool]]
+    - [[#find-and-replace-improvements][Find and Replace improvements]]
+    - [[#org-mode][Org mode]]
+    - [[#spellcheck][Spellcheck]]
+    - [[#code-completion][Code Completion]]
+    - [[#completion-framework][Completion Framework]]
+    - [[#syntax-highlighting-for-additional-languages][Syntax highlighting for additional languages]]
+    - [[#window-switcher][Window switcher]]
+    - [[#git-integration][Git integration]]
+    - [[#templates][Templates]]
+    - [[#multiple-cursors][Multiple Cursors]]
+    - [[#other-smaller-additions][Other smaller additions]]
+  - [[#functions][Functions]]
+    - [[#][???]]
+    - [[#aliases][Aliases]]
+  - [[#global-keybindings][Global Keybindings]]
+  - [[#user-interface][User Interface]]
+    - [[#font][Font]]
+    - [[#theme][Theme]]
+    - [[#theme-customization][Theme Customization]]
+  - [[#settings-][Settings ???]]
+    - [[#indentation][Indentation]]
+  - [[#defaults][Defaults]]
+  - [[#personal-settings][Personal Settings]]
+  - [[#final-setup][Final Setup]]
+
+* Introduction
+** What is this and who is it for?
+
+This emacs configuration is mostly to just use Org mode.
+
+Many of the keybindings are replaced with what I consider "standard" keybinds, like those you would find in Sublime Text, Atom and VSCode. Likewise, many of the features you would expect from some of these editors are also implemented here.
+
+The goal of this configuration is to provide a comfortable experience editing Org mode files to programmers that are accustomed to modern text editors.
+
+** Dependencies
+
+In order for everything to work correctly, you should have the following installed on your system:
+
+- ripgrep
+- aspell or hunspell
+
+** Installation
+
+git clone ...
+
+open the command menu with M-x and run 'all-the-icons-install-fonts'
+
+** Custom Keybindings
+
+The conversion to use "modern" keybinds is mostly dealt with by [[https://github.com/darkstego/wakib-keys][wakib-keys]].
+I customized the commands and changed a few keys but it's still similar to the default package.
+
+The following image shows all the keys you need to know to get started:
+
+#+ATTR_ORG: :width 1200
+[[./config-resources/keyboard-layout-ctrl.png]]
+
+The wakib-keys package defines a lot more bindings that are more oriented towars speed and productivity.
+If you're interested, go check it out.
+
+Note: this image was done using [[http://www.keyboard-layout-editor.com/#/][Keyboard Layout Editor]].
+
+** Todo list
+
+Todo:
+- treemacs
+- ctrl+shift+o to open directory in sidebar
+- diff in gutter
+- add projectile keybinds if there are any useful ones
+- use flymake/flycheck for elisp (for config file)
+- add keybindings tables
+- ctrl+pageup should skip some buffers: messages, scratch, dashboard
+- make alt+arrow work in org mode for headlines without shift (custom function)
+- commenting inside source block jumps to top of block. also happens with just 'emacs -Q' and comment-dwim.
+- query-replace with current selection as input (Replace+ package maybe?)
+- make the M-o keybinding available outside of ivy, so the default wakib function can be used
+- M-o isnt working for C-o and flyspell-correct
+- error indicator in fringe
+- maybe incorporate previous/next from wakib-emacs? (it uses ';')
+- look at counsel-projectile
+- alt-shift-up/down conflict in org mode
+- add shortcut to dashboard and init file
+- org mode: when pressing enter at the end of line that starts with '-', it adds two spaces
+- project find and project replace
+
+also:
+- look at vscode settings + extensions and import anything I like
+- look at things in org mode file from KMPG
+
+* Early Init file
+Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before package and UI initialization happens.
+
+** Lexical Binding
+
+#+begin_src emacs-lisp :tangle early-init.el
+;;; early-init.el --- -*- lexical-binding: t -*-
+#+end_src
+
+** Start time optimizations
+
+#+begin_src emacs-lisp :tangle early-init.el
+;; A common optimization is to temporarily reduce the frequency of garbage collection during initialization.
+(setq gc-cons-threshold most-positive-fixnum)
+
+;; FileNameHandler
+(defvar file-name-handler-alist-original file-name-handler-alist)
+(setq file-name-handler-alist nil)
+
+;; Restore values after startup
+(add-hook 'after-init-hook
+  (lambda ()
+    (setq gc-cons-threshold (* 16 8 1024 1024) ; 16MB
+    file-name-handler-alist file-name-handler-alist-original)))
+
+;; Initialise installed packages
+(setq package-enable-at-startup t)
+
+
+;; Allow loading from the package cache.
+(setq package-quickstart t)
+(setq package-quickstart-file (expand-file-name "var/package-quickstart.el" user-emacs-directory))
+
+;; Prevent unwanted runtime builds; packages are compiled ahead-of-time when
+;; they are installed and site files are compiled when gccemacs is installed.
+(setq comp-deferred-compilation nil)
+#+end_src
+
+** GUI changes that deserve to be in early-init
+
+#+begin_src emacs-lisp :tangle early-init.el
+;; Only show cursor in the active window.
+(setq-default cursor-in-non-selected-windows nil)
+
+;;Default frame position
+(setq default-frame-alist
+  `((height . 60) (width . 100)))
+
+;; Prevent the glimpse of un-styled Emacs by disabling these UI elements early.
+(push '(menu-bar-lines . 0) default-frame-alist)
+(push '(tool-bar-lines . 0) default-frame-alist)
+(push '(vertical-scroll-bars) default-frame-alist)
+
+;; show column number alongside line number
+(column-number-mode t)
+
+;; display relative line numbers
+(global-display-line-numbers-mode)
+(setq display-line-numbers-type 'visual)
+
+;; highlight current line
+(global-hl-line-mode +1)
+
+;; avoid flashing the default emcas modeline while starting
+(setq mode-line-format nil)
+
+;; Do not resize the frame at this early stage.
+(setq frame-inhibit-implied-resize t)
+#+end_src
+
+* Configuration file
+** Lexical binding
+
+#+begin_src emacs-lisp :tangle yes
+;;; init.el --- -*- lexical-binding: t -*-
+;;; GNU Emacs Configuration
+#+end_src
+
+** Initial Setup
+
+Things to do before making changes
+
+#+begin_src emacs-lisp :tangle yes
+;; when an error occurs during startup, automatically open debugger
+(setq debug-on-error t)
+
+;; Load packages if necessary, depending on emacs version
+(if (version< emacs-version "27")
+  (package-initialize))
+#+end_src
+
+** Package management
+
+Configure package sources and package installation.
+
+#+begin_src emacs-lisp :tangle yes
+;; Internet repositories for new packages
+(setq package-archives
+      '(("org"          . "http://orgmode.org/elpa/")
+        ("melpa"        . "http://melpa.org/packages/")
+        ("gnu"          . "http://elpa.gnu.org/packages/"))
+      package-archive-priorities
+      '(("org"          . 10)
+        ("melpa"        . 5)
+        ("gnu"          . 0)))
+
+;; Make sure `use-package' is available.
+(unless (package-installed-p 'use-package)
+  (message "use-package needs to be installed")
+  (package-refresh-contents)
+  (package-install 'use-package))
+
+;; Configure `use-package' prior to loading it.
+(setq use-package-always-ensure t)
+(setq use-package-expand-minimally t)
+(setq use-package-compute-statistics t)
+(setq use-package-enable-imenu-support t)
+(setq use-package-verbose t)
+#+end_src
+
+I experimented with using either delight or minions but It didn't really seem useful for me.
+I'll leave this here in case it has some use in the future.
+
+#+begin_src emacs-lisp :tangle yes
+;; (use-package delight)
+
+;; (use-package minions
+;;   :config (minions-mode 1))
+#+end_src
+
+Make emacs configuration directory more organized and keep it clean.
+This package should be loaded as early as possible since it changes where other packages will save their files.
+
+#+begin_src emacs-lisp :tangle yes
+(use-package no-littering)
+#+end_src
+
+** Features
+*** Icons
+
+Allow Emacs to use icons in various UI elements.
+
+The first time this package is installed, you need to run 'all-the-icons-install-fonts' to install fonts.
+
+#+begin_src emacs-lisp :tangle yes
+(use-package all-the-icons)
+(setq all-the-icons-color-icons t)
+#+end_src
+
+*** Auto update packages
+
+#+begin_src emacs-lisp :tangle yes
+;; automatically update packages every once in a while
+(use-package auto-package-update
+  :if (not (daemonp))
+  :custom
+  (auto-package-update-interval 7) ;; in days
+  (auto-package-update-prompt-before-update t)
+  (auto-package-update-delete-old-versions t)
+  (auto-package-update-hide-results t)
+  :config
+  (auto-package-update-maybe))
+#+end_src
+
+*** Project Management
+
+To use a non-repository folder as a project, create a blank '.projectile' file in the folder to mark the project root.
+See [[https://docs.projectile.mx/projectile/projects.html#ignoring-file]] what to write in this file.
+
+Basically:
+'-' to ignore
+'+' to keep and ignore everything else
+'!' to override .gitignore
+
+#+begin_src emacs-lisp :tangle yes
+(use-package projectile
+  :config
+  (setq projectile-completion-system 'ivy)
+  (projectile-mode 1))
+#+end_src
+
+*** TODO File Explorer
+
+Since I am using Treemacs worspaces I will explain my view on projects and workspaces.
+Here is my ideal usage of workspaces/projects:
+
+- each project has a name that can be easily configured
+- a list of projects appears in the dashboard (with their custom names)
+- you can search all files in a project
+- the project name appears in the modeline
+- all of the previous items should also work with a standard folder (even if it's not a repository)
+
+That last item is very important. It's the reason why I don't just use projectile without anything else.
+
+This is a desired but not required feature:
+- no files are saved on project directory, or as few as possible. everthing should be saved in the '.emacs.d' folder
+
+Taking this into account, projectile is a good start but it doesnt give me everything I want, so I'm also using Treemacs workspaces.
+
+#+begin_src emacs-lisp :tangle yes
+(use-package treemacs)
+(define-key treemacs-mode-map [mouse-1] #'treemacs-single-click-expand-action)
+
+(defun my-treemacs-switch-workspace (ws)
+  (setf (treemacs-current-workspace) (treemacs--select-workspace-by-name ws))
+  (treemacs--invalidate-buffer-project-cache)
+  (treemacs--rerender-after-workspace-change)
+  (run-hooks 'treemacs-switch-workspace-hook)
+  )
+
+(defun dashboard-insert-treemacs-workspaces (list-size)
+  (treemacs--maybe-load-workspaces)
+  (dashboard-insert-section
+	"Workspaces:"
+	(dashboard-subseq (mapcar 'treemacs-workspace->name (treemacs-workspaces)) 0 list-size)
+	list-size
+	"w"
+	`(lambda (&rest ignore) (my-treemacs-switch-workspace ,el))
+	el))
+#+end_src
+
+*** Dashboard
+
+#+begin_src emacs-lisp :tangle yes
+(use-package dashboard
+  :ensure t
+  :defer nil
+  :config
+  (dashboard-setup-startup-hook)
+  (add-to-list 'dashboard-item-generators '(treemacs-workspaces . dashboard-insert-treemacs-workspaces))
+  (setq dashboard-items '((treemacs-workspaces . 5)
+                          (bookmarks . 5)
+                          (recents   . 5)
+                          (agenda    . 5)))
+  (setq dashboard-center-content t)
+  (setq dashboard-set-heading-icons t)
+  (setq dashboard-startup-banner 'official)
+  (setq dashboard-banner-logo-title (format "GNU Emacs version %d.%d" emacs-major-version emacs-minor-version))
+  (setq dashboard-set-init-info t)
+  (setq dashboard-init-info (format "%d packages loaded in %s"
+                                    (length package-activated-list) (emacs-init-time)))
+  (setq dashboard-set-footer nil)
+  (setq dashboard-set-navigator t)
+  (setq dashboard-navigator-buttons
+        `(
+          ((,(all-the-icons-octicon "dashboard" :height 1.1 :v-adjust 0.0)
+            "config file"
+            "Open Config File"
+            (lambda (&rest _) (find-file "~/.emacs.d/config.org")))))
+  )
+)
+
+;; hide the modeline in the dashboard buffer
+(use-package hide-mode-line
+  :init
+  (add-hook 'dashboard-mode-hook #'hide-mode-line-mode))
+#+end_src
+
+*** Modeline
+
+#+begin_src emacs-lisp :tangle yes
+(use-package doom-modeline
+  :init
+  (doom-modeline-mode 1)
+  (setq doom-modeline-height 26)
+  (setq doom-modeline-major-mode-icon nil)
+  (setq doom-modeline-indent-info t))
+#+end_src
+
+*** Keyboard layout
+
+#+begin_src emacs-lisp :tangle yes
+(use-package wakib-keys
+  :config
+  (wakib-keys 1)
+  (add-hook 'after-change-major-mode-hook 'wakib-update-major-mode-map)
+  (add-hook 'menu-bar-update-hook 'wakib-update-minor-mode-maps))
+#+end_src
+
+*** Search tool
+
+My option for this is rg.
+
+Other options are:
+- deadgrep
+- ripgrep
+- ag
+
+#+begin_src emacs-lisp :tangle yes
+(use-package rg)
+
+(rg-define-search rg-search-current-dir
+  "Search in the directory of the currently open file or buffer"
+  :query ask
+  :format literal
+  :files "everything"
+  :dir "current"
+  :flags ("--hidden"))
+#+end_src
+
+*** Find and Replace improvements
+
+#+begin_src emacs-lisp :tangle yes
+;; ;; note: Anzu has to be before Doom mode line
+;; (use-package anzu
+;;   :custom
+;;   (anzu-search-threshold 100)
+;;   :hook ((after-init . global-anzu-mode))
+;;   :bind (([remap query-replace] . anzu-query-replace)
+;;          ([remap query-replace-regexp] . anzu-query-replace-regexp)))
+
+;; (custom-set-variables
+;;  '(anzu-replace-to-string-separator " -> "))
+
+
+
+
+
+
+
+;; seems better than Anzu for my uses, but theres some sort of issue with customization
+(use-package visual-regexp)
+
+;; provides a regex backend to be used by visual-regexp-steroids
+;; this is to avoid having python installed as a dependency
+(use-package pcre2el)
+
+;; you can use actual regex with this package, instead of emacs specific regex
+(use-package visual-regexp-steroids)
+
+;; the default engine is python
+(setq vr/engine 'pcre2el)
+
+#+end_src
+
+*** Org mode
+
+The code below, executes org-babel-tangle asynchronously when config.org is saved.
+
+#+begin_src emacs-lisp :tangle yes
+(use-package async)
+
+(defvar *config-file* (expand-file-name "config.org" user-emacs-directory)
+  "The configuration file.")
+
+(defvar *config-last-change* (nth 5 (file-attributes *config-file*))
+  "Last modification time of the configuration file.")
+
+(defvar *show-async-tangle-results* nil
+  "Keeps *emacs* async buffers around for later inspection.")
+
+(defun user/config-updated ()
+  "Checks if the configuration file has been updated since the last time."
+  (time-less-p *config-last-change*
+               (nth 5 (file-attributes *config-file*))))
+
+(defun user/config-tangle ()
+  "Tangles the user configuration org file asynchronously."
+  (when (user/config-updated)
+    (setq *config-last-change*
+          (nth 5 (file-attributes *config-file*)))
+    (user/async-babel-tangle *config-file*)))
+
+(defun user/async-babel-tangle (org-file)
+  "Tangles an org file asynchronously."
+  (let ((init-tangle-start-time (current-time))
+        (file (buffer-file-name))
+        (async-quiet-switch "-q"))
+    (async-start
+     `(lambda ()
+        (require 'org)
+        (org-babel-tangle-file ,org-file))
+     (unless *show-async-tangle-results*
+       `(lambda (result)
+          (if result
+              (message "SUCCESS: %s successfully tangled (%.2fs)."
+                       ,org-file
+                       (float-time (time-subtract (current-time)
+                                                  ',init-tangle-start-time)))
+            (message "ERROR: %s as tangle failed." ,org-file)))))))
+#+end_src
+
+
+
+#+begin_src emacs-lisp :tangle yes
+(use-package org
+  :ensure org-plus-contrib
+  :hook ((after-save . user/config-tangle)))
+
+;; Org Bullets
+(use-package org-bullets
+    :hook (org-mode . org-bullets-mode))
+
+;; indent text to heading level
+(setq org-startup-indented t)
+
+;; set initial view to 'content' (show all headlines)
+(setq org-startup-folded 'content)
+
+;; highlight links
+(setq org-descriptive-links t)
+
+;; dim blocked tasks
+(setq org-agenda-dim-blocked-tasks t)
+
+;; avoid showing unecessary tasks
+(setq
+    org-agenda-skip-deadline-if-done t
+    org-agenda-skip-scheduled-if-done t
+    org-agenda-skip-archived-trees nil
+)
+
+;; one newline is enough to separate headings -> two are needed
+(setq org-cycle-separator-lines 2)
+
+;; default todo keywords
+(setq org-todo-keywords
+      '((sequence "TODO" "ONGOING" "REVIEW" "|" "DONE" "CANCEL")))
+
+;; set agenda location
+(setq org-agenda-files '("~/Documents/Notes/org/"))
+
+;; insert an annotation in a task when it is marked as done, including a timestamp
+(setq org-log-done (quote time))
+
+(setq org-support-shift-select t)
+
+;; allow C-S-<arrow> selection of paragraphs
+(eval-after-load "org"
+  '(progn
+     (define-key org-mode-map (kbd "<C-S-left>") nil)
+     (define-key org-mode-map (kbd "<C-S-right>") nil)
+     (define-key org-mode-map (kbd "<C-S-up>") nil)
+     (define-key org-mode-map (kbd "<C-S-down>") nil)
+))
+
+;; the default M-arrow binds are in conflict with some global binds
+(bind-key "M-S-<left>" 'org-metaleft org-mode-map)
+(bind-key "M-S-<right>" 'org-metaright org-mode-map)
+(bind-key "M-S-<up>" 'org-metaup org-mode-map)
+(bind-key "M-S-<down>" 'org-metadown org-mode-map)
+
+
+
+
+;; ;; allow usage of ctrl+shift+<left/right> selection
+;; (defadvice org-call-for-shift-select (before org-call-for-shift-select-cua activate)
+;;   (if (and cua-mode
+;;            org-support-shift-select
+;;            (not (use-region-p)))
+;;       (cua-set-mark)))
+
+
+;; ;; allow usage of ctrl+shift+<up/down>
+;; (setq org-replace-disputed-keys t)
+;; (setq org-disputed-keys
+;;       '(
+;;         ([(control shift right)] . [(meta +)])         ; status of group
+;;         ([(control shift left)]  . [(meta -)])         ;
+;;         ([(control shift up)]    . [(control meta +)]) ; change clock logs
+;;         ([(control shift down)]  . [(control meta -)]) ;
+;;         ))
+
+;; (defadvice org-backward-paragraph
+;;     (before set-up-shift-select-backward-paragraph activate)
+;;   (interactive "^"))
+;; (defadvice org-forward-paragraph
+;;     (before set-up-shift-select-forward-paragraph activate)
+;;   (interactive "^"))
+
+
+;; grey out completed tasks
+(setq org-fontify-done-headline t)
+
+(custom-set-faces
+ '(org-headline-done
+   ((((class color) (min-colors 16) (background dark))
+     (:foreground "dim gray"))))
+)
+
+
+(use-package toc-org
+  :hook (org-mode . toc-org-mode))
+
+
+
+(setq org-src-preserve-indentation t ;; do not put two spaces on the left
+      org-src-tab-acts-natively t) ;; make tab behave as it would normally for that language
+
+;; Changing the org-mode ellipsis
+(setq org-ellipsis " ⤵")
+;; (setq org-ellipsis " ▼")
+
+
+;; if there is something like #+ATTR_ORG: width="200", resize to 200, otherwise don't resize
+(setq org-image-actual-width nil)
+#+end_src
+
+*** Spellcheck
+
+#+begin_src emacs-lisp :tangle yes
+(setq ispell-program-name "aspell")
+(setq ispell-local-dictionary "en_US")
+
+
+(use-package flyspell-correct-ivy
+  :config
+  (setq flyspell-correct-interface #'flyspell-correct-ivy)
+  (define-key flyspell-mouse-map [mouse-2] nil)
+  (define-key flyspell-mouse-map [mouse-3] 'flyspell-correct-word))
+
+
+(defun toggle-spellcheck ()
+	"Toggle spell checking, using Flyspell"
+   (interactive)
+   (if (bound-and-true-p flyspell-mode)
+	(progn
+	  (flyspell-mode -1)
+	  (message "Flyspell mode disabled in current buffer"))
+     (progn
+	(flyspell-mode 1)
+	(message "Flyspell mode enabled in current buffer"))))
+#+end_src
+
+*** TODO Code Completion
+
+#+begin_src emacs-lisp :tangle yes
+(use-package company
+  :config
+  (global-company-mode 1))
+#+end_src
+
+*** Completion Framework
+
+Completion framework being used:
+
+Ivy + Swiper + Counsel
+
+ivy is the mechanism that handles all selection lists, narrowing
+    them down using a variety of possible builders (regular expressions of
+    flexible matching).  It also provides a base interface for any
+    function that needs to receive input based on a list of candidates.
+
+counsel provides a superset of functions for navigating the file
+    system, switching buffers, etc. that expand on the basic features
+    supported by Ivy.  For instance, switching buffers with Counsel offers
+    a preview of their contents in the window, whereas regular Ivy does
+    not.
+
+swiper is a tool for performing searches, powered by Ivy, all while
+    presenting a preview of the results.
+
+**** Ivy bases
+
+#+begin_src emacs-lisp :tangle yes
+(use-package ivy
+  :defer 0.1
+  :diminish
+  :custom
+  (ivy-use-virtual-buffers t)
+  (ivy-count-format "%d/%d ")
+  (ivy-wrap t)
+  (ivy-re-builders-alist
+   '((t . ivy--regex-plus)))  ; also try: ivy--regex-fuzzy
+  (ivy-initial-inputs-alist nil)
+  :config (ivy-mode))
+
+;; make one tab enough to autocomplete. default behaviour is 2 tab presses
+(define-key ivy-minibuffer-map (kbd "TAB") 'ivy-alt-done)
+
+(use-package counsel
+  :after ivy
+  :config (counsel-mode))
+
+(use-package swiper
+  :after ivy)
+#+end_src
+
+**** Ivy extensions
+
+#+begin_src emacs-lisp :tangle yes
+;; Ivy sorts such large lists using flx package's scoring mechanism, if it's installed.
+(use-package flx)
+
+;; Prescient
+(use-package prescient
+  :custom
+  (prescient-history-length 50)
+  (prescient-filter-method '(literal regexp))
+  :config
+  (prescient-persist-mode 1))
+
+(use-package ivy-prescient
+  :after (prescient ivy)
+  :custom
+  (ivy-prescient-sort-commands
+   '(:not swiper swiper-isearch ivy-switch-buffer counsel-switch-buffer flyspell-correct-ivy))
+  (ivy-prescient-retain-classic-highlighting t)
+  (ivy-prescient-enable-filtering nil)
+  (ivy-prescient-enable-sorting t)
+  :config
+  (ivy-prescient-mode 1))
+
+;; Ivy-rich
+(use-package ivy-rich
+  :custom
+  (ivy-rich-path-style 'abbreviate)
+  :config
+  (setcdr (assq t ivy-format-functions-alist)
+          #'ivy-format-function-line)
+  (ivy-rich-mode 1))
+
+(use-package all-the-icons-ivy-rich
+  :custom
+  (all-the-icons-ivy-rich-icon-size 1.0)
+  :config (all-the-icons-ivy-rich-mode 1))
+
+;; Ivy-posframe
+(use-package ivy-posframe
+  :custom
+  (ivy-posframe-parameters
+   '((left-fringe . 2)
+     (right-fringe . 2)
+     (internal-border-width . 2)))
+  (ivy-posframe-height-alist
+   '((swiper . 1)
+     (swiper-isearch . 1)
+   (flyspell-correct-ivy . 10)
+     (t . 20)))
+  (ivy-posframe-display-functions-alist
+   '((complete-symbol . ivy-posframe-display-at-point)
+     (swiper . ivy-display-function-fallback)
+   (swiper-isearch . ivy-display-function-fallback)
+   (flyspell-correct-ivy . ivy-posframe-display-at-point)
+     (t . ivy-posframe-display-at-frame-center)))
+  :config (ivy-posframe-mode 1))
+
+(use-package counsel-projectile)
+
+;; ----------Isearch improvements
+
+(use-package isearch
+  :ensure nil
+  :custom
+  (search-whitespace-regexp ".*?")
+  (isearch-lax-whitespace t)
+  (isearch-regexp-lax-whitespace nil)
+)
+
+(define-key isearch-mode-map (kbd "k") 'isearch-repeat-forward)
+(define-key isearch-mode-map (kbd "j") 'isearch-repeat-backward)
+#+end_src
+
+*** Syntax highlighting for additional languages
+
+# Markdown files
+
+# #+begin_src emacs-lisp :tangle yes
+# (use-package markdown-mode
+#   :mode "\\.\\(m\\(ark\\)?down\\|md\\)$")
+# #+end_src
+
+# YAML files.
+
+# #+begin_src emacs-lisp :tangle yes
+# (use-package yaml-mode
+#   :mode "\\.yml\\'")
+# #+end_src
+
+# C# files. currently not needed.
+
+# #+begin_src emacs-lisp :tangle yes
+# ;; (use-package csharp-mode
+# ;;   :mode ("\\.cs\\'" . csharp-mode)
+# ;;   :interpreter ("csharp" . csharp-mode))
+# #+end_src
+
+*** Window switcher
+
+#+begin_src emacs-lisp :tangle yes
+(use-package switch-window)
+#+end_src
+
+*** TODO Git integration
+
+#+begin_src emacs-lisp :tangle yes
+(use-package magit)
+
+(use-package git-gutter)
+(global-git-gutter-mode +1)
+(set-face-foreground 'git-gutter:modified "#f7bc0a")
+(custom-set-variables
+ '(git-gutter:update-interval 2))
+#+end_src
+
+*** Templates
+
+#+begin_src emacs-lisp :tangle yes
+;; (use-package yasnippet-snippets
+;;   :defer t)
+
+;; (use-package yasnippet
+;;   :hook
+;;   ((prog-mode . yas-minor-mode))
+;;   :config
+;;   (require 'yasnippet-snippets)
+;;   (yas-reload-all))
+
+
+;; (use-package ivy-yasnippet
+;;   :bind ("M-y" . ivy-yasnippet))
+#+end_src
+
+*** TODO Multiple Cursors
+
+#+begin_src emacs-lisp :tangle yes
+(use-package multiple-cursors
+  :init
+  (custom-set-variables `(mc/always-run-for-all ,t))
+  :config
+  (define-key mc/keymap [remap keyboard-quit] 'mc/keyboard-quit)
+  (define-key rectangular-region-mode-map [remap keyboard-quit] 'rrm/keyboard-quit)
+  ;;(custom-set-variables `(mc/always-run-for-all ,t))
+  :bind
+  (("M-S" . set-rectangular-region-anchor)
+   :map wakib-keys-overriding-map
+     ("M-S-<down>" . mc/mark-next-like-this)
+     ("M-S-<up>" . mc/mark-previous-like-this)
+     ("<C-down-mouse-1>" . mc/add-cursor-on-click)))
+#+end_src
+
+*** Other smaller additions
+
+#+begin_src emacs-lisp :tangle yes
+;; Change undo/redo behaviour
+(use-package undo-tree
+  :config
+  (global-undo-tree-mode))
+
+
+;; Edit files with elevated permissions
+(use-package sudo-edit)
+
+
+;; Key Rebinding utility. Will be used in the keybinds section
+(use-package bind-key)
+
+
+;; when c-x or c-c are pressed with no active selection, cut/copy the line instead
+;; default behaviour is to do the operation between the cursor and the mark, which is hidden
+(use-package whole-line-or-region)
+
+
+;; alt+up/down to move line or region
+(use-package move-text)
+(move-text-default-bindings)
+
+
+;; display available keybindings in popup after a prefix key is pressed
+(use-package which-key)
+(which-key-mode)
+
+
+;; add an easy way to restart emacs
+(use-package restart-emacs
+  :commands (restart-emacs))
+
+
+(use-package expand-region
+  :bind ("M-A" . er/expand-region))
+
+
+(use-package avy
+  :bind ("M-m" . avy-goto-char))
+#+end_src
+
+** Functions
+*** ???
+
+#+begin_src emacs-lisp :tangle yes
+(defun user/reload-init-file ()
+  (interactive)
+  (message "Reloading init.el...")
+  (load-file user-init-file)
+  (message "Reloading init.el... done."))
+
+
+(defun user/select-current-line ()
+  "Select the current line"
+  (interactive)
+  (beginning-of-line) ; move to end of line
+  (set-mark (line-end-position)))
+
+(defun user/kill-emacs ()
+  "save some buffers, then exit unconditionally"
+  (interactive)
+  (save-some-buffers nil t)
+  (kill-emacs))
+
+(defun toggle-fullscreen ()
+  "Toggle fullscreen"
+  (interactive)
+  (toggle-frame-fullscreen))
+
+(defun swiper-isearch-with-selection ()
+  "Swiper-isearch, but uses active selection as input if it exists"
+  (interactive)
+  (if (region-active-p) (swiper-isearch-thing-at-point)
+    (swiper-isearch nil)
+    ))
+
+
+(defun user/delete-word-no-clipboard (arg)
+  "Delete characters forward until encountering the end of a word.
+With argument, do this that many times.
+This command does not push text to `kill-ring'."
+  (interactive "p")
+  (delete-region
+   (point)
+   (progn
+     (forward-word arg)
+     (point))))
+
+(defun user/backward-delete-word-no-clipboard (arg)
+  "Delete characters backward until encountering the beginning of a word.
+With argument, do this that many times.
+This command does not push text to `kill-ring'."
+  (interactive "p")
+  (user/delete-word-no-clipboard (- arg)))
+
+;; keep selection after indenting
+(defadvice whole-line-or-region-indent-rigidly-right-to-tab-stop (after keep-transient-mark-active ())
+  "Override the deactivation of the mark."
+  (setq deactivate-mark nil))
+(ad-activate 'whole-line-or-region-indent-rigidly-right-to-tab-stop)
+
+(defadvice whole-line-or-region-indent-rigidly-left-to-tab-stop (after keep-transient-mark-active ())
+  "Override the deactivation of the mark."
+  (setq deactivate-mark nil))
+(ad-activate 'whole-line-or-region-indent-rigidly-left-to-tab-stop)
+
+
+
+
+
+
+(defun user/query-replace-regexp-whole-buffer ()
+  "query-replace-regexp from the beginning of the buffer."
+  (interactive)
+  (goto-char (point-min))
+  (call-interactively 'vr/query-replace))
+
+#+end_src
+
+*** Aliases
+
+Give the toggle menu funcion a nicer name so its easier to find if necessary.
+
+#+begin_src emacs-lisp :tangle yes
+(defalias 'toggle-menu-bar 'toggle-menu-bar-mode-from-frame)
+#+end_src
+
+Consolidate names for functions related to bookmarks.
+These are the function used for bookmarks:
+
+- bookmark-add-or-open
+- bookmark-remove
+- bookmark-rename
+
+#+begin_src emacs-lisp :tangle yes
+(defalias 'bookmark-add-or-open 'counsel-bookmark)
+(defalias 'bookmark-remove 'bookmark-delete)
+#+end_src
+
+** Global Keybindings
+
+I grew up with Sublime Text, Atom and VSCode and these all share a common set of keybinds.
+These are the keybinds I'm interested in using.
+I tried standard Emacs keybinds for a short amount of time and I wasn't impressed at all.
+
+Here's my history with trying to use "standard" keybinds in emacs:
+- ergoemacs-mode
+	At first I tried using ergoemacs-mode, but that created a lot of conflicts when my config grew in size as I added more functinality.
+	I also had issues with reloading my config file.
+- cua-mode
+	Then I tried using cua-mode, but it wasn't "standard" enough to my liking.
+	The way 'C-x' works in particular was a problem, since I would like to cut a whole line by default when I press C-x and there is no active region selected.
+- config bindings
+	The next attempt was to bind every key manually in my emacs config file.
+	This gave me a lot of control and knowledge over what exactly was happening in terms of keybinds, which I liked.
+	It was almost perfect, but quite there yet.
+	I was able to set up all the bindings that are prefixed by Control and I was also able to bind C-x, C-h and C-g to '<menu> x', '<menu> h' and '<menu> g', respectively.
+	The problem is that Emacs makes rebinding C-c quite difficult.
+- wakib-keys
+	I found out a package that was able to deal with the C-c rebind issue, and decided to just use it instead of dealing with all the trouble of rebinding C-c myself.
+	Since wakib-keys override the global keymap binds, this involved transferring some of my keybinds to the wakib keymap (wakib-keys-overriding-map).
+	Finally, I was able to achieve the behavior I wanted
+
+#+begin_src emacs-lisp :tangle yes
+;; Add keyboard shortcut for reloading emacs config file
+(bind-key "<f5>" 'user/reload-init-file wakib-keys-overriding-map)
+
+(bind-key "C-S-<f5>" 'restart-emacs wakib-keys-overriding-map)
+
+;; make 'C-SPC' select in a rectangle instead of the normal selection
+(bind-key "C-SPC" 'cua-rectangle-mark-mode wakib-keys-overriding-map)
+
+;; Comment code lines, command reacts based on the major mode.
+(bind-key "C-«" 'whole-line-or-region-comment-dwim wakib-keys-overriding-map)
+
+
+;; same, but for for other keyboard layouts
+;; actually, this line breaks undo-tree
+;;(bind-key "C-/" 'whole-line-or-region-comment-dwim wakib-keys-overriding-map)
+
+;; alternative way to quit emacs besides C-x C-c
+(bind-key "C-q" 'user/kill-emacs wakib-keys-overriding-map)
+
+;; add a fullscreen toggle
+(bind-key "<f11>" 'toggle-fullscreen wakib-keys-overriding-map)
+
+
+(bind-key "C-c" 'whole-line-or-region-kill-ring-save wakib-keys-overriding-map)
+(bind-key "C-x" 'whole-line-or-region-kill-region wakib-keys-overriding-map)
+
+
+;; undo and redo
+(bind-key "C-z" 'undo-tree-undo wakib-keys-overriding-map)
+(bind-key "C-y" 'undo-tree-redo wakib-keys-overriding-map)
+
+;; replace 'isearch' with swiper
+(bind-key "C-f" 'swiper-isearch-with-selection wakib-keys-overriding-map)
+
+;; replace 'occur' with rg
+(bind-key "C-S-f" 'rg-search-current-dir wakib-keys-overriding-map)
+
+
+(bind-key "C-h" 'user/query-replace-regexp-whole-buffer wakib-keys-overriding-map)
+;; (bind-key "C-S-h" 'my wakib-keys-overriding-map)
+
+
+
+;; (bind-key "C-S-h" 'vr/replace wakib-keys-overriding-map)  ;; this should be "replace in project"
+;; (bind-key "\C-ch" help-map)
+
+;; use C-p to switch between files in project directory
+(bind-key "C-p" 'counsel-fzf wakib-keys-overriding-map)
+
+;; switch between open buffers
+(bind-key "C-b" 'ivy-switch-buffer wakib-keys-overriding-map)
+
+
+(bind-key "C-+" 'text-scale-increase wakib-keys-overriding-map)
+(bind-key "C--" 'text-scale-decrease wakib-keys-overriding-map)
+
+
+;; should use M-g instead of C-g for goto menu
+(bind-key "C-g" 'goto-line wakib-keys-overriding-map)
+(bind-key "M-q" 'keyboard-escape-quit wakib-keys-overriding-map)
+
+
+
+(bind-key "<escape>" 'keyboard-escape-quit wakib-keys-overriding-map)
+
+(bind-key "C-l" 'user/select-current-line wakib-keys-overriding-map)
+
+(bind-key "C-o" 'counsel-find-file wakib-keys-overriding-map)
+
+(bind-key "C-<prior>" 'previous-buffer wakib-keys-overriding-map)
+(bind-key "C-<next>" 'next-buffer wakib-keys-overriding-map)
+
+;; enable navigation by subwords in backward/forward word. (like camelCase)
+(global-subword-mode +1)
+
+
+;; C-S-up/down to select paragraphs is activated with shift-select-mode
+(bind-key "C-<left>" 'backward-word wakib-keys-overriding-map)
+(bind-key "C-<right>" 'forward-word wakib-keys-overriding-map)
+
+
+;; indent blocks of text
+(bind-key "M-<left>" 'whole-line-or-region-indent-rigidly-left-to-tab-stop wakib-keys-overriding-map)
+(bind-key "M-<right>" 'whole-line-or-region-indent-rigidly-right-to-tab-stop wakib-keys-overriding-map)
+
+
+;; move lines up/down
+(bind-key "M-<up>" 'move-text-up wakib-keys-overriding-map)
+(bind-key "M-<down>" 'move-text-down wakib-keys-overriding-map)
+
+
+;; for some reason M-S-h doesn't work
+(bind-key "M-H" 'switch-window wakib-keys-overriding-map)
+
+
+(bind-key "M-o" nil) ;; the default bind interferes with ivy (show options command)
+
+
+(bind-key "<backspace>" 'backward-delete-char-untabify)
+
+
+
+(bind-key "C-<delete>" 'user/delete-word-no-clipboard wakib-keys-overriding-map)
+(bind-key "C-<backspace>" 'user/backward-delete-word-no-clipboard wakib-keys-overriding-map)
+
+
+;; ;; Use menu key as a leader key
+;; ;;     on Linux, the menu/apps key syntax is <menu>
+;; ;;     on Windows, the menu/apps key syntax is <apps>
+;; ;;     make the syntax equal
+;; (define-key key-translation-map (kbd "<apps>") (kbd "<menu>"))
+
+;; (bind-key "<menu>" nil)
+;; (bind-key* "<menu> h" help-map)
+;; (bind-key* "<menu> g" 'keyboard-escape-quit)
+;; (bind-key* "<menu> x" ctl-x-map)
+
+;; cant use bind-key for C-c keybinds
+(define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+(global-set-key (kbd "C-c h") help-map)
+
+(bind-key "C-." 'flyspell-correct-at-point wakib-keys-overriding-map)
+
+(bind-key "C-S-v" 'counsel-yank-pop wakib-keys-overriding-map)
+
+#+end_src
+
+** User Interface
+
+Most GUI changes are done in early-init.el
+
+*** Font
+
+#+begin_src emacs-lisp :tangle yes
+;; (set-frame-font "IBM Plex Mono-11" nil t)
+(set-frame-font "Cartograph CF-12" nil t)
+#+end_src
+
+*** Theme
+
+#+begin_src emacs-lisp :tangle yes
+(use-package cyberpunk-theme
+  :config
+    (load-theme 'cyberpunk t))
+#+end_src
+
+*** Theme Customization
+
+#+begin_src emacs-lisp :tangle yes
+(setq custom--inhibit-theme-enable nil)
+(with-eval-after-load "cyberpunk-theme"
+  (custom-theme-set-faces
+   'cyberpunk
+   '(default ((t (:background "#14141D" :foreground "#bdbdb3"))))
+   '(fringe ((t (:background "#14141D" :foreground "#dcdccc"))))
+   '(region ((t (:extend t :background "#5e153c"))))
+   '(error ((t (:foreground "#D92027" :weight bold))))
+   '(whitespace-tab ((t (:background nil))))
+   '(whitespace-trailing ((t (:background nil))))
+   '(mode-line ((t (:background "#251F33" :foreground "gray66" :box (:line-width -1 :color "#0d1a1e")))))
+   '(mode-line-inactive ((t (:background "#1A1A1A" :foreground "#4D4D4D" :box (:line-width -1 :color "#0d1a1e")))))
+   '(doom-modeline-bar-inactive ((t (:background "#1A1A1A"))))
+   '(doom-modeline-bar ((t (:background "#251F33"))))
+   '(mode-line-buffer-id ((t (:foreground "#21D7D7" :weight bold))))
+   '(mode-line-emphasis ((t (:foreground "#12F292" :weight bold))))
+   '(ivy-current-match ((t (:box nil :underline "#dc8cc3" :weight extra-bold))))
+   '(minibuffer-prompt ((t (:background "#02242b" :foreground "medium spring green"))))
+   '(highlight ((t (:background "#333333"))))
+   '(line-number-current-line ((t (:background "#333333"))))
+   '(ivy-minibuffer-match-face-1 ((t (:background "#444444"))))
+   '(ivy-minibuffer-match-face-2 ((t (:background "#666666" :weight bold))))
+   '(ivy-minibuffer-match-face-3 ((t (:background "#5654ca" :weight bold))))
+   '(ivy-minibuffer-match-face-4 ((t (:background "#8b4887" :weight bold))))
+   '(vr/match-0 ((t (:background "#5654ca"))))
+   '(vr/match-1 ((t (:background "#8b4887"))))
+   '(ivy-posframe ((t (:background "#1B1821"))))   ; 13141A
+   '(ivy-posframe-border ((t (:background "#A13878"))))
+   '(flyspell-incorrect ((t (:underline (:style wave :color "red2")))))
+   '(flyspell-duplicate ((nil)))
+   '(org-todo ((t (:foreground "#ffa500" :box (:line-width 1 :style none) :weight bold))))
+   '(org-done ((t (:foreground "#00ff00" :box (:line-width 1 :style none) :weight bold))))
+   '(org-block ((t (:background "#151424"))))
+   '(org-ellipsis ((t (:foreground "gainsboro"))))
+   '(org-level-3 ((t (:foreground "#A840F4"))))
+   '(org-document-title ((t (:background "#14141D" :foreground "#add8e6" :weight bold :height 1.5))))
+   '(dashboard-banner-logo-title ((t (:foreground "#A840F4" :height 1.0))))
+   '(font-lock-keyword-face ((t (:foreground "#21D7D7"))))
+   ;; '(anzu-replace-highlight ((t (:foreground "red"))))
+   ;; '(anzu-replace-to ((t (:foreground "green"))))
+))
+#+end_src
+
+** Settings ???
+*** Indentation
+
+#+begin_src emacs-lisp :tangle yes
+;; set default tab width globally
+(setq-default tab-width 4)
+
+;; use spaces for indentation by default
+(setq-default indent-tabs-mode nil)
+
+;; make tabs appear visible as a “|” (pipe) character
+(global-whitespace-mode)								; make all whitespace visible
+(setq whitespace-style '(face tabs tab-mark trailing))  ; only show tabs and trailing whitespace
+(custom-set-faces
+ '(whitespace-tab ((t (:foreground "#636363"))))    	; set tab character color
+ '(whitespace-trailing ((t (:underline (:style wave :color "yellow2")))))
+)
+
+;; set tab character. 124 is the ascii ID of the pipe character
+(setq whitespace-display-mappings
+  '((tab-mark 9 [124 9] [92 9])))
+
+;; make backspace delete all tabs and spaces until the first character
+(setq backward-delete-char-untabify-method 'hungry)
+
+(defun identation-use-spaces ()
+  "Use spaces for indentation"
+  (interactive)
+  (setq indent-tabs-mode nil))
+
+(defun identation-use-tabs  ()
+  "Use tabs for indentation"
+  (interactive)
+  (local-set-key (kbd "TAB") 'tab-to-tab-stop)
+  (setq indent-tabs-mode t))
+
+#+end_src
+
+** Defaults
+
+Stuff that already comes with emacs.
+
+#+begin_src emacs-lisp :tangle yes
+;; Put Customize blocks in a separate file
+(setq custom-file (no-littering-expand-etc-file-name "custom.el"))
+(when (file-exists-p custom-file)
+  (load custom-file))
+
+;; automatically reload files from disk when changed
+(global-auto-revert-mode 1)
+
+;; auto refresh dired when file changes
+(add-hook 'dired-mode-hook 'auto-revert-mode)
+
+;; put auto-save files in designated folder (inside var from no-littering)
+(setq auto-save-default t)
+;; (setq auto-save-file-name-transforms `((".*" "~/.emacs.d/autosaves/" t)))
+(setq auto-save-file-name-transforms
+      `((".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
+
+;; disable file backup
+(setq backup-inhibited t)
+
+;; For all text modes use visual-line-mode
+(add-hook 'text-mode-hook 'visual-line-mode)
+
+;; for files with the same name, include part of directory name at the beginning of the buffer name
+(setq uniquify-buffer-name-style 'forward)
+
+;; Let marks be set when shift arrow-ing
+(setq shift-select-mode t)
+
+;; replace the active region just by typing text and delete the selected text by hitting the Backspace key
+(delete-selection-mode 1)
+
+;; Only require to type 'y' or 'n' instead of 'yes' or 'no' when prompted
+(fset 'yes-or-no-p 'y-or-n-p)
+
+;; Try to always use utf8
+(prefer-coding-system 'utf-8)
+
+;; allow using mouse to switch between windows
+(setq focus-follows-mouse t)
+
+;; links and html files should be opened in a browser, instead of emacs
+(setq browse-url-browser-function 'browse-url-generic)
+(setq browse-url-generic-program "xdg-open")
+
+;; exclude elpa folder from recent files to prevent autoload files filling it up
+(use-package recentf
+  :config
+  (recentf-mode)
+  (setq recentf-max-saved-items 100
+        recentf-exclude '("COMMIT_EDITMSG\\'"
+                          "[/\\]elpa/\\.*"
+						  "[/\\]var/\\.*")))
+
+
+;; disable bell
+(setq ring-bell-function 'ignore)
+
+
+
+;; highlight matching parentheses
+(show-paren-mode)
+
+;; automatically add a pair to braces and quotes
+(electric-pair-mode)
+
+
+
+
+
+
+(pixel-scroll-mode 1)
+(setq scroll-conservatively 101)
+(pixel-scroll-mode)
+
+
+
+(setq mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
+(setq mouse-wheel-progressive-speed nil)
+
+
+
+
+
+(setq blink-cursor-interval 1)
+
+
+;; remove trailling whitespace on save
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
+
+
+(setq require-final-newline t)
+#+end_src
+
+** Personal Settings
+
+Load personal settings file if it exists.
+This is where you put sensitive information like logins and passwords.
+
+#+begin_src emacs-lisp :tangle yes
+(let ((personal-settings (expand-file-name "personal.el" user-emacs-directory)))
+ (when (file-exists-p personal-settings)
+   (load-file personal-settings)))
+#+end_src
+
+** Final Setup
+
+things to do after making changes and right before startup
+
+#+begin_src emacs-lisp :tangle yes
+;; start in org mode by default
+(setq-default major-mode 'org-mode)
+(setq debug-on-error nil)
+
+;;; init.el ends here
+#+end_src
