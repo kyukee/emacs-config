@@ -1,5 +1,5 @@
-#+TITLE: Emacs Configuration
-#+STARTUP: inlineimages
+#+title: Emacs Configuration
+#+startup: inlineimages
 
 * Table of contents                                                     :TOC_3:
 - [[#introduction][Introduction]]
@@ -16,6 +16,9 @@
   - [[#lexical-binding-1][Lexical binding]]
   - [[#initial-setup][Initial Setup]]
   - [[#package-management][Package management]]
+  - [[#defaults][Defaults]]
+    - [[#general][General]]
+    - [[#indentation][Indentation]]
   - [[#features][Features]]
     - [[#icons][Icons]]
     - [[#auto-update-packages][Auto update packages]]
@@ -30,23 +33,23 @@
     - [[#spellcheck][Spellcheck]]
     - [[#code-completion][Code Completion]]
     - [[#completion-framework][Completion Framework]]
-    - [[#syntax-highlighting-for-additional-languages][Syntax highlighting for additional languages]]
     - [[#window-switcher][Window switcher]]
     - [[#git-integration][Git integration]]
-    - [[#templates][Templates]]
+    - [[#templates-and-snippets][Templates and Snippets]]
     - [[#multiple-cursors][Multiple Cursors]]
     - [[#other-smaller-additions][Other smaller additions]]
+  - [[#programming-languages][Programming languages]]
+    - [[#markdown-syntax][Markdown syntax]]
+    - [[#yaml-syntax][YAML syntax]]
+    - [[#c-syntax][C# syntax]]
   - [[#functions][Functions]]
-    - [[#][???]]
-    - [[#aliases][Aliases]]
+    - [[#custom-functions][Custom Functions]]
+    - [[#function-aliases][Function Aliases]]
   - [[#global-keybindings][Global Keybindings]]
   - [[#user-interface][User Interface]]
     - [[#font][Font]]
     - [[#theme][Theme]]
     - [[#theme-customization][Theme Customization]]
-  - [[#settings-][Settings ???]]
-    - [[#indentation][Indentation]]
-  - [[#defaults][Defaults]]
   - [[#personal-settings][Personal Settings]]
   - [[#final-setup][Final Setup]]
 
@@ -64,6 +67,8 @@ The goal of this configuration is to provide a comfortable experience editing Or
 In order for everything to work correctly, you should have the following installed on your system:
 
 - ripgrep
+- fd
+- fzf
 - aspell or hunspell
 
 ** Installation
@@ -90,13 +95,10 @@ Note: this image was done using [[http://www.keyboard-layout-editor.com/#/][Keyb
 ** Todo list
 
 Todo:
-- treemacs
 - ctrl+shift+o to open directory in sidebar
-- diff in gutter
 - add projectile keybinds if there are any useful ones
 - use flymake/flycheck for elisp (for config file)
 - add keybindings tables
-- ctrl+pageup should skip some buffers: messages, scratch, dashboard
 - make alt+arrow work in org mode for headlines without shift (custom function)
 - commenting inside source block jumps to top of block. also happens with just 'emacs -Q' and comment-dwim.
 - query-replace with current selection as input (Replace+ package maybe?)
@@ -104,11 +106,14 @@ Todo:
 - M-o isnt working for C-o and flyspell-correct
 - error indicator in fringe
 - maybe incorporate previous/next from wakib-emacs? (it uses ';')
-- look at counsel-projectile
 - alt-shift-up/down conflict in org mode
-- add shortcut to dashboard and init file
+- add shortcuts for dashboard and init file
 - org mode: when pressing enter at the end of line that starts with '-', it adds two spaces
-- project find and project replace
+- new keybindings for project find and project replace
+- when opening a workspace in dashboard, it should ask for a file
+- vr/replace doesnt auto open org headings
+- setting scroll margin messes up org indent mode. the first/last line sometimes appears unindented.
+- change project name in the modeline (the name itself + its appereance)
 
 also:
 - look at vscode settings + extensions and import anything I like
@@ -141,7 +146,6 @@ Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before p
 
 ;; Initialise installed packages
 (setq package-enable-at-startup t)
-
 
 ;; Allow loading from the package cache.
 (setq package-quickstart t)
@@ -188,7 +192,7 @@ Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before p
 ** Lexical binding
 
 #+begin_src emacs-lisp :tangle yes
-;;; init.el --- -*- lexical-binding: t -*-
+;;; config.el --- -*- lexical-binding: t -*-
 ;;; GNU Emacs Configuration
 #+end_src
 
@@ -245,10 +249,156 @@ I'll leave this here in case it has some use in the future.
 #+end_src
 
 Make emacs configuration directory more organized and keep it clean.
-This package should be loaded as early as possible since it changes where other packages will save their files.
+no-littering should be loaded as early as possible since it changes where other packages will save their files.
 
 #+begin_src emacs-lisp :tangle yes
 (use-package no-littering)
+
+(setq auto-save-file-name-transforms
+      `((".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
+#+end_src
+
+** Defaults
+
+Stuff that already comes with emacs. No package installation required.
+
+*** General
+
+Some nice-to have things and general settings.
+
+#+begin_src emacs-lisp :tangle yes
+;; Put Customize blocks in a separate file
+(setq custom-file (expand-file-name "etc/custom.el" user-emacs-directory))
+(when (file-exists-p custom-file)
+  (load custom-file))
+
+
+;; automatically reload files from disk when changed externally
+(global-auto-revert-mode 1)
+
+
+;; auto refresh dired when file changes
+(add-hook 'dired-mode-hook 'auto-revert-mode)
+
+
+;; put auto-save files in designated folder
+(setq auto-save-default t)
+
+
+;; disable file backup
+(setq backup-inhibited t)
+
+
+;; For all text modes use visual-line-mode
+(add-hook 'text-mode-hook 'visual-line-mode)
+
+
+;; for files with the same name, include part of directory name at the beginning of the buffer name
+(setq uniquify-buffer-name-style 'forward)
+
+
+;; Let marks be set when shift arrow-ing
+(setq shift-select-mode t)
+
+
+;; replace the active region just by typing text and delete the selected text by hitting the Backspace key
+(delete-selection-mode 1)
+
+
+;; Only require to type 'y' or 'n' instead of 'yes' or 'no' when prompted
+(fset 'yes-or-no-p 'y-or-n-p)
+
+
+;; Try to always use utf8
+(prefer-coding-system 'utf-8)
+
+
+;; allow using mouse to switch between windows
+(setq focus-follows-mouse t)
+
+
+;; links and html files should be opened in a browser, instead of emacs
+(setq browse-url-browser-function 'browse-url-generic)
+(setq browse-url-generic-program "xdg-open")
+
+
+;; disable bell
+(setq ring-bell-function 'ignore)
+
+
+;; highlight matching parentheses
+(show-paren-mode)
+
+
+;; automatically add a pair to braces and quotes
+(electric-pair-mode)
+
+
+;; try to improve scrolling in emacs. still not ideal though
+(pixel-scroll-mode)
+(setq scroll-conservatively 101)
+(setq mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
+(setq mouse-wheel-progressive-speed nil)
+(setq scroll-margin 3)
+
+
+;; change cursor blink speed. default = 0.5
+(setq blink-cursor-interval 1)
+
+
+;; On save, automatically remove trailling whitespace and add final newline
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
+(setq require-final-newline t)
+#+end_src
+
+*** Indentation
+
+#+begin_src emacs-lisp :tangle yes
+;; set default tab width globally
+(setq-default tab-width 4)
+
+;; use spaces for indentation by default
+(setq-default indent-tabs-mode nil)
+
+;; make tabs appear visible as a “|” (pipe) character
+(global-whitespace-mode)								; make all whitespace visible
+(setq whitespace-style '(face tabs tab-mark trailing))  ; only show tabs and trailing whitespace
+(custom-set-faces
+ '(whitespace-tab ((t (:foreground "#636363"))))    	; set tab character color
+ '(whitespace-trailing ((t (:underline (:style wave :color "yellow2")))))
+)
+
+;; set tab character. 124 is the ascii ID of the pipe character
+(setq whitespace-display-mappings
+  '((tab-mark 9 [124 9] [92 9])))
+
+;; make backspace delete all tabs and spaces until the first non-whitespace character
+(setq backward-delete-char-untabify-method 'hungry)
+
+
+;; function to call from the menu
+(defun user/identation-use-spaces ()
+  "Use spaces for indentation"
+  (interactive)
+  (setq indent-tabs-mode nil))
+
+(defun user/identation-use-tabs  ()
+  "Use tabs for indentation"
+  (interactive)
+  (local-set-key (kbd "TAB") 'tab-to-tab-stop)
+  (setq indent-tabs-mode t))
+
+
+;; keep selection after indenting (with alt+left/right)
+(defadvice whole-line-or-region-indent-rigidly-right-to-tab-stop (after keep-transient-mark-active ())
+  "Override the deactivation of the mark."
+  (setq deactivate-mark nil))
+(ad-activate 'whole-line-or-region-indent-rigidly-right-to-tab-stop)
+
+(defadvice whole-line-or-region-indent-rigidly-left-to-tab-stop (after keep-transient-mark-active ())
+  "Override the deactivation of the mark."
+  (setq deactivate-mark nil))
+(ad-activate 'whole-line-or-region-indent-rigidly-left-to-tab-stop)
 #+end_src
 
 ** Features
@@ -276,6 +426,12 @@ The first time this package is installed, you need to run 'all-the-icons-install
   (auto-package-update-hide-results t)
   :config
   (auto-package-update-maybe))
+
+;; (defun delete-quickstart ()
+;;   (delete-file (expand-file-name "var/package-quickstart.el" user-emacs-directory)))
+;; (add-hook 'auto-package-update-after-hook 'delete-quickstart)
+
+(add-hook 'auto-package-update-after-hook 'package-quickstart-refresh)
 #+end_src
 
 *** Project Management
@@ -292,10 +448,11 @@ Basically:
 (use-package projectile
   :config
   (setq projectile-completion-system 'ivy)
+  ;; (setq projectile-indexing-method 'hybrid)
   (projectile-mode 1))
 #+end_src
 
-*** TODO File Explorer
+*** File Explorer
 
 Since I am using Treemacs worspaces I will explain my view on projects and workspaces.
 Here is my ideal usage of workspaces/projects:
@@ -315,24 +472,36 @@ Taking this into account, projectile is a good start but it doesnt give me every
 
 #+begin_src emacs-lisp :tangle yes
 (use-package treemacs)
+
+;; single mouse click to open files and folders
 (define-key treemacs-mode-map [mouse-1] #'treemacs-single-click-expand-action)
+
+;; dont show line numbers in the sidebar
+(add-hook 'treemacs-mode-hook (lambda() (display-line-numbers-mode -1)))
+
+(define-key global-map (kbd "<f9>") 'treemacs)
 
 (defun my-treemacs-switch-workspace (ws)
   (setf (treemacs-current-workspace) (treemacs--select-workspace-by-name ws))
   (treemacs--invalidate-buffer-project-cache)
   (treemacs--rerender-after-workspace-change)
+  (treemacs-select-window)
   (run-hooks 'treemacs-switch-workspace-hook)
   )
 
 (defun dashboard-insert-treemacs-workspaces (list-size)
   (treemacs--maybe-load-workspaces)
   (dashboard-insert-section
-	"Workspaces:"
+  "Workspaces:"
 	(dashboard-subseq (mapcar 'treemacs-workspace->name (treemacs-workspaces)) 0 list-size)
 	list-size
 	"w"
 	`(lambda (&rest ignore) (my-treemacs-switch-workspace ,el))
 	el))
+
+
+(use-package treemacs-projectile)
+(use-package treemacs-magit)
 #+end_src
 
 *** Dashboard
@@ -344,6 +513,10 @@ Taking this into account, projectile is a good start but it doesnt give me every
   :config
   (dashboard-setup-startup-hook)
   (add-to-list 'dashboard-item-generators '(treemacs-workspaces . dashboard-insert-treemacs-workspaces))
+
+  (add-to-list 'dashboard-heading-icons '(treemacs-workspaces . "book"))
+  (dashboard-modify-heading-icons '((treemacs-workspaces . "book")))
+
   (setq dashboard-items '((treemacs-workspaces . 5)
                           (bookmarks . 5)
                           (recents   . 5)
@@ -526,7 +699,7 @@ The code below, executes org-babel-tangle asynchronously when config.org is save
     org-agenda-skip-archived-trees nil
 )
 
-;; one newline is enough to separate headings -> two are needed
+;; set how may real newlines are necessary to display a newline when folded.
 (setq org-cycle-separator-lines 2)
 
 ;; default todo keywords
@@ -610,6 +783,27 @@ The code below, executes org-babel-tangle asynchronously when config.org is save
 
 ;; if there is something like #+ATTR_ORG: width="200", resize to 200, otherwise don't resize
 (setq org-image-actual-width nil)
+
+
+
+(add-hook 'org-mode-hook (lambda ()
+   "Beautify Org Checkbox Symbol"
+   (push '("[ ]" .  "☐") prettify-symbols-alist)
+   (push '("[X]" . "☑" ) prettify-symbols-alist)
+   (push '("[-]" . "❍" ) prettify-symbols-alist)
+   ;; (push '("#+BEGIN_SRC" . "↦" ) prettify-symbols-alist)
+   ;; (push '("#+END_SRC" . "⇤" ) prettify-symbols-alist)
+   ;; (push '("#+BEGIN_EXAMPLE" . "↦" ) prettify-symbols-alist)
+   ;; (push '("#+END_EXAMPLE" . "⇤" ) prettify-symbols-alist)
+   ;; (push '("#+BEGIN_QUOTE" . "↦" ) prettify-symbols-alist)
+   ;; (push '("#+END_QUOTE" . "⇤" ) prettify-symbols-alist)
+   ;; (push '("#+begin_quote" . "↦" ) prettify-symbols-alist)
+   ;; (push '("#+end_quote" . "⇤" ) prettify-symbols-alist)
+   ;; (push '("#+begin_example" . "↦" ) prettify-symbols-alist)
+   ;; (push '("#+end_example" . "⇤" ) prettify-symbols-alist)
+   ;; (push '("#+begin_src" . "↦" ) prettify-symbols-alist)
+   ;; (push '("#+end_src" . "⇤" ) prettify-symbols-alist)
+   (prettify-symbols-mode)))
 #+end_src
 
 *** Spellcheck
@@ -765,31 +959,31 @@ swiper is a tool for performing searches, powered by Ivy, all while
 
 (define-key isearch-mode-map (kbd "k") 'isearch-repeat-forward)
 (define-key isearch-mode-map (kbd "j") 'isearch-repeat-backward)
+
+
+;; ---------- counsel-fzf
+;; do not hide files from  .gitignore
+;; ignore files in ~/.config/fd/ignore
+
+(when (zerop (length (getenv "FZF_DEFAULT_COMMAND")))
+    (setenv "FZF_DEFAULT_COMMAND"
+            (and (executable-find "fd")
+                 (concat "fd"
+                         " "
+                         "--type"
+                         " "
+                         "'file'"
+                         " "
+                         "--hidden"
+                         " "
+                         "--no-ignore-vcs"
+                         " "
+                         "--ignore-case"
+                         " "
+                         "--exclude"
+                         " "
+                         "'.git/*'"))))
 #+end_src
-
-*** Syntax highlighting for additional languages
-
-# Markdown files
-
-# #+begin_src emacs-lisp :tangle yes
-# (use-package markdown-mode
-#   :mode "\\.\\(m\\(ark\\)?down\\|md\\)$")
-# #+end_src
-
-# YAML files.
-
-# #+begin_src emacs-lisp :tangle yes
-# (use-package yaml-mode
-#   :mode "\\.yml\\'")
-# #+end_src
-
-# C# files. currently not needed.
-
-# #+begin_src emacs-lisp :tangle yes
-# ;; (use-package csharp-mode
-# ;;   :mode ("\\.cs\\'" . csharp-mode)
-# ;;   :interpreter ("csharp" . csharp-mode))
-# #+end_src
 
 *** Window switcher
 
@@ -802,14 +996,28 @@ swiper is a tool for performing searches, powered by Ivy, all while
 #+begin_src emacs-lisp :tangle yes
 (use-package magit)
 
-(use-package git-gutter)
-(global-git-gutter-mode +1)
-(set-face-foreground 'git-gutter:modified "#f7bc0a")
-(custom-set-variables
- '(git-gutter:update-interval 2))
+;; has a conflict with org mode. new headings display ellipsis as a block
+;; (use-package git-gutter)
+;; ;; (global-git-gutter-mode +1)
+;; (set-face-foreground 'git-gutter:modified "#f7bc0a")
+;; (custom-set-variables
+;;  '(git-gutter:update-interval 2))
+
+(use-package diff-hl)
+(global-diff-hl-mode)
+(diff-hl-flydiff-mode)
+(add-hook 'magit-pre-refresh-hook 'diff-hl-magit-pre-refresh)
+(add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
+
+;; lines that are 'inserted' cause problems with org headings ellipsis symbol
+(defun disable-gutter()
+  (interactive)
+  (diff-hl-mode 0))
+(add-hook 'org-mode-hook 'disable-gutter)
+
 #+end_src
 
-*** Templates
+*** Templates and Snippets
 
 #+begin_src emacs-lisp :tangle yes
 ;; (use-package yasnippet-snippets
@@ -877,6 +1085,17 @@ swiper is a tool for performing searches, powered by Ivy, all while
 (which-key-mode)
 
 
+;; Save a list of most recently edited files
+;; We exclude elpa folder from recent files to prevent autoload files filling it up
+(use-package recentf
+  :config
+  (recentf-mode)
+  (setq recentf-max-saved-items 100
+        recentf-exclude '("COMMIT_EDITMSG\\'"
+                          "[/\\]elpa/\\.*"
+                          "[/\\]var/\\.*")))
+
+
 ;; add an easy way to restart emacs
 (use-package restart-emacs
   :commands (restart-emacs))
@@ -890,8 +1109,40 @@ swiper is a tool for performing searches, powered by Ivy, all while
   :bind ("M-m" . avy-goto-char))
 #+end_src
 
+** Programming languages
+
+Some of these entries are just to add syntax highlighting. Others add more features.
+
+*** Markdown syntax
+
+Add syntax highlighting.
+
+#+begin_src emacs-lisp :tangle yes
+(use-package markdown-mode
+  :mode "\\.\\(m\\(ark\\)?down\\|md\\)$")
+#+end_src
+
+*** YAML syntax
+
+Add syntax highlighting.
+
+#+begin_src emacs-lisp :tangle yes
+(use-package yaml-mode
+  :mode "\\.yml\\'")
+#+end_src
+
+*** C# syntax
+
+Add syntax highlighting.
+
+#+begin_src emacs-lisp :tangle yes
+(use-package csharp-mode
+   :mode ("\\.cs\\'" . csharp-mode)
+   :interpreter ("csharp" . csharp-mode))
+#+end_src
+
 ** Functions
-*** ???
+*** Custom Functions
 
 #+begin_src emacs-lisp :tangle yes
 (defun user/reload-init-file ()
@@ -907,16 +1158,19 @@ swiper is a tool for performing searches, powered by Ivy, all while
   (beginning-of-line) ; move to end of line
   (set-mark (line-end-position)))
 
+
 (defun user/kill-emacs ()
   "save some buffers, then exit unconditionally"
   (interactive)
   (save-some-buffers nil t)
   (kill-emacs))
 
-(defun toggle-fullscreen ()
+
+(defun user/toggle-fullscreen ()
   "Toggle fullscreen"
   (interactive)
   (toggle-frame-fullscreen))
+
 
 (defun swiper-isearch-with-selection ()
   "Swiper-isearch, but uses active selection as input if it exists"
@@ -937,6 +1191,7 @@ This command does not push text to `kill-ring'."
      (forward-word arg)
      (point))))
 
+
 (defun user/backward-delete-word-no-clipboard (arg)
   "Delete characters backward until encountering the beginning of a word.
 With argument, do this that many times.
@@ -944,31 +1199,15 @@ This command does not push text to `kill-ring'."
   (interactive "p")
   (user/delete-word-no-clipboard (- arg)))
 
-;; keep selection after indenting
-(defadvice whole-line-or-region-indent-rigidly-right-to-tab-stop (after keep-transient-mark-active ())
-  "Override the deactivation of the mark."
-  (setq deactivate-mark nil))
-(ad-activate 'whole-line-or-region-indent-rigidly-right-to-tab-stop)
-
-(defadvice whole-line-or-region-indent-rigidly-left-to-tab-stop (after keep-transient-mark-active ())
-  "Override the deactivation of the mark."
-  (setq deactivate-mark nil))
-(ad-activate 'whole-line-or-region-indent-rigidly-left-to-tab-stop)
-
-
-
-
-
 
 (defun user/query-replace-regexp-whole-buffer ()
   "query-replace-regexp from the beginning of the buffer."
   (interactive)
   (goto-char (point-min))
   (call-interactively 'vr/query-replace))
-
 #+end_src
 
-*** Aliases
+*** Function Aliases
 
 Give the toggle menu funcion a nicer name so its easier to find if necessary.
 
@@ -1033,7 +1272,7 @@ Here's my history with trying to use "standard" keybinds in emacs:
 (bind-key "C-q" 'user/kill-emacs wakib-keys-overriding-map)
 
 ;; add a fullscreen toggle
-(bind-key "<f11>" 'toggle-fullscreen wakib-keys-overriding-map)
+(bind-key "<f11>" 'user/toggle-fullscreen wakib-keys-overriding-map)
 
 
 (bind-key "C-c" 'whole-line-or-region-kill-ring-save wakib-keys-overriding-map)
@@ -1082,8 +1321,8 @@ Here's my history with trying to use "standard" keybinds in emacs:
 
 (bind-key "C-o" 'counsel-find-file wakib-keys-overriding-map)
 
-(bind-key "C-<prior>" 'previous-buffer wakib-keys-overriding-map)
-(bind-key "C-<next>" 'next-buffer wakib-keys-overriding-map)
+(bind-key "C-<prior>" 'projectile-previous-project-buffer wakib-keys-overriding-map)
+(bind-key "C-<next>" 'projectile-next-project-buffer wakib-keys-overriding-map)
 
 ;; enable navigation by subwords in backward/forward word. (like camelCase)
 (global-subword-mode +1)
@@ -1176,6 +1415,8 @@ Most GUI changes are done in early-init.el
    '(mode-line-inactive ((t (:background "#1A1A1A" :foreground "#4D4D4D" :box (:line-width -1 :color "#0d1a1e")))))
    '(doom-modeline-bar-inactive ((t (:background "#1A1A1A"))))
    '(doom-modeline-bar ((t (:background "#251F33"))))
+   '(doom-modeline-project-dir ((t (:foreground "dark orange"))))
+   '(doom-modeline-buffer-path ((t (:inherit (mode-line-emphasis bold) :foreground "gray75"))))
    '(mode-line-buffer-id ((t (:foreground "#21D7D7" :weight bold))))
    '(mode-line-emphasis ((t (:foreground "#12F292" :weight bold))))
    '(ivy-current-match ((t (:box nil :underline "#dc8cc3" :weight extra-bold))))
@@ -1200,152 +1441,18 @@ Most GUI changes are done in early-init.el
    '(org-document-title ((t (:background "#14141D" :foreground "#add8e6" :weight bold :height 1.5))))
    '(dashboard-banner-logo-title ((t (:foreground "#A840F4" :height 1.0))))
    '(font-lock-keyword-face ((t (:foreground "#21D7D7"))))
+   '(diff-hl-insert ((t (:background "green4" :foreground "green4"))))
+   '(diff-hl-change ((t (:background "yellow4" :foreground "yellow4"))))
+   '(diff-hl-delete ((t (:background "red4" :foreground "red4"))))
    ;; '(anzu-replace-highlight ((t (:foreground "red"))))
    ;; '(anzu-replace-to ((t (:foreground "green"))))
 ))
 #+end_src
 
-** Settings ???
-*** Indentation
-
-#+begin_src emacs-lisp :tangle yes
-;; set default tab width globally
-(setq-default tab-width 4)
-
-;; use spaces for indentation by default
-(setq-default indent-tabs-mode nil)
-
-;; make tabs appear visible as a “|” (pipe) character
-(global-whitespace-mode)								; make all whitespace visible
-(setq whitespace-style '(face tabs tab-mark trailing))  ; only show tabs and trailing whitespace
-(custom-set-faces
- '(whitespace-tab ((t (:foreground "#636363"))))    	; set tab character color
- '(whitespace-trailing ((t (:underline (:style wave :color "yellow2")))))
-)
-
-;; set tab character. 124 is the ascii ID of the pipe character
-(setq whitespace-display-mappings
-  '((tab-mark 9 [124 9] [92 9])))
-
-;; make backspace delete all tabs and spaces until the first character
-(setq backward-delete-char-untabify-method 'hungry)
-
-(defun identation-use-spaces ()
-  "Use spaces for indentation"
-  (interactive)
-  (setq indent-tabs-mode nil))
-
-(defun identation-use-tabs  ()
-  "Use tabs for indentation"
-  (interactive)
-  (local-set-key (kbd "TAB") 'tab-to-tab-stop)
-  (setq indent-tabs-mode t))
-
-#+end_src
-
-** Defaults
-
-Stuff that already comes with emacs.
-
-#+begin_src emacs-lisp :tangle yes
-;; Put Customize blocks in a separate file
-(setq custom-file (no-littering-expand-etc-file-name "custom.el"))
-(when (file-exists-p custom-file)
-  (load custom-file))
-
-;; automatically reload files from disk when changed
-(global-auto-revert-mode 1)
-
-;; auto refresh dired when file changes
-(add-hook 'dired-mode-hook 'auto-revert-mode)
-
-;; put auto-save files in designated folder (inside var from no-littering)
-(setq auto-save-default t)
-;; (setq auto-save-file-name-transforms `((".*" "~/.emacs.d/autosaves/" t)))
-(setq auto-save-file-name-transforms
-      `((".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
-
-;; disable file backup
-(setq backup-inhibited t)
-
-;; For all text modes use visual-line-mode
-(add-hook 'text-mode-hook 'visual-line-mode)
-
-;; for files with the same name, include part of directory name at the beginning of the buffer name
-(setq uniquify-buffer-name-style 'forward)
-
-;; Let marks be set when shift arrow-ing
-(setq shift-select-mode t)
-
-;; replace the active region just by typing text and delete the selected text by hitting the Backspace key
-(delete-selection-mode 1)
-
-;; Only require to type 'y' or 'n' instead of 'yes' or 'no' when prompted
-(fset 'yes-or-no-p 'y-or-n-p)
-
-;; Try to always use utf8
-(prefer-coding-system 'utf-8)
-
-;; allow using mouse to switch between windows
-(setq focus-follows-mouse t)
-
-;; links and html files should be opened in a browser, instead of emacs
-(setq browse-url-browser-function 'browse-url-generic)
-(setq browse-url-generic-program "xdg-open")
-
-;; exclude elpa folder from recent files to prevent autoload files filling it up
-(use-package recentf
-  :config
-  (recentf-mode)
-  (setq recentf-max-saved-items 100
-        recentf-exclude '("COMMIT_EDITMSG\\'"
-                          "[/\\]elpa/\\.*"
-						  "[/\\]var/\\.*")))
-
-
-;; disable bell
-(setq ring-bell-function 'ignore)
-
-
-
-;; highlight matching parentheses
-(show-paren-mode)
-
-;; automatically add a pair to braces and quotes
-(electric-pair-mode)
-
-
-
-
-
-
-(pixel-scroll-mode 1)
-(setq scroll-conservatively 101)
-(pixel-scroll-mode)
-
-
-
-(setq mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
-(setq mouse-wheel-progressive-speed nil)
-
-
-
-
-
-(setq blink-cursor-interval 1)
-
-
-;; remove trailling whitespace on save
-(add-hook 'before-save-hook 'delete-trailing-whitespace)
-
-
-(setq require-final-newline t)
-#+end_src
-
 ** Personal Settings
 
 Load personal settings file if it exists.
-This is where you put sensitive information like logins and passwords.
+This is where you put sensitive information like emails and credentials.
 
 #+begin_src emacs-lisp :tangle yes
 (let ((personal-settings (expand-file-name "personal.el" user-emacs-directory)))
@@ -1362,5 +1469,5 @@ things to do after making changes and right before startup
 (setq-default major-mode 'org-mode)
 (setq debug-on-error nil)
 
-;;; init.el ends here
+;;; config.el ends here
 #+end_src
