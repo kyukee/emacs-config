@@ -68,14 +68,22 @@ Note: this image was done using [[http://www.keyboard-layout-editor.com/#/][Keyb
 ** Fixes and improvements
 
 Todo:
-- [ ] ctrl+shift+o to open directory in sidebar
 - [X] workspaces in dashboard
+- [X] org mode: when pressing enter at the end of line that starts with '-', it adds two spaces
+- [X] setting scroll margin messes up org indent mode. the first/last line sometimes appears unindented
+- [X] change project name in the modeline (the name itself + its appereance)
+- [X] change org souce block header highlight color
+- [X] home key should toggle between row 0 and first character in line (beginning and indentation, in emacs terms)
+- [X] when line number is 0-9, and it changes to a greater value, the numbers column width changes and the whole buffers moves.
+- [X] disable completion for plain text modes (org-mode)
+- [X] config.org should open with 2 levels of headings
+- [ ] ctrl+shift+o to open directory in sidebar
 - [ ] workspaces in dashboard icon
 - [ ] add projectile keybinds if there are any useful ones
 - [ ] use flymake/flycheck for elisp (for config file)
 - [ ] add keybindings tables
 - [ ] make alt+arrow work in org mode for headlines without shift (custom function)
-- [ ] alt-shift-up/down conflict in org mode with multiple cursors
+- [ ] alt-shift-up/down conflict in org mode with multiple cursors (mc bind disabled now)
 - [ ] commenting inside source block jumps to top of block. happens with just 'emacs -Q' and comment-dwim
 - [ ] query-replace with current selection as input (Replace+ package maybe?)
 - [ ] make the M-o keybinding available outside of ivy, so the default wakib function can be used
@@ -83,27 +91,20 @@ Todo:
 - [ ] error indicator in fringe for flyspell and flycheck/flymake
 - [ ] maybe incorporate previous/next concept from wakib-emacs? (it uses ';')
 - [ ] add shortcuts for dashboard and init file
-- [X] org mode: when pressing enter at the end of line that starts with '-', it adds two spaces
 - [ ] new keybindings for project find and project replace
 - [ ] when opening a workspace in dashboard, it should ask for a file
 - [ ] vr/replace doesnt auto open org headings
-- [X] setting scroll margin messes up org indent mode. the first/last line sometimes appears unindented
-- [ ] change project name in the modeline (the name itself + its appereance)
-- [ ] change org souce block header highlight color
 - [ ] use 'C-.' to fix any type of error
-- [ ] a hex color should count as a full word when selecting it
+- [ ] a hex color should count as a full word when selecting it (double click or C-S-left/right)
+- [ ] apostrophes should not be selected when selecting words
 - [ ] use straight.el so only packages declared in the config file are loaded
 - [ ] compare latest version with old version in git. load time went from 0.7-0.8 -> 1.0-1.2 seconds.
-- [ ] org-indent messes up hl-line-mode. it only has one face for the indentation. try using face priority
-- [ ] home key should toggle between row 0 and first character in line
-- [X] when line number is 0-9, and it changes to a greater value, the numbers column width changes and the whole buffers moves.
+- [ ] org-indent messes up hl-line-mode. it only has one face for the indentation. this creates a gap from line number to line. try fixing with face priority
 - [ ] treemacs project name font
 - [ ] replace "cua-selection-mode" with "set-rectangular-region-anchor" from "rectangular-region-mode"
-- [ ] package-quickstart needs to be deleted after package update. it's not working.
+- [ ] package-quickstart needs to be deleted after package update or else there's an error. sometimes also custom.el
 - [ ] org-mode unordered lists should also have bullets (org-superstar seems to solve this)
 - [ ] add tabs like Sublime Text or somehow show tabs in current project
-- [ ] make it so company only works for programming.
-- [ ] disable completion for plain text modes (org-mode)
 
 also:
 - [ ] look at vscode settings + extensions and import anything I like
@@ -403,6 +404,47 @@ With argument, do this that many times.
 This command does not push text to `kill-ring'."
   (interactive "p")
   (user/delete-word-no-clipboard (- arg)))
+
+
+(defun user/genius-beginning-of-line ()
+   "Move point to the first non-whitespace character on this line.
+ If point was already at that position, move point to beginning of line.
+ If line is empty, indent the line relative to the preceding line.
+ "
+   (interactive "^")
+   (let ((oldpos (point)))
+     (back-to-indentation)
+     (and (= oldpos (point))
+          (progn (move-beginning-of-line nil)
+                 (when (=
+                        (line-beginning-position)
+                        (line-end-position))
+                   (save-excursion
+                     (indent-according-to-mode)))))))
+
+
+(defun user/smarter-move-beginning-of-line (arg)
+  "Move point back to indentation of beginning of line.
+
+Move point to the first non-whitespace character on this line.
+If point is already there, move to the beginning of the line.
+Effectively toggle between the first non-whitespace character and
+the beginning of the line.
+
+If ARG is not nil or 1, move forward ARG - 1 lines first.  If
+point reaches the beginning or end of the buffer, stop there."
+  (interactive "^p")
+  (setq arg (or arg 1))
+
+  ;; Move lines first
+  (when (/= arg 1)
+    (let ((line-move-visual nil))
+      (forward-line (1- arg))))
+
+  (let ((orig-point (point)))
+    (back-to-indentation)
+    (when (= orig-point (point))
+      (move-beginning-of-line 1))))
 #+END_SRC
 
 *** Function Aliases
@@ -456,15 +498,18 @@ Here's my history with trying to use "standard" keybinds in emacs:
 - ergoemacs-mode
 	At first I tried using ergoemacs-mode, but that created a lot of conflicts when my config grew in size as I added more functinality.
 	I also had issues with reloading my config file.
+
 - cua-mode
 	Then I tried using cua-mode, but it wasn't "standard" enough to my liking.
 	The way 'C-x' works in particular was a problem, since I would like to cut a whole line by default when I press C-x and there is no active region selected.
+
 - config bindings
 	The next attempt was to bind every key manually in my emacs config file.
 	This gave me a lot of control and knowledge over what exactly was happening in terms of keybinds, which I liked.
 	It was almost perfect, but quite there yet.
 	I was able to set up all the bindings that are prefixed by Control and I was also able to bind C-x, C-h and C-g to '<menu> x', '<menu> h' and '<menu> g', respectively.
 	The problem is that Emacs makes rebinding C-c quite difficult.
+
 - wakib-keys
 	I found out a package that was able to deal with the C-c rebind issue, and decided to just use it instead of dealing with all the trouble of rebinding C-c myself.
 	Since wakib-keys override the global keymap binds, this involved transferring some of my keybinds to the wakib keymap (wakib-keys-overriding-map).
@@ -485,10 +530,6 @@ Here's my history with trying to use "standard" keybinds in emacs:
 
 (bind-key "C-+" 'text-scale-increase wakib-keys-overriding-map)
 (bind-key "C--" 'text-scale-decrease wakib-keys-overriding-map)
-
-;; should use M-g instead of C-g for goto menu
-(bind-key "C-g" 'goto-line wakib-keys-overriding-map)
-(bind-key "M-q" 'keyboard-escape-quit wakib-keys-overriding-map)
 
 (bind-key "<escape>" 'keyboard-escape-quit wakib-keys-overriding-map)
 
@@ -511,6 +552,14 @@ Here's my history with trying to use "standard" keybinds in emacs:
 
 ;; cant use bind-key for C-c keybinds
 (global-set-key (kbd "C-c h") help-map)
+
+(bind-key "<home>" 'user/smarter-move-beginning-of-line wakib-keys-overriding-map)
+
+
+
+
+
+
 
 
 
@@ -732,7 +781,7 @@ What I want for this feature is to be able to save and load lists of files using
 Workspaces should be able to be composed of multiple items. Each item can be a project, normal folder or normal file.
 I use the name 'workspaces' in this section, but it's interchangeable with other names for this type of thing in emacs.
 
-Restoring the window layout is not so important for me.
+Restoring the window sizes, positions and layouts is not so important for me.
 
 Specific features I want:
 
@@ -748,14 +797,13 @@ Specific features I want:
 Packages I looked at:
 
   treemacs workspaces:
-    - a workspace can only have projects or folders
-    - possible to use bookmarks for files
-    - Can not list all buffers in workspace
+    - a workspace can only have projects or folders (but it's possible to use bookmarks for files)
+    - Can not list all buffers in current workspace
 
   eyebrowse:
     - does not save files, only layouts
     - works like i3 workspaces
-    - the way it works is that you assign a workspace to a certain purpose and only open certain projects in certain workspaces
+    - the way it works is that you assign a workspace to a certain purpose and only open certain projects in there
 
   bufler (bufler-workspace-mode):
     - bufler-list is good for managing buffers. works like magit
@@ -763,20 +811,24 @@ Packages I looked at:
     - does not save files
     - I tried to use desktop-save-mode for saving stuff, but wasnt very happy with it
 
-  perspective:
+  projectile + bookmarks:
+    - needs a special file in a project directory to give it a custom name
+    - it's not ideal for normal non-repo folders
+
+  perspective and persp-mode (shared):
     - doesn't really have a concept of projects, only buffers
-    - saves and loads all perspectives at once
+    - saves and loads all perspectives at once. on file load, all buffers from all saved perspectives are opened
+    - persp-mode is more popular and supported, while perspective is simpler and nicer to configure
+
+  perspective:
+    - the list of buffers in current perspective works better than persp-mode
 
   persp-mode:
-    - doesn't really have a concept of projects, only buffers
-    - saves and loads all perspectives at once
-    - it's a pain to setup and the documentation is pretty lacking
+    - it's a pain to setup and the documentation is pretty lacking (these are related)
     - cant make it load save file at startup without resuming session
     - the list of buffers in current perspective shows a bunch or useless buffers
 
-  projectile + bookmarks:
-    - needs a special file in a project directory to give it a custom name
-
+Currently using: perspective
 
 #+BEGIN_SRC emacs-lisp :tangle yes
   ;; (use-package persp-mode
@@ -804,7 +856,7 @@ Packages I looked at:
 (persp-turn-off-modestring)
 
 (setq persp-state-default-file (expand-file-name "var/persp-mode/persp-auto-save" user-emacs-directory))
-;;(persp-state-load persp-state-default-file)
+;; (add-hook 'after-init-hook (persp-state-load persp-state-default-file))
 
 
 
@@ -982,7 +1034,7 @@ Taking this into account, projectile is a good start but it doesnt give me every
   "Display Projectile project name"
   (if (and (boundp 'persp-mode) persp-mode)
       (propertize (format " P: %s" (persp-current-name))
-                  'face '(:foreground "dark orange" :weight bold))
+                  'face '(:foreground "yellow" :weight bold))
     ""))
 
 (doom-modeline-def-segment persp-spacing
@@ -1313,6 +1365,8 @@ The code below, executes org-babel-tangle asynchronously when config.org is save
 (use-package company
   :config
   (global-company-mode 1))
+
+(setq company-global-modes '(not org-mode))
 #+END_SRC
 
 *** Completion Framework
@@ -1383,6 +1437,8 @@ swiper is a tool for performing searches, powered by Ivy, all while
 
 ;; replace 'isearch' with swiper
 (bind-key "C-f" 'swiper-isearch-with-selection wakib-keys-overriding-map)
+
+;; put a cursor on every swiper search result
 ;;(bind-key "C-h" 'swiper-mc swiper-map)
 #+END_SRC
 
@@ -1546,7 +1602,6 @@ swiper is a tool for performing searches, powered by Ivy, all while
   :config
   (define-key mc/keymap [remap keyboard-quit] 'mc/keyboard-quit)
   (define-key rectangular-region-mode-map [remap keyboard-quit] 'rrm/keyboard-quit)
-  ;;(custom-set-variables `(mc/always-run-for-all ,t))
   :bind
   (("M-S" . set-rectangular-region-anchor)
    :map mc/keymap
@@ -1704,3 +1759,12 @@ things to do after making changes and right before startup
 
 ;;; config.el ends here
 #+END_SRC
+
+
+
+This part is not relative to the emacs configuration
+This makes the config file show 2 heading levels at startup, to make navigation easier
+
+;;; Local Variables:
+;;; eval: (org-content 2)
+;;; End:
