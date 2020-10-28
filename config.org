@@ -77,11 +77,17 @@ Todo:
 - [X] when line number is 0-9, and it changes to a greater value, the numbers column width changes and the whole buffers moves.
 - [X] disable completion for plain text modes (org-mode)
 - [X] config.org should open with 2 levels of headings
+- [X] add tabs like Sublime Text or somehow show tabs in current project
+- [X] disable tab-line in dashboard
+- [X] hidden tab-bar reappears when doing: M-x ESC
+- [X] mode-line lighter for current indentation settings isn't there anymore
+- [X] add icon to custom projectile doom-modeline segment
+- [X] workspaces in dashboard icon
+- [X] org-indent messes up hl-line-mode. it only has one face for the indentation. this creates a gap from line number to line. fix by changing bg of curr line number
 - [ ] ctrl+shift+o to open directory in sidebar
-- [ ] workspaces in dashboard icon
-- [ ] add projectile keybinds if there are any useful ones
+- [ ] add projectile hydras
 - [ ] use flymake/flycheck for elisp (for config file)
-- [ ] add keybindings tables
+- [ ] add keybindings tables in config.org
 - [ ] make alt+arrow work in org mode for headlines without shift (custom function)
 - [ ] alt-shift-up/down conflict in org mode with multiple cursors (mc bind disabled now)
 - [ ] commenting inside source block jumps to top of block. happens with just 'emacs -Q' and comment-dwim
@@ -92,19 +98,21 @@ Todo:
 - [ ] maybe incorporate previous/next concept from wakib-emacs? (it uses ';')
 - [ ] add shortcuts for dashboard and init file
 - [ ] new keybindings for project find and project replace
-- [ ] when opening a workspace in dashboard, it should ask for a file
+- [ ] when opening a treemacs workspace in dashboard, it should ask for a file
 - [ ] vr/replace doesnt auto open org headings
 - [ ] use 'C-.' to fix any type of error
 - [ ] a hex color should count as a full word when selecting it (double click or C-S-left/right)
 - [ ] apostrophes should not be selected when selecting words
 - [ ] use straight.el so only packages declared in the config file are loaded
 - [ ] compare latest version with old version in git. load time went from 0.7-0.8 -> 1.0-1.2 seconds.
-- [ ] org-indent messes up hl-line-mode. it only has one face for the indentation. this creates a gap from line number to line. try fixing with face priority
-- [ ] treemacs project name font
 - [ ] replace "cua-selection-mode" with "set-rectangular-region-anchor" from "rectangular-region-mode"
 - [ ] package-quickstart needs to be deleted after package update or else there's an error. sometimes also custom.el
 - [ ] org-mode unordered lists should also have bullets (org-superstar seems to solve this)
-- [ ] add tabs like Sublime Text or somehow show tabs in current project
+- [ ] arrow indicating visual line doesn't appear
+- [ ] selecting with S-<home> and pressing delete only removes indentation
+- [ ] figure out how to deal with new file (C-n) while using bufler groups
+- [ ] counsel-find-file should order items alphabetically
+- [ ] change swiper match colours (each regex group has a different colour)
 
 also:
 - [ ] look at vscode settings + extensions and import anything I like
@@ -300,36 +308,54 @@ Most GUI changes are done in early-init.el
 (with-eval-after-load "cyberpunk-theme"
   (custom-theme-set-faces
    'cyberpunk
+
+   ;; defaults
    '(default ((t (:background "#14141D" :foreground "#bdbdb3"))))
    '(fringe ((t (:background "#14141D" :foreground "#dcdccc"))))
    '(region ((t (:extend t :background "#5e153c"))))
    '(error ((t (:foreground "#D92027" :weight bold))))
    '(whitespace-tab ((t (:background nil))))
    '(whitespace-trailing ((t (:background nil))))
-   '(mode-line ((t (:background "#251F33" :foreground "gray66" :box (:line-width -1 :color "#0d1a1e")))))
-   '(mode-line-inactive ((t (:background "#1A1A1A" :foreground "#4D4D4D" :box (:line-width -1 :color "#0d1a1e")))))
+   '(font-lock-keyword-face ((t (:foreground "#21D7D7"))))
+   '(line-number ((t (:foreground "#6b6b6b"))))
+   '(line-number-current-line ((t (:background "#14141D"))))
+
+   ;; tab-line
+   '(tab-line ((t (:background "#14141D" :foreground "white" :height 1.0))))
+   '(tab-line-tab ((t (:inherit tab-line :foreground "MediumOrchid4"))))              ; selected but not in focus
+   '(tab-line-tab-current ((t (:inherit tab-line-tab :foreground "MediumOrchid1"))))  ; selected
+   '(tab-line-tab-inactive ((t (:inherit tab-line-tab :foreground "gray60"))))        ; not selected
+   '(tab-line-highlight ((t (:inherit tab-line-tab :background "orange"))))
+
+   ;; modeline
    '(doom-modeline-bar-inactive ((t (:background "#1A1A1A"))))
    '(doom-modeline-bar ((t (:background "#251F33"))))
    '(doom-modeline-project-dir ((t (:foreground "dark orange"))))
-   '(doom-modeline-buffer-path ((t (:inherit (mode-line-emphasis bold) :foreground "gray75"))))
+   '(doom-modeline-buffer-path ((t (:inherit (mode-line-emphasis bold) :foreground "gray60"))))
    '(doom-modeline-persp-buffer-not-in-persp ((t (:inherit (font-lock-comment-face italic)))))
    '(doom-modeline-persp-name ((t (:inherit (font-lock-doc-face italic bold)))))
+   '(mode-line ((t (:background "#251F33" :foreground "gray66" :box (:line-width -1 :color "#0d1a1e")))))
+   '(mode-line-inactive ((t (:background "#1A1A1A" :foreground "#4D4D4D" :box (:line-width -1 :color "#0d1a1e")))))
    '(mode-line-highlight ((t (:box (:line-width 2 :color "grey54")))))
    '(mode-line-buffer-id ((t (:foreground "#21D7D7" :weight bold))))
    '(mode-line-emphasis ((t (:foreground "#12F292" :weight bold))))
-   '(ivy-current-match ((t (:box nil :underline "#dc8cc3" :weight extra-bold))))
+
+   ;; ivy
    '(minibuffer-prompt ((t (:background "#02242b" :foreground "medium spring green"))))
    '(highlight ((t (:background "#333333"))))
+   '(ivy-current-match ((t (:box nil :underline "#dc8cc3" :weight extra-bold))))
    '(ivy-minibuffer-match-face-1 ((t (:background "#444444"))))
    '(ivy-minibuffer-match-face-2 ((t (:background "#666666" :weight bold))))
    '(ivy-minibuffer-match-face-3 ((t (:background "#5654ca" :weight bold))))
    '(ivy-minibuffer-match-face-4 ((t (:background "#8b4887" :weight bold))))
-   '(vr/match-0 ((t (:background "#5654ca" :foreground "#ffffff"))))
-   '(vr/match-1 ((t (:background "#8b4887" :foreground "#ffffff"))))
    '(ivy-posframe ((t (:background "#1B1821"))))   ; 13141A
    '(ivy-posframe-border ((t (:background "#A13878"))))
+
+   ;; flyspell
    '(flyspell-incorrect ((t (:underline (:style wave :color "red2")))))
    '(flyspell-duplicate ((nil)))
+
+   ;; org mode
    '(org-todo ((t (:foreground "#ffa500" :box (:line-width 1 :style none) :weight bold))))
    '(org-done ((t (:foreground "#00ff00" :box (:line-width 1 :style none) :weight bold))))
    '(org-block ((t (:background "#151424"))))
@@ -339,15 +365,16 @@ Most GUI changes are done in early-init.el
    '(org-level-3 ((t (:foreground "#A840F4"))))
    '(org-document-title ((t (:background "#14141D" :foreground "#add8e6" :weight bold :height 1.5))))
    '(org-checkbox ((t (:background "#14141D" :foreground "#dddddd"))))
+
+   ;; other packages
    '(dashboard-banner-logo-title ((t (:foreground "#A840F4" :height 1.0))))
-   '(font-lock-keyword-face ((t (:foreground "#21D7D7"))))
    '(diff-hl-insert ((t (:background "green4" :foreground "green4"))))
    '(diff-hl-change ((t (:background "yellow4" :foreground "yellow4"))))
    '(diff-hl-delete ((t (:background "red4" :foreground "red4"))))
    ;; '(anzu-replace-highlight ((t (:foreground "red"))))
    ;; '(anzu-replace-to ((t (:foreground "green"))))
-   '(line-number ((t (:foreground "#6b6b6b"))))
-   '(line-number-current-line ((t (:background "#14141D"))))
+   '(vr/match-0 ((t (:background "#5654ca" :foreground "#ffffff"))))
+   '(vr/match-1 ((t (:background "#8b4887" :foreground "#ffffff"))))
 ))
 #+END_SRC
 
@@ -757,7 +784,7 @@ The first time this package is installed, you need to run 'all-the-icons-install
 To use a non-repository folder as a project, create a blank '.projectile' file in the folder to mark the project root.
 See [[https://docs.projectile.mx/projectile/projects.html#ignoring-file]] what to write in this file.
 
-Basically:
+Quick version of what to write in .projectile:
 '-' to ignore
 '+' to keep and ignore everything else
 '!' to override .gitignore
@@ -794,11 +821,18 @@ Specific features I want:
   - integration with dashboard package (needs a way of getting list of existing workspaces)
   - show current workspace in the modeline
 
+
+Another idea I've had is the following:
+  - whenever you enter a projectile project, the sidebar and tab-bar automatically show information from only that project.
+  - for everthing else, the sidebar shows the current file's parent directory and the tab-bar shows all the non-project files.
+
+
 Packages I looked at:
 
   treemacs workspaces:
     - a workspace can only have projects or folders (but it's possible to use bookmarks for files)
     - Can not list all buffers in current workspace
+    - can use projectile and bookmarks to cover some functionality
 
   eyebrowse:
     - does not save files, only layouts
@@ -810,6 +844,8 @@ Packages I looked at:
     - the tab-bar integration is nice
     - does not save files
     - I tried to use desktop-save-mode for saving stuff, but wasnt very happy with it
+    - bufler-workspace-mode allows to automatically switch workspaces when switching buffers
+    - can use bookmarks to cover some functionality
 
   projectile + bookmarks:
     - needs a special file in a project directory to give it a custom name
@@ -828,44 +864,44 @@ Packages I looked at:
     - cant make it load save file at startup without resuming session
     - the list of buffers in current perspective shows a bunch or useless buffers
 
-Currently using: perspective
+Currently using: bufler with optional bufler-tabs-mode
 
 #+BEGIN_SRC emacs-lisp :tangle yes
-  ;; (use-package persp-mode
-  ;;   :ensure t
-  ;;   :config
-  ;;   (setq persp-auto-resume-time -1
-  ;;         persp-auto-save-opt 0
-  ;;         persp-auto-save-num-of-backups 0
-  ;;         persp-set-last-persp-for-new-frames nil
-  ;;         persp-reset-windows-on-nil-window-conf t
-  ;;         persp-autokill-buffer-on-remove t
-  ;;         persp-add-buffer-on-after-change-major-mode t
-  ;;         persp-kill-foreign-buffer-behaviour 'kill)
-  ;;   (persp-mode 1))
+;; (use-package persp-mode
+;;   :ensure t
+;;   :config
+;;   (setq persp-auto-resume-time -1
+;;         persp-auto-save-opt 0
+;;         persp-auto-save-num-of-backups 0
+;;         persp-set-last-persp-for-new-frames nil
+;;         persp-reset-windows-on-nil-window-conf t
+;;         persp-autokill-buffer-on-remove t
+;;         persp-add-buffer-on-after-change-major-mode t
+;;         persp-kill-foreign-buffer-behaviour 'kill)
+;;   (persp-mode 1))
 
 
 ;; (persp-load-state-from-file (expand-file-name "var/persp-mode/persp-auto-save" user-emacs-directory))
 
 
 
-(use-package perspective
-  :config
-  (persp-mode))
+;; (use-package perspective
+;;   :config
+;;   (persp-mode))
 
-(persp-turn-off-modestring)
+;; (persp-turn-off-modestring)
 
-(setq persp-state-default-file (expand-file-name "var/persp-mode/persp-auto-save" user-emacs-directory))
-;; (add-hook 'after-init-hook (persp-state-load persp-state-default-file))
-
-
+;; (setq persp-state-default-file (expand-file-name "var/persp-mode/persp-auto-save" user-emacs-directory))
+;; ;; (add-hook 'after-init-hook (persp-state-load persp-state-default-file))
 
 
 
 
 
 
-(bind-key "C-b" 'persp-counsel-switch-buffer wakib-keys-overriding-map)
+
+
+;; (bind-key "C-b" 'projectile-switch-to-buffer wakib-keys-overriding-map)
 
 ;; (add-to-list 'persp-filter-save-buffers-functions
 ;;               (lambda (b) (string-prefix-p "todo" (buffer-name b)))
@@ -875,13 +911,99 @@ Currently using: perspective
 
 
 (use-package bufler)
-(use-package desktop+)
+
+;; this sets the modeline lighter
+;;(bufler-mode 1)
+
+(bufler-tabs-mode 1)
+(tab-bar-mode 0)
+(setq bufler-workspace-switch-buffer-sets-workspace t)
+
+(bind-key "C-S-b" 'bufler wakib-keys-overriding-map)
+
+(bind-key "C-b" 'bufler-switch-buffer wakib-keys-overriding-map)
+;; C-u C-b to show all buffers and aumatically switch workspaces
+
+
+;; (use-package desktop+)
 
 (bind-key "C-<prior>" 'tab-line-switch-to-prev-tab wakib-keys-overriding-map)
 (bind-key "C-<next>" 'tab-line-switch-to-next-tab wakib-keys-overriding-map)
 
 
-(setq bufler-tabs-mode t)
+
+
+;; focus current buffer workspace everytime a file is opened
+(add-hook 'find-file-hook (lambda () (call-interactively #'bufler-workspace-focus-buffer)))
+
+
+(setf bufler-groups
+      (bufler-defgroups
+        (group
+         ;; Subgroup collecting all named workspaces.
+         (auto-workspace))
+        (group
+         ;; Subgroup collecting all `help-mode' and `info-mode' buffers.
+         (group-or "*Help/Info*"
+                   (mode-match "*Help*" (rx bos "help-"))
+                   (mode-match "*Info*" (rx bos "info-"))))
+        (group
+         ;; Subgroup collecting all special buffers (i.e. ones that are not
+         ;; file-backed), except `magit-status-mode' buffers (which are allowed to fall
+         ;; through to other groups, so they end up grouped with their project buffers).
+         (group-and "*Special*"
+                    (lambda (buffer)
+                      (unless (or (funcall (mode-match "Magit" (rx bos "magit-status"))
+                                           buffer)
+                                  (funcall (mode-match "Dired" (rx bos "dired"))
+                                           buffer)
+                                  (funcall (auto-file) buffer))
+                        "*Special*")))
+         (group
+          ;; Subgroup collecting these "special special" buffers
+          ;; separately for convenience.
+          (name-match "**Special**"
+                      (rx bos "*" (or "Messages" "Warnings" "scratch" "Backtrace") "*")))
+         (group
+          ;; Subgroup collecting all other Magit buffers, grouped by directory.
+          (mode-match "*Magit* (non-status)" (rx bos (or "magit" "forge") "-"))
+          (auto-directory))
+         ;; Subgroup for Helm buffers.
+         (mode-match "*Helm*" (rx bos "helm-"))
+         ;; Remaining special buffers are grouped automatically by mode.
+         (auto-mode))
+        (group
+         ;; Subgroup collecting buffers in `org-directory' (or "~/org" if
+         ;; `org-directory' is not yet defined).
+         (dir (if (bound-and-true-p org-directory)
+                  org-directory
+                "~/org"))
+         (group
+          ;; Subgroup collecting indirect Org buffers, grouping them by file.
+          ;; This is very useful when used with `org-tree-to-indirect-buffer'.
+          (auto-indirect)
+          (auto-file))
+         ;; Group remaining buffers by whether they're file backed, then by mode.
+         (group-not "*special*" (auto-file))
+         (auto-mode))
+        (group
+         ;; Subgroup collecting buffers in a projectile project.
+         (auto-projectile))
+        ;; Group remaining buffers by directory.
+        (filename-match "Files" (rx bol (zero-or-more anything)))
+        )
+)
+
+
+
+
+
+;; redefine lighter function
+(defun user/bufler-workspace-mode-lighter ()
+  "Return lighter string for mode line."
+  (frame-parameter nil 'bufler-workspace-path-formatted))
+
+
 
 
 #+END_SRC
@@ -951,7 +1073,7 @@ Taking this into account, projectile is a good start but it doesnt give me every
 (defun dashboard-insert-persp-mode (list-size)
   (dashboard-insert-section
   "Perspectives:"
-  (persp-all-names)
+  bufler-workspace-name
 	list-size
 	"p"
 	`(lambda (&rest ignore) (persp-switch ,el))
@@ -970,7 +1092,7 @@ Taking this into account, projectile is a good start but it doesnt give me every
 ;;  (add-to-list 'dashboard-heading-icons '(treemacs-workspaces . "book"))
 ;;  (dashboard-modify-heading-icons '((treemacs-workspaces . "book")))
 
-  (setq dashboard-items '((perspectives . 5)
+  (setq dashboard-items '((projects  . 5)
                           (bookmarks . 5)
                           (recents   . 5)
                           (agenda    . 5)))
@@ -996,6 +1118,8 @@ Taking this into account, projectile is a good start but it doesnt give me every
 (use-package hide-mode-line
   :init
   (add-hook 'dashboard-mode-hook #'hide-mode-line-mode))
+
+(add-hook 'dashboard-mode-hook (lambda () (tab-line-mode -1)))
 #+END_SRC
 
 *** Modeline
@@ -1004,53 +1128,26 @@ Taking this into account, projectile is a good start but it doesnt give me every
 (use-package doom-modeline
   :init
   ;;  (doom-modeline-mode 1)
-  (setq doom-modeline-height 26)
+  (setq doom-modeline-height 24)
   (setq doom-modeline-major-mode-icon nil)
   (setq doom-modeline-indent-info t)
 
-  ;;  (setq doom-modeline-buffer-file-name-style 'file-name)
+  (setq doom-modeline-buffer-file-name-style 'relative-to-project)
   )
 
 
 
-
-
-
-
-
-
-
-
-;; (doom-modeline-def-segment projectile-project-name
-;;   "Display Projectile project name"
-;;   (if (and (boundp 'projectile-mode) projectile-mode)
-;;       (propertize (format " P: %s" (projectile-project-name))
-;;                   'face '(:foreground "dark orange" :weight bold))
-;;     ""))
-
-
-
-(doom-modeline-def-segment user/perspective
-  "Display Projectile project name"
-  (if (and (boundp 'persp-mode) persp-mode)
-      (propertize (format " P: %s" (persp-current-name))
-                  'face '(:foreground "yellow" :weight bold))
+(doom-modeline-def-segment user/bufler-workspace
+  "Display current bufler workspace name"
+  (if (and (boundp 'bufler-workspace-tabs-mode) bufler-workspace-tabs-mode)
+      (propertize (format "  %s" (replace-regexp-in-string "Projectile:" (all-the-icons-alltheicon "git") (user/bufler-workspace-mode-lighter)))
+                  'face '(:foreground "dark orange" :weight bold))
     ""))
-
-(doom-modeline-def-segment persp-spacing
-  "Adds spacing to the modeline when persp-mode is active
-   This avoids the persp-name segment being next to the edge of the modeline"
-  (when (bound-and-true-p persp-mode)
-    (let* ((persp (get-current-persp))
-           (name (safe-persp-name persp)))
-      (when (not (string-equal persp-nil-name name))
-        "  "
-      ))))
 
 
 (doom-modeline-def-modeline 'user/main
-  '(persp-spacing user/perspective persp-name bar window-number matches " " buffer-info remote-host buffer-position parrot " " selection-info)
-  '(misc-info lsp github debug minor-modes input-method buffer-encoding major-mode process vcs checker))
+  '(user/bufler-workspace bar window-number matches " " buffer-info remote-host buffer-position parrot " " selection-info)
+  '(objed-state grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info buffer-encoding major-mode process vcs checker))
 
 ;; default modeline
 ;; (doom-modeline-def-modeline 'main
@@ -1061,6 +1158,8 @@ Taking this into account, projectile is a good start but it doesnt give me every
   (doom-modeline-set-modeline 'user/main t))
 
 (add-hook 'doom-modeline-mode-hook 'setup-initial-doom-modeline)
+
+
 
 
 (doom-modeline-mode 1)
@@ -1225,6 +1324,7 @@ The code below, executes org-babel-tangle asynchronously when config.org is save
       '((sequence "TODO" "ONGOING" "REVIEW" "|" "DONE" "CANCEL")))
 
 ;; set agenda location
+(setq org-directory "~/Documents/Notes/org/")
 (setq org-agenda-files '("~/Documents/Notes/org/"))
 
 ;; insert an annotation in a task when it is marked as done, including a timestamp
@@ -1402,13 +1502,13 @@ swiper is a tool for performing searches, powered by Ivy, all while
   (ivy-re-builders-alist
    '((t . ivy--regex-plus)))  ; also try: ivy--regex-fuzzy
   (ivy-initial-inputs-alist nil)
+  ;; (ivy-sort-functions-alist
+  ;;     '((t)
+  ;;       (counsel-find-file . ivy-sort-file-function-default)))
   :config (ivy-mode))
 
 ;; make one tab enough to autocomplete. default behaviour is 2 tab presses
 (define-key ivy-minibuffer-map (kbd "TAB") 'ivy-alt-done)
-
-;; switch between open buffers
-(bind-key "C-S-b" 'ivy-switch-buffer wakib-keys-overriding-map)
 
 
 
@@ -1460,7 +1560,9 @@ swiper is a tool for performing searches, powered by Ivy, all while
   :after (prescient ivy)
   :custom
   (ivy-prescient-sort-commands
-   '(:not swiper swiper-isearch ivy-switch-buffer counsel-switch-buffer flyspell-correct-ivy))
+   ;; things that shouldnt be sorted go n this list
+   '(:not swiper swiper-isearch ivy-switch-buffer counsel-switch-buffer flyspell-correct-ivy counsel-find-file find-file))
+  (ivy-prescient-excluded-commands '(counsel-find-file find-file))
   (ivy-prescient-retain-classic-highlighting t)
   (ivy-prescient-enable-filtering nil)
   (ivy-prescient-enable-sorting t)
@@ -1568,11 +1670,11 @@ swiper is a tool for performing searches, powered by Ivy, all while
 (add-hook 'magit-pre-refresh-hook 'diff-hl-magit-pre-refresh)
 (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
 
-;; lines that are 'inserted' cause problems with org headings ellipsis symbol
-(defun disable-gutter()
-  (interactive)
-  (diff-hl-mode 0))
-(add-hook 'org-mode-hook 'disable-gutter)
+;; ;; lines that are 'inserted' cause problems with org headings ellipsis symbol
+;; (defun disable-gutter()
+;;   (interactive)
+;;   (diff-hl-mode 0))
+;; (add-hook 'org-mode-hook 'disable-gutter)
 #+END_SRC
 
 *** Templates and Snippets
@@ -1619,7 +1721,7 @@ swiper is a tool for performing searches, powered by Ivy, all while
 
 
 ;; Comment code lines, command reacts based on the major mode.
-(bind-key "C-«" 'whole-line-or-region-comment-dwim wakib-keys-overriding-map)
+;;(bind-key "C-«" 'whole-line-or-region-comment-dwim wakib-keys-overriding-map)
 
 ;; for some reason, this line breaks undo-tree
 ;;(bind-key "C-/" 'whole-line-or-region-comment-dwim wakib-keys-overriding-map)
@@ -1699,6 +1801,13 @@ swiper is a tool for performing searches, powered by Ivy, all while
   :bind ("M-m" . avy-goto-char))
 
 ;; (use-package ibuffer-vc)
+
+
+
+(use-package comment-dwim-2)
+(bind-key "C-«" 'comment-dwim-2)
+(bind-key "C-«" 'org-comment-dwim-2 org-mode-map)
+
 #+END_SRC
 
 ** Programming languages
