@@ -43,6 +43,7 @@ In order for everything to work correctly, you should have the following install
 - fd
 - fzf
 - aspell or hunspell
+- git
 
 ** Installation
 
@@ -84,12 +85,16 @@ Todo:
 - [X] add icon to custom projectile doom-modeline segment
 - [X] workspaces in dashboard icon
 - [X] org-indent messes up hl-line-mode. it only has one face for the indentation. this creates a gap from line number to line. fix by changing bg of curr line number
+- [X] background colour of org document keywords is not the same as normal background
+- [X] ctrl+shift+left/right doesnt work
+- [X] a hex color should count as a full word when selecting it (double click or C-S-left/right) (disable subword navigation)
+- [X] selecting with S-<home> and pressing delete only removes indentation (untabify)
 - [ ] ctrl+shift+o to open directory in sidebar
 - [ ] add projectile hydras
 - [ ] use flymake/flycheck for elisp (for config file)
 - [ ] add keybindings tables in config.org
 - [ ] make alt+arrow work in org mode for headlines without shift (custom function)
-- [ ] alt-shift-up/down conflict in org mode with multiple cursors (mc bind disabled now)
+- [ ] alt-shift-up/down conflict in org mode with multiple cursors (mc bind disabled for now)
 - [ ] commenting inside source block jumps to top of block. happens with just 'emacs -Q' and comment-dwim
 - [ ] query-replace with current selection as input (Replace+ package maybe?)
 - [ ] make the M-o keybinding available outside of ivy, so the default wakib function can be used
@@ -101,7 +106,6 @@ Todo:
 - [ ] when opening a treemacs workspace in dashboard, it should ask for a file
 - [ ] vr/replace doesnt auto open org headings
 - [ ] use 'C-.' to fix any type of error
-- [ ] a hex color should count as a full word when selecting it (double click or C-S-left/right)
 - [ ] apostrophes should not be selected when selecting words
 - [ ] use straight.el so only packages declared in the config file are loaded
 - [ ] compare latest version with old version in git. load time went from 0.7-0.8 -> 1.0-1.2 seconds.
@@ -109,14 +113,16 @@ Todo:
 - [ ] package-quickstart needs to be deleted after package update or else there's an error. sometimes also custom.el
 - [ ] org-mode unordered lists should also have bullets (org-superstar seems to solve this)
 - [ ] arrow indicating visual line doesn't appear
-- [ ] selecting with S-<home> and pressing delete only removes indentation
 - [ ] figure out how to deal with new file (C-n) while using bufler groups
 - [ ] counsel-find-file should order items alphabetically
 - [ ] change swiper match colours (each regex group has a different colour)
+- [ ] bufler groups show file 2 times, in its own group and without a group (maybe it should use ivy options?)
+- [ ] replace org-bullets with org-superstar
+- [ ] make C-backspace delete until first non whitespace character
 
 also:
 - [ ] look at vscode settings + extensions and import anything I like
-- [ ] look at things in org mode file from KMPG
+- [X] look at things in org mode file from KMPG
 
 * Early Init file
 Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before package and UI initialization happens.
@@ -365,6 +371,8 @@ Most GUI changes are done in early-init.el
    '(org-level-3 ((t (:foreground "#A840F4"))))
    '(org-document-title ((t (:background "#14141D" :foreground "#add8e6" :weight bold :height 1.5))))
    '(org-checkbox ((t (:background "#14141D" :foreground "#dddddd"))))
+   '(org-document-info ((t (:foreground "#add8e6" :weight bold))))
+   '(org-document-info-keyword ((t (:foreground "#8B8989"))))
 
    ;; other packages
    '(dashboard-banner-logo-title ((t (:foreground "#A840F4" :height 1.0))))
@@ -472,6 +480,57 @@ point reaches the beginning or end of the buffer, stop there."
     (back-to-indentation)
     (when (= orig-point (point))
       (move-beginning-of-line 1))))
+
+
+
+
+
+
+
+
+
+(defun indent-region-custom(numSpaces)
+  (progn
+    ;; default to start and end of current line
+    (setq regionStart (line-beginning-position))
+    (setq regionEnd (line-end-position))
+    ;; if there's a selection, use that instead of the current line
+    (when (use-region-p)
+      (setq regionStart (region-beginning))
+      (setq regionEnd (region-end))
+      )
+
+    (save-excursion ; restore the position afterwards
+      (goto-char regionStart) ; go to the start of region
+      (setq start (line-beginning-position)) ; save the start of the line
+      (goto-char regionEnd) ; go to the end of region
+      (setq end (line-end-position)) ; save the end of the line
+
+      (indent-rigidly start end numSpaces) ; indent between start and end
+      (setq deactivate-mark nil) ; restore the selected region
+      )
+    )
+  )
+
+(defun untab-region (N)
+  (interactive "p")
+  (indent-region-custom -4)
+  )
+
+(defun tab-region (N)
+  (interactive "p")
+  (if (active-minibuffer-window)
+      (minibuffer-complete)    ; tab is pressed in minibuffer window -> do completion
+    (indent-region-custom 4) ; call indent-region-custom
+    )
+  )
+
+;; can't use this yet because it would interfere with ivy
+;;(bind-key "<backtab>" 'untab-region)
+;;(bind-key "<tab>" 'tab-region)
+
+
+
 #+END_SRC
 
 *** Function Aliases
@@ -561,18 +620,21 @@ Here's my history with trying to use "standard" keybinds in emacs:
 (bind-key "<escape>" 'keyboard-escape-quit wakib-keys-overriding-map)
 
 (bind-key "C-l" 'user/select-current-line wakib-keys-overriding-map)
+(bind-key "C-k" 'kill-whole-line wakib-keys-overriding-map)
 
 ;; C-S-up/down to select paragraphs is activated with shift-select-mode
 (bind-key "C-<left>" 'backward-word wakib-keys-overriding-map)
 (bind-key "C-<right>" 'forward-word wakib-keys-overriding-map)
 
-;; move lines up/down
-(bind-key "M-<up>" 'move-text-up wakib-keys-overriding-map)
-(bind-key "M-<down>" 'move-text-down wakib-keys-overriding-map)
+
+;; indent blocks of text
+(bind-key "M-<left>" 'untab-region wakib-keys-overriding-map)
+(bind-key "M-<right>" 'tab-region wakib-keys-overriding-map)
 
 (bind-key "M-o" nil wakib-keys-overriding-map) ;; the default bind interferes with ivy (show options command)
 
 (bind-key "<backspace>" 'backward-delete-char-untabify)
+
 
 (bind-key "C-<delete>" 'user/delete-word-no-clipboard wakib-keys-overriding-map)
 (bind-key "C-<backspace>" 'user/backward-delete-word-no-clipboard wakib-keys-overriding-map)
@@ -581,6 +643,7 @@ Here's my history with trying to use "standard" keybinds in emacs:
 (global-set-key (kbd "C-c h") help-map)
 
 (bind-key "<home>" 'user/smarter-move-beginning-of-line wakib-keys-overriding-map)
+
 
 
 
@@ -700,7 +763,7 @@ Some nice-to have things and general settings.
 
 
 ;; enable navigation by subwords in backward/forward word. (useful for camelCase)
-(global-subword-mode +1)
+;; (global-subword-mode +1)
 
 
 ;; make numbers column width a little bigger so it never changes size and moves the buffer.
@@ -725,21 +788,19 @@ Some nice-to have things and general settings.
  '(whitespace-trailing ((t (:underline (:style wave :color "yellow2")))))
 )
 
-;; set tab character. 124 is the ascii ID of the pipe character
+;; set tab character. 8614 is the unicode number of the character
 (setq whitespace-display-mappings
-  '((tab-mark 9 [124 9] [92 9])))
+  '((tab-mark 9 [8614 9] [92 9])))
 
-;; make backspace delete all tabs and spaces until the first non-whitespace character
-(setq backward-delete-char-untabify-method 'hungry)
-
+(setq backward-delete-char-untabify-method 'untabify)
 
 ;; function to call from the menu
-(defun user/identation-use-spaces ()
+(defun user/switch-indentation-use-spaces ()
   "Use spaces for indentation"
   (interactive)
   (setq indent-tabs-mode nil))
 
-(defun user/identation-use-tabs  ()
+(defun user/switch-indentation-use-tabs  ()
   "Use tabs for indentation"
   (interactive)
   (local-set-key (kbd "TAB") 'tab-to-tab-stop)
@@ -917,7 +978,9 @@ Currently using: bufler with optional bufler-tabs-mode
 
 (bufler-tabs-mode 1)
 (tab-bar-mode 0)
-(setq bufler-workspace-switch-buffer-sets-workspace t)
+
+;; always switch workspace when switching buffers with bufler
+;;(setq bufler-workspace-switch-buffer-sets-workspace t)
 
 (bind-key "C-S-b" 'bufler wakib-keys-overriding-map)
 
@@ -934,8 +997,10 @@ Currently using: bufler with optional bufler-tabs-mode
 
 
 ;; focus current buffer workspace everytime a file is opened
-(add-hook 'find-file-hook (lambda () (call-interactively #'bufler-workspace-focus-buffer)))
+;; (add-hook 'find-file-hook (lambda () (call-interactively #'bufler-workspace-focus-buffer)))
 
+;; focus default workspace when starting emacs
+(add-hook 'dashboard-mode-hook (lambda () (call-interactively #'bufler-workspace-focus-buffer)))
 
 (setf bufler-groups
       (bufler-defgroups
@@ -957,6 +1022,8 @@ Currently using: bufler with optional bufler-tabs-mode
                                            buffer)
                                   (funcall (mode-match "Dired" (rx bos "dired"))
                                            buffer)
+                                  (funcall (mode-match "Dashboard" (rx bos "dashboard"))
+                                           buffer)
                                   (funcall (auto-file) buffer))
                         "*Special*")))
          (group
@@ -972,27 +1039,22 @@ Currently using: bufler with optional bufler-tabs-mode
          (mode-match "*Helm*" (rx bos "helm-"))
          ;; Remaining special buffers are grouped automatically by mode.
          (auto-mode))
+
+
+
         (group
-         ;; Subgroup collecting buffers in `org-directory' (or "~/org" if
-         ;; `org-directory' is not yet defined).
-         (dir (if (bound-and-true-p org-directory)
-                  org-directory
-                "~/org"))
-         (group
-          ;; Subgroup collecting indirect Org buffers, grouping them by file.
-          ;; This is very useful when used with `org-tree-to-indirect-buffer'.
-          (auto-indirect)
-          (auto-file))
-         ;; Group remaining buffers by whether they're file backed, then by mode.
-         (group-not "*special*" (auto-file))
-         (auto-mode))
-        (group
-         ;; Subgroup collecting buffers in a projectile project.
-         (auto-projectile))
-        ;; Group remaining buffers by directory.
-        (filename-match "Files" (rx bol (zero-or-more anything)))
+         (group-or "Files"
+                   (filename-match "Files" (rx bol (zero-or-more anything)))
+                   (mode-match "Dashboard" (rx bos "dashboard"))
+                   )
+                   (group
+                   ;; Subgroup collecting buffers in a projectile project.
+                   (auto-projectile)
+                   )
+         )
+
         )
-)
+      )
 
 
 
@@ -1730,10 +1792,6 @@ swiper is a tool for performing searches, powered by Ivy, all while
 (bind-key "C-c" 'whole-line-or-region-kill-ring-save wakib-keys-overriding-map)
 (bind-key "C-x" 'whole-line-or-region-kill-region wakib-keys-overriding-map)
 
-;; indent blocks of text
-(bind-key "M-<left>" 'whole-line-or-region-indent-rigidly-left-to-tab-stop wakib-keys-overriding-map)
-(bind-key "M-<right>" 'whole-line-or-region-indent-rigidly-right-to-tab-stop wakib-keys-overriding-map)
-
 
 ;; keep selection after indenting (with alt+left/right)
 (defadvice whole-line-or-region-indent-rigidly-right-to-tab-stop (after keep-transient-mark-active ())
@@ -1745,6 +1803,24 @@ swiper is a tool for performing searches, powered by Ivy, all while
   "Override the deactivation of the mark."
   (setq deactivate-mark nil))
 (ad-activate 'whole-line-or-region-indent-rigidly-left-to-tab-stop)
+#+END_SRC
+
+*** Presentations
+
+Write in Org mode and export to HTML with reveal.js
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package ox-reveal)
+
+(setq org-reveal-root "/home/kyukee/.reveal/reveal.js-master")
+;; (setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
+
+;; set content of initial slide to %t - Title
+(setq org-reveal-title-slide "%t")
+
+
+
+
 #+END_SRC
 
 *** Other smaller additions
@@ -1767,8 +1843,9 @@ swiper is a tool for performing searches, powered by Ivy, all while
 
 
 ;; alt+up/down to move line or region
-(use-package move-text)
-(move-text-default-bindings)
+(use-package drag-stuff)
+(bind-key "M-<up>" 'drag-stuff-up wakib-keys-overriding-map)
+(bind-key "M-<down>" 'drag-stuff-down wakib-keys-overriding-map)
 
 
 ;; display available keybindings in popup after a prefix key is pressed
@@ -1808,6 +1885,10 @@ swiper is a tool for performing searches, powered by Ivy, all while
 (bind-key "C-«" 'comment-dwim-2)
 (bind-key "C-«" 'org-comment-dwim-2 org-mode-map)
 
+
+
+;; (use-package symbolword-mode)
+;; (symbolword-mode 1)
 #+END_SRC
 
 ** Programming languages
