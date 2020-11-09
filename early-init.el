@@ -1,4 +1,7 @@
-;;; early-init.el --- -*- lexical-binding: t -*-
+;;; early-init.el --- Emacs Early Init File          -*- lexical-binding: t -*-
+;;; GNU Emacs Configuration - Early Init
+
+(setq-default lexical-binding t)
 
 ;; A common optimization is to temporarily reduce the frequency of garbage collection during initialization.
 (setq gc-cons-threshold most-positive-fixnum)
@@ -12,17 +15,6 @@
   (lambda ()
     (setq gc-cons-threshold (* 16 8 1024 1024) ; 16MB
     file-name-handler-alist file-name-handler-alist-original)))
-
-;; Initialise installed packages
-(setq package-enable-at-startup t)
-
-;; Allow loading from the package cache.
-(setq package-quickstart t)
-(setq package-quickstart-file (expand-file-name "var/package-quickstart.el" user-emacs-directory))
-
-;; Prevent unwanted runtime builds; packages are compiled ahead-of-time when
-;; they are installed and site files are compiled when gccemacs is installed.
-(setq comp-deferred-compilation nil)
 
 ;; Only show cursor in the active window.
 (setq-default cursor-in-non-selected-windows nil)
