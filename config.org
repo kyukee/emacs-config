@@ -9,14 +9,13 @@
   - [[#custom-keybindings][Custom Keybindings]]
   - [[#fixes-and-improvements][Fixes and improvements]]
 - [[#early-init-file][Early Init file]]
-  - [[#lexical-binding][Lexical Binding]]
+  - [[#file-header][File Header]]
   - [[#start-time-optimizations][Start time optimizations]]
   - [[#gui-changes-that-deserve-to-be-in-early-init][GUI changes that deserve to be in early-init]]
 - [[#configuration-file][Configuration file]]
-  - [[#lexical-binding-1][Lexical binding]]
+  - [[#file-header-1][File Header]]
   - [[#initial-setup][Initial Setup]]
-  - [[#package-management][Package management]]
-  - [[#startup-profiler][Startup Profiler]]
+  - [[#bootstrap][Bootstrap]]
   - [[#user-interface][User Interface]]
   - [[#functions][Functions]]
   - [[#keybindings][Keybindings]]
@@ -127,10 +126,13 @@ also:
 * Early Init file
 Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before package and UI initialization happens.
 
-** Lexical Binding
+** File Header
 
 #+BEGIN_SRC emacs-lisp :tangle early-init.el
-;;; early-init.el --- -*- lexical-binding: t -*-
+;;; early-init.el --- Emacs Early Init File          -*- lexical-binding: t -*-
+;;; GNU Emacs Configuration - Early Init
+
+(setq-default lexical-binding t)
 #+END_SRC
 
 ** Start time optimizations
@@ -148,17 +150,6 @@ Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before p
   (lambda ()
     (setq gc-cons-threshold (* 16 8 1024 1024) ; 16MB
     file-name-handler-alist file-name-handler-alist-original)))
-
-;; Initialise installed packages
-(setq package-enable-at-startup t)
-
-;; Allow loading from the package cache.
-(setq package-quickstart t)
-(setq package-quickstart-file (expand-file-name "var/package-quickstart.el" user-emacs-directory))
-
-;; Prevent unwanted runtime builds; packages are compiled ahead-of-time when
-;; they are installed and site files are compiled when gccemacs is installed.
-(setq comp-deferred-compilation nil)
 #+END_SRC
 
 ** GUI changes that deserve to be in early-init
@@ -194,67 +185,71 @@ Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before p
 #+END_SRC
 
 * Configuration file
-** Lexical binding
+** File Header
 
 #+BEGIN_SRC emacs-lisp :tangle yes
-;;; config.el --- -*- lexical-binding: t -*-
+;;; config.el --- Emacs Configuration File          -*- lexical-binding: t -*-
 ;;; GNU Emacs Configuration
+
+(setq-default lexical-binding t)
 #+END_SRC
 
 ** Initial Setup
 
-Things to do before making changes
+Things to do before we start making changes
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 ;; when an error occurs during startup, automatically open debugger
 (setq debug-on-error t)
-
-;; Load packages if necessary, depending on emacs version
-(if (version< emacs-version "27")
-  (package-initialize))
 #+END_SRC
 
-** Package management
+** Bootstrap
+*** Package management
 
-Configure package sources and package installation.
+*straight*
+
+straight.el is used to make the init-file the sole source of truth for package operations.
+
+To install a package temporarily (until you restart Emacs):
+    - M-x straight-use-package
+
+To install a package permanently, place a call to straight-use-package in your init-file, like:
+    - (straight-use-package 'el-patch)
+
+To update all packages to their most recent version:
+    - M-x straight-pull-all
 
 #+BEGIN_SRC emacs-lisp :tangle yes
+(setq straight-use-package-by-default         t
+      straight-check-for-modifications        '(find-when-checking))
 
-(require 'package) ;; Emacs builtin
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+#+END_SRC
 
-;; Internet repositories for new packages
-(setq package-archives
-      '(("org"          . "http://orgmode.org/elpa/")
-        ("melpa"        . "http://melpa.org/packages/")
-        ("gnu"          . "http://elpa.gnu.org/packages/"))
-      package-archive-priorities
-      '(("org"          . 10)
-        ("melpa"        . 5)
-        ("gnu"          . 0)))
+*use-package*
 
-;; Make sure `use-package' is available.
-(unless (package-installed-p 'use-package)
-  (message "use-package needs to be installed")
-  (package-refresh-contents)
-  (package-install 'use-package))
+#+BEGIN_SRC emacs-lisp :tangle yes
+(straight-use-package 'use-package)
 
 ;; Configure `use-package' prior to loading it.
-(setq use-package-always-ensure t)
 (setq use-package-expand-minimally t)
 (setq use-package-compute-statistics t)
 (setq use-package-enable-imenu-support t)
 (setq use-package-verbose t)
 #+END_SRC
 
-I experimented with using either delight or minions but It didn't really seem useful for me.
-I'll leave this here in case it has some use in the future.
-
-#+BEGIN_SRC emacs-lisp :tangle yes
-;; (use-package delight)
-
-;; (use-package minions
-;;   :config (minions-mode 1))
-#+END_SRC
+*** No littering
 
 Make emacs configuration directory more organized and keep it clean.
 no-littering should be loaded as early as possible since it changes where other packages will save their files.
@@ -267,14 +262,14 @@ no-littering should be loaded as early as possible since it changes where other 
 
 #+END_SRC
 
-** Startup Profiler
+*** Startup Profiler
 
 This isn't together with all the other features because it needs to load as early as possible to get accurate results.
 When using the profiler, just uncoment the line that disables the package.
 
 #+BEGIN_SRC emacs-lisp :tangle yes
+;; doesn't really work well with early-init file
 ;; (use-package esup
-;;   :ensure t
 ;;   :commands (esup))
 ;; (setq esup-depth 0)
 
@@ -285,7 +280,6 @@ When using the profiler, just uncoment the line that disables the package.
   ;; To disable collection of benchmark data after init is done.
   (add-hook 'after-init-hook 'benchmark-init/deactivate)
   (benchmark-init/activate))
-
 #+END_SRC
 
 ** User Interface
@@ -819,27 +813,6 @@ The first time this package is installed, you need to run 'all-the-icons-install
 (setq all-the-icons-color-icons t)
 #+END_SRC
 
-*** Auto update packages
-
-#+BEGIN_SRC emacs-lisp :tangle yes
-;; automatically update packages every once in a while
-(use-package auto-package-update
-  :if (not (daemonp))
-  :custom
-  (auto-package-update-interval 7) ;; in days
-  (auto-package-update-prompt-before-update t)
-  (auto-package-update-delete-old-versions t)
-  (auto-package-update-hide-results t)
-  :config
-  (auto-package-update-maybe))
-
-;; (defun delete-quickstart ()
-;;   (delete-file (expand-file-name "var/package-quickstart.el" user-emacs-directory)))
-;; (add-hook 'auto-package-update-after-hook 'delete-quickstart)
-
-(add-hook 'auto-package-update-after-hook 'package-quickstart-refresh)
-#+END_SRC
-
 *** Project Management
 
 To use a non-repository folder as a project, create a blank '.projectile' file in the folder to mark the project root.
@@ -929,7 +902,6 @@ Currently using: bufler with optional bufler-tabs-mode
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 ;; (use-package persp-mode
-;;   :ensure t
 ;;   :config
 ;;   (setq persp-auto-resume-time -1
 ;;         persp-auto-save-opt 0
@@ -1145,7 +1117,6 @@ Taking this into account, projectile is a good start but it doesnt give me every
 
 
 (use-package dashboard
-  :ensure t
   :defer nil
   :config
   (dashboard-setup-startup-hook)
@@ -1163,8 +1134,8 @@ Taking this into account, projectile is a good start but it doesnt give me every
   (setq dashboard-startup-banner 'official)
   (setq dashboard-banner-logo-title (format "GNU Emacs version %d.%d" emacs-major-version emacs-minor-version))
   (setq dashboard-set-init-info t)
-  (setq dashboard-init-info (format "%d packages loaded in %s"
-                                    (length package-activated-list) (emacs-init-time)))
+  (setq dashboard-init-info (format "%d packages loaded with straight. finished in %s"
+                                    (length (hash-table-keys straight--success-cache)) (emacs-init-time)))
   (setq dashboard-set-footer nil)
   (setq dashboard-set-navigator t)
   (setq dashboard-navigator-buttons
@@ -1352,7 +1323,7 @@ The code below, executes org-babel-tangle asynchronously when config.org is save
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package org
-  :ensure org-plus-contrib
+  :straight org-plus-contrib
   :hook ((after-save . user/config-tangle)))
 
 ;; Org Bullets
@@ -1491,7 +1462,6 @@ The code below, executes org-babel-tangle asynchronously when config.org is save
 #+BEGIN_SRC emacs-lisp :tangle yes
 ;; defer is used to only load package when mode is activated
 (use-package flyspell
-  :ensure nil
   :defer t)
 
 
@@ -1670,7 +1640,7 @@ swiper is a tool for performing searches, powered by Ivy, all while
 ;; ----------Isearch improvements
 
 (use-package isearch
-  :ensure nil
+  :straight nil
   :custom
   (search-whitespace-regexp ".*?")
   (isearch-lax-whitespace t)
@@ -1952,8 +1922,8 @@ things to do after making changes and right before startup
 
 
 
-This part is not relative to the emacs configuration
-This makes the config file show 2 heading levels at startup, to make navigation easier
+This next part is not relative to the emacs configuration.
+Here, we make the config file show 2 heading levels at startup, to make navigation easier.
 
 ;;; Local Variables:
 ;;; eval: (org-content 2)
