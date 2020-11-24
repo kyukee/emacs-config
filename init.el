@@ -9,25 +9,12 @@
 ;; This will make startup slower and there will be some GUI settings that are not set correctly.
 ;; On runs after the first one, everthing should run smoothly
 
-;; (if (file-exists-p (expand-file-name "config.el" user-emacs-directory))
-;;     (load-file (expand-file-name "config.el" user-emacs-directory))
-;;   (org-babel-load-file (expand-file-name "config.org" user-emacs-directory)))
+(if (file-exists-p (expand-file-name "config.el" user-emacs-directory))
+    (load-file (expand-file-name "config.el" user-emacs-directory))
+  (org-babel-load-file (expand-file-name "config.org" user-emacs-directory)))
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-;; temporary (otherwise need to delete files to recover from error)
-(org-babel-load-file (expand-file-name "config.org" user-emacs-directory))
+;; ;; always parse config file atstartup (otherwise need to delete files to recover from error)
+;; (org-babel-load-file (expand-file-name "config.org" user-emacs-directory))

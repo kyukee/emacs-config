@@ -1,8 +1,6 @@
 ;;; early-init.el --- Emacs Early Init File          -*- lexical-binding: t -*-
 ;;; GNU Emacs Configuration - Early Init
 
-(setq-default lexical-binding t)
-
 ;; A common optimization is to temporarily reduce the frequency of garbage collection during initialization.
 (setq gc-cons-threshold most-positive-fixnum)
 
@@ -29,7 +27,7 @@
 (push '(vertical-scroll-bars) default-frame-alist)
 
 ;; show column number alongside line number
-(column-number-mode t)
+(column-number-mode 1)
 
 ;; display relative line numbers
 (global-display-line-numbers-mode)

@@ -11,7 +11,7 @@
 - [[#early-init-file][Early Init file]]
   - [[#file-header][File Header]]
   - [[#start-time-optimizations][Start time optimizations]]
-  - [[#gui-changes-that-deserve-to-be-in-early-init][GUI changes that deserve to be in early-init]]
+  - [[#gui-changes][GUI changes]]
 - [[#configuration-file][Configuration file]]
   - [[#file-header-1][File Header]]
   - [[#initial-setup][Initial Setup]]
@@ -28,7 +28,7 @@
 * Introduction
 ** What is this and who is it for?
 
-This emacs configuration is mostly to just use Org mode.
+This emacs configuration allows you to use Org mode and still have access to "modern" keybindings.
 
 Many of the keybindings are replaced with what I consider "standard" keybinds, like those you would find in Sublime Text, Atom and VSCode. Likewise, many of the features you would expect from some of these editors are also implemented here.
 
@@ -43,12 +43,22 @@ In order for everything to work correctly, you should have the following install
 - fzf
 - aspell or hunspell
 - git
+- marked (or some other markdown parser)
+
+For markdown, you need to customize the command to run the markdown parser if you use something else.
 
 ** Installation
 
-git clone ...
+optional backup:
+cp ~/.emacs.d ~/.emacs.d_backup
 
-open the command menu with M-x and run 'all-the-icons-install-fonts'
+
+installation:
+cd ~/.emacs.d/
+git clone https://github.com/kyukee/emacs-config.git
+
+
+then, inside emacs, open the command menu with M-x and run 'all-the-icons-install-fonts'
 
 ** Custom Keybindings
 
@@ -118,12 +128,17 @@ Todo:
 - [ ] bufler groups show file 2 times, in its own group and without a group (maybe it should use ivy options?)
 - [ ] replace org-bullets with org-superstar
 - [ ] make C-backspace delete until first non whitespace character
+- [ ] opening a new file in terminal should add a new buffer to existing emacs frame
+- [ ] make new line indicator appear only on right fringe
+- [ ] bufler workspace name in modeline doesn't fade to grey in inactive window
+
 
 also:
 - [ ] look at vscode settings + extensions and import anything I like
 - [X] look at things in org mode file from KMPG
 
 * Early Init file
+
 Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before package and UI initialization happens.
 
 ** File Header
@@ -132,7 +147,6 @@ Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before p
 ;;; early-init.el --- Emacs Early Init File          -*- lexical-binding: t -*-
 ;;; GNU Emacs Configuration - Early Init
 
-(setq-default lexical-binding t)
 #+END_SRC
 
 ** Start time optimizations
@@ -152,7 +166,9 @@ Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before p
     file-name-handler-alist file-name-handler-alist-original)))
 #+END_SRC
 
-** GUI changes that deserve to be in early-init
+** GUI changes
+
+For the GUI changes that deserve to be in early-init. It is more efficient to disable UI elements before they are even loaded than to load them with the wrong configuration than change them.
 
 #+BEGIN_SRC emacs-lisp :tangle early-init.el
 ;; Only show cursor in the active window.
@@ -168,7 +184,7 @@ Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before p
 (push '(vertical-scroll-bars) default-frame-alist)
 
 ;; show column number alongside line number
-(column-number-mode t)
+(column-number-mode 1)
 
 ;; display relative line numbers
 (global-display-line-numbers-mode)
@@ -191,7 +207,6 @@ Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before p
 ;;; config.el --- Emacs Configuration File          -*- lexical-binding: t -*-
 ;;; GNU Emacs Configuration
 
-(setq-default lexical-binding t)
 #+END_SRC
 
 ** Initial Setup
@@ -209,15 +224,6 @@ Things to do before we start making changes
 *straight*
 
 straight.el is used to make the init-file the sole source of truth for package operations.
-
-To install a package temporarily (until you restart Emacs):
-    - M-x straight-use-package
-
-To install a package permanently, place a call to straight-use-package in your init-file, like:
-    - (straight-use-package 'el-patch)
-
-To update all packages to their most recent version:
-    - M-x straight-pull-all
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (setq straight-use-package-by-default         t
@@ -249,10 +255,21 @@ To update all packages to their most recent version:
 (setq use-package-verbose t)
 #+END_SRC
 
+**** Basic usage
+
+To install a package temporarily (until you restart Emacs):
+    - M-x straight-use-package
+
+To install a package permanently, place a call to straight-use-package in your init-file, like:
+    - (straight-use-package 'el-patch)
+
+To update all packages to their most recent version:
+    - M-x straight-pull-all
+
 *** No littering
 
 Make emacs configuration directory more organized and keep it clean.
-no-littering should be loaded as early as possible since it changes where other packages will save their files.
+'no-littering' should be loaded as early as possible since it changes where other packages will save their files.
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package no-littering)
@@ -264,8 +281,7 @@ no-littering should be loaded as early as possible since it changes where other 
 
 *** Startup Profiler
 
-This isn't together with all the other features because it needs to load as early as possible to get accurate results.
-When using the profiler, just uncoment the line that disables the package.
+This isn't in the same section as the other features because it needs to loaded as early as possible to get accurate results.
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 ;; doesn't really work well with early-init file
@@ -281,6 +297,15 @@ When using the profiler, just uncoment the line that disables the package.
   (add-hook 'after-init-hook 'benchmark-init/deactivate)
   (benchmark-init/activate))
 #+END_SRC
+
+**** Basic usage
+
+When using the profiler, just uncoment the line that disables the package.
+Comment and uncoment that line to enable/disable the feature.
+
+To see the results, run:
+    - benchmark-init/show-durations-tabulated
+    - benchmark-init/show-durations-tree
 
 ** User Interface
 
@@ -548,10 +573,12 @@ These are the function used for bookmarks:
 #+END_SRC
 
 ** Keybindings
-*** Keyboard layout
+*** Change default keybindings layout
 
-Change emacs keybindings to be more modern and ergonomic.
-This should be near the top of the features list, so there isn't any error when assigning keybindings to the wakib keymap.
+I don't like the default emacs keybindings, so I use some package to change them.
+
+Wakib changes emacs keybindings to be more modern and ergonomic.
+This package should be near the top of the features list, so there isn't any error when assigning keybindings to the wakib keymap.
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package wakib-keys
@@ -568,32 +595,6 @@ The ones that use functions from some package are defined in that package's sect
 
 Some of these are slight alterations to wakib, such as modifying the functions of the keybinds.
 Others add convenient things like zoom, reloading, fullscreen, etc.
-
-Here's my adventure with emacs and keybindings:
-I grew up with Sublime Text, Atom and VSCode and these all share a common set of keybinds.
-These are the keybinds I'm interested in using.
-I tried standard Emacs keybinds for a short amount of time and I wasn't impressed at all.
-
-Here's my history with trying to use "standard" keybinds in emacs:
-- ergoemacs-mode
-	At first I tried using ergoemacs-mode, but that created a lot of conflicts when my config grew in size as I added more functinality.
-	I also had issues with reloading my config file.
-
-- cua-mode
-	Then I tried using cua-mode, but it wasn't "standard" enough to my liking.
-	The way 'C-x' works in particular was a problem, since I would like to cut a whole line by default when I press C-x and there is no active region selected.
-
-- config bindings
-	The next attempt was to bind every key manually in my emacs config file.
-	This gave me a lot of control and knowledge over what exactly was happening in terms of keybinds, which I liked.
-	It was almost perfect, but quite there yet.
-	I was able to set up all the bindings that are prefixed by Control and I was also able to bind C-x, C-h and C-g to '<menu> x', '<menu> h' and '<menu> g', respectively.
-	The problem is that Emacs makes rebinding C-c quite difficult.
-
-- wakib-keys
-	I found out a package that was able to deal with the C-c rebind issue, and decided to just use it instead of dealing with all the trouble of rebinding C-c myself.
-	Since wakib-keys override the global keymap binds, this involved transferring some of my keybinds to the wakib keymap (wakib-keys-overriding-map).
-	Finally, I was able to achieve the behavior I wanted
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 ;; Add keyboard shortcut for reloading emacs config file
@@ -642,15 +643,6 @@ Here's my history with trying to use "standard" keybinds in emacs:
 
 
 
-
-
-
-
-
-
-
-
-
 ;; ;; How to use menu key as a leader key
 ;; ;;     on Linux, the menu/apps key syntax is <menu>
 ;; ;;     on Windows, the menu/apps key syntax is <apps>
@@ -663,6 +655,36 @@ Here's my history with trying to use "standard" keybinds in emacs:
 ;; (bind-key* "<menu> x" ctl-x-map)
 
 #+END_SRC
+
+*** History
+
+Here's my adventure with emacs and keybindings:
+I grew up with Sublime Text, Atom and VSCode and these all share a (mostly) common set of keybinds.
+These are the keybinds I'm interested in using.
+I tried standard Emacs keybinds for a short amount of time and I wasn't impressed at all.
+
+Here's my history with trying to use "standard" keybinds packages in emacs:
+
+- ergoemacs-mode
+	At first I tried using ergoemacs-mode, but that created a lot of conflicts when my config grew in size as I added more functinality.
+	I also had issues with reloading my config file.
+
+- cua-mode
+	Then I tried using cua-mode, but it wasn't "standard" enough to my liking.
+	The way 'C-x' works in particular was a problem, since I would like to cut a whole line by default when I press C-x and there is no active region selected.
+
+- manual bindings in config
+	The next attempt was to bind every key manually in my emacs config file.
+	This gave me a lot of control and knowledge over what exactly was happening in terms of keybinds, which I liked.
+	It was almost perfect, but not quite there yet.
+	I was able to set up all the bindings that are prefixed by Control and I was also able to bind C-x, C-h and C-g to '<menu> x', '<menu> h' and '<menu> g', respectively.
+	The problem is that Emacs makes rebinding C-c quite difficult.
+
+- wakib-keys
+	I found out a package that was able to deal with the C-c rebind issue, and decided to just use it instead of dealing with all the trouble of rebinding C-c myself.
+	Since wakib-keys override the global keymap binds, this involved transferring some of my keybinds to the wakib keymap (wakib-keys-overriding-map).
+	It also adds some new keybindings for things that I didn't originally want, but that I think might be useful.
+	Finally, I was able to achieve the behavior I wanted
 
 ** Defaults
 
@@ -695,6 +717,10 @@ Some nice-to have things and general settings.
 (setq backup-inhibited t)
 
 
+;; disable default startup screen
+(setq inhibit-startup-screen t)
+
+
 ;; For all text modes use visual-line-mode
 (add-hook 'text-mode-hook 'visual-line-mode)
 
@@ -703,7 +729,7 @@ Some nice-to have things and general settings.
 (setq uniquify-buffer-name-style 'forward)
 
 
-;; Let marks be set when shift arrow-ing
+;; allow marks to be set when shift arrow-ing
 (setq shift-select-mode t)
 
 
@@ -741,10 +767,10 @@ Some nice-to have things and general settings.
 
 
 ;; try to improve scrolling in emacs. still not ideal though
-;;(pixel-scroll-mode)
 (setq scroll-conservatively 101)
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
 (setq scroll-margin 3)
+;;(pixel-scroll-mode) ; this makes it a bit laggy
 
 
 ;; change cursor blink speed. default = 0.5
@@ -756,13 +782,13 @@ Some nice-to have things and general settings.
 (setq require-final-newline t)
 
 
-;; enable navigation by subwords in backward/forward word. (useful for camelCase)
-;; (global-subword-mode +1)
-
-
-;; make numbers column width a little bigger so it never changes size and moves the buffer.
+;; make numbers column width a little bigger so it never changes size and moves the buffer. (refering to line numbers)
 ;; with a value of 3 digits, the buffer only moves when the line number is 1000 or hifher
 (setq-default display-line-numbers-width 3)
+
+
+;; open new buffers in the same frame
+;; (setq ns-pop-up-frames nil)
 #+END_SRC
 
 *** Indentation
@@ -782,9 +808,11 @@ Some nice-to have things and general settings.
  '(whitespace-trailing ((t (:underline (:style wave :color "yellow2")))))
 )
 
-;; set tab character. 8614 is the unicode number of the character
+;; set tab character.
+;; 8614 is the unicode number of a double right arrow
+;; 124 is the unicode number of a pipe
 (setq whitespace-display-mappings
-  '((tab-mark 9 [8614 9] [92 9])))
+  '((tab-mark 9 [124 9] [92 9])))
 
 (setq backward-delete-char-untabify-method 'untabify)
 
@@ -802,11 +830,14 @@ Some nice-to have things and general settings.
 #+END_SRC
 
 ** Features
+
+Add features by installing emacs packages.
+
 *** Icons
 
 Allow Emacs to use icons in various UI elements.
 
-The first time this package is installed, you need to run 'all-the-icons-install-fonts' to install fonts.
+Important: The first time this package is installed, you need to run 'all-the-icons-install-fonts' to install fonts.
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package all-the-icons)
@@ -814,14 +845,6 @@ The first time this package is installed, you need to run 'all-the-icons-install
 #+END_SRC
 
 *** Project Management
-
-To use a non-repository folder as a project, create a blank '.projectile' file in the folder to mark the project root.
-See [[https://docs.projectile.mx/projectile/projects.html#ignoring-file]] what to write in this file.
-
-Quick version of what to write in .projectile:
-'-' to ignore
-'+' to keep and ignore everything else
-'!' to override .gitignore
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package projectile
@@ -833,6 +856,16 @@ Quick version of what to write in .projectile:
 ;; cant use bind-key for C-c keybinds
 (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
 #+END_SRC
+
+**** Basic usage
+
+To use a non-repository folder as a project, create a blank '.projectile' file in the folder to mark the project root.
+See [[https://docs.projectile.mx/projectile/projects.html#ignoring-file]] for what to write in this file.
+
+Quick version of what to write in .projectile:
+'-' to ignore
+'+' to keep and ignore everything else
+'!' to override .gitignore
 
 *** Workspaces
 
@@ -860,43 +893,6 @@ Another idea I've had is the following:
   - whenever you enter a projectile project, the sidebar and tab-bar automatically show information from only that project.
   - for everthing else, the sidebar shows the current file's parent directory and the tab-bar shows all the non-project files.
 
-
-Packages I looked at:
-
-  treemacs workspaces:
-    - a workspace can only have projects or folders (but it's possible to use bookmarks for files)
-    - Can not list all buffers in current workspace
-    - can use projectile and bookmarks to cover some functionality
-
-  eyebrowse:
-    - does not save files, only layouts
-    - works like i3 workspaces
-    - the way it works is that you assign a workspace to a certain purpose and only open certain projects in there
-
-  bufler (bufler-workspace-mode):
-    - bufler-list is good for managing buffers. works like magit
-    - the tab-bar integration is nice
-    - does not save files
-    - I tried to use desktop-save-mode for saving stuff, but wasnt very happy with it
-    - bufler-workspace-mode allows to automatically switch workspaces when switching buffers
-    - can use bookmarks to cover some functionality
-
-  projectile + bookmarks:
-    - needs a special file in a project directory to give it a custom name
-    - it's not ideal for normal non-repo folders
-
-  perspective and persp-mode (shared):
-    - doesn't really have a concept of projects, only buffers
-    - saves and loads all perspectives at once. on file load, all buffers from all saved perspectives are opened
-    - persp-mode is more popular and supported, while perspective is simpler and nicer to configure
-
-  perspective:
-    - the list of buffers in current perspective works better than persp-mode
-
-  persp-mode:
-    - it's a pain to setup and the documentation is pretty lacking (these are related)
-    - cant make it load save file at startup without resuming session
-    - the list of buffers in current perspective shows a bunch or useless buffers
 
 Currently using: bufler with optional bufler-tabs-mode
 
@@ -1042,6 +1038,65 @@ Currently using: bufler with optional bufler-tabs-mode
 
 #+END_SRC
 
+**** Basic usage
+
+*Keybindings*
+
+Default keymap
+
+| Keybind | Action                                                        |
+|---------+---------------------------------------------------------------|
+| C-b     | switch to buffer in current workspace                         |
+| C-u C-b | switch to buffer in any workspace (and also switch workspace) |
+| C-S-b   | show bufler workspace list                                    |
+
+Inside bufler workspace list
+
+| Keybind | Action                   |
+|---------+--------------------------|
+| ?       | show available keybinds  |
+| f       | focus selected workspace |
+| q       | close bufler window      |
+
+**** History
+
+Packages I looked at:
+
+  treemacs workspaces:
+    - a workspace can only have projects or folders (but it's possible to use bookmarks for files)
+    - Can not list all buffers in current workspace
+    - can use projectile and bookmarks to cover some functionality
+
+  eyebrowse:
+    - does not save files, only layouts
+    - works like i3 workspaces
+    - the way it works is that you assign a workspace to a certain purpose and only open certain projects in there
+
+  bufler (bufler-workspace-mode):
+    - bufler-list is good for managing buffers. works like magit
+    - the tab-bar integration is nice
+    - does not save files
+    - I tried to use desktop-save-mode for saving stuff, but wasnt very happy with it
+    - bufler-workspace-mode allows to automatically switch workspaces when switching buffers
+    - can use bookmarks to cover some functionality
+
+  projectile + bookmarks:
+    - needs a special file in a project directory to give it a custom name
+    - it's not ideal for normal non-repo folders
+
+  perspective and persp-mode (shared):
+    - doesn't really have a concept of projects, only buffers
+    - saves and loads all perspectives at once. on file load, all buffers from all saved perspectives are opened
+    - persp-mode is more popular and supported, while perspective is simpler and nicer to configure
+
+  perspective:
+    - the list of buffers in current perspective works better than persp-mode
+
+  persp-mode:
+    - it's a pain to setup and the documentation is pretty lacking (these are related)
+    - cant make it load save file at startup without resuming session
+    - the list of buffers in current perspective shows a bunch or useless buffers
+
 *** File Explorer
 
 Since I am using Treemacs worspaces I will explain my view on projects and workspaces.
@@ -1053,7 +1108,7 @@ Here is my ideal usage of workspaces/projects:
 - the project name appears in the modeline
 - all of the previous items should also work with a standard folder (even if it's not a repository)
 
-That last item is very important. It's the reason why I don't just use projectile without anything else.
+That last item is very important. It's the reason why I projectile by itself isn't enough.
 
 This is a desired but not required feature:
 - no files are saved on project directory, or as few as possible. everthing should be saved in the '.emacs.d' folder
@@ -1131,7 +1186,7 @@ Taking this into account, projectile is a good start but it doesnt give me every
                           (agenda    . 5)))
   (setq dashboard-center-content t)
   (setq dashboard-set-heading-icons t)
-  (setq dashboard-startup-banner 'official)
+  (setq dashboard-startup-banner (expand-file-name "config-resources/Emacs-logo.svg" user-emacs-directory))
   (setq dashboard-banner-logo-title (format "GNU Emacs version %d.%d" emacs-major-version emacs-minor-version))
   (setq dashboard-set-init-info t)
   (setq dashboard-init-info (format "%d packages loaded with straight. finished in %s"
@@ -1179,7 +1234,7 @@ Taking this into account, projectile is a good start but it doesnt give me every
 
 
 (doom-modeline-def-modeline 'user/main
-  '(user/bufler-workspace bar window-number matches " " buffer-info remote-host buffer-position parrot " " selection-info)
+  '(user/bufler-workspace bar window-number matches buffer-info remote-host buffer-position parrot " " selection-info)
   '(objed-state grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info buffer-encoding major-mode process vcs checker))
 
 ;; default modeline
@@ -1324,6 +1379,7 @@ The code below, executes org-babel-tangle asynchronously when config.org is save
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package org
   :straight org-plus-contrib
+  :demand t
   :hook ((after-save . user/config-tangle)))
 
 ;; Org Bullets
@@ -1489,7 +1545,14 @@ The code below, executes org-babel-tangle asynchronously when config.org is save
 
 
 (bind-key "C-." 'flyspell-correct-at-point wakib-keys-overriding-map)
+
+;; automatically enable spellchecker for org files (doesn't affect source blocks)
+(add-hook 'org-mode-hook 'flyspell-mode)
 #+END_SRC
+
+**** Basic usage
+
+Use 'flyspell-mode' to enable/disable.
 
 *** REVIEW Code Completion
 
@@ -1523,6 +1586,8 @@ swiper is a tool for performing searches, powered by Ivy, all while
 
 **** Ivy bases
 
+*Ivy*
+
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package ivy
   :defer 0.1
@@ -1541,10 +1606,11 @@ swiper is a tool for performing searches, powered by Ivy, all while
 
 ;; make one tab enough to autocomplete. default behaviour is 2 tab presses
 (define-key ivy-minibuffer-map (kbd "TAB") 'ivy-alt-done)
+#+END_SRC
 
+*Counsel*
 
-
-
+#+BEGIN_SRC emacs-lisp :tangle yes
 (use-package counsel
   :after ivy
   :config (counsel-mode))
@@ -1555,9 +1621,11 @@ swiper is a tool for performing searches, powered by Ivy, all while
 (bind-key "C-o" 'counsel-find-file wakib-keys-overriding-map)
 
 (bind-key "C-S-v" 'counsel-yank-pop wakib-keys-overriding-map)
+#+END_SRC
 
+*Swiper*
 
-
+#+BEGIN_SRC emacs-lisp :tangle yes
 (use-package swiper
   :after ivy)
 
@@ -1576,11 +1644,17 @@ swiper is a tool for performing searches, powered by Ivy, all while
 
 **** Ivy extensions
 
-#+BEGIN_SRC emacs-lisp :tangle yes
-;; Ivy sorts such large lists using flx package's scoring mechanism, if it's installed.
-(use-package flx)
+*flx*
 
-;; Prescient
+Ivy sorts large lists using flx's scoring mechanism, if it's installed.
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package flx)
+#+END_SRC
+
+*ivy-prescient*
+
+#+BEGIN_SRC emacs-lisp :tangle yes
 (use-package prescient
   :custom
   (prescient-history-length 50)
@@ -1600,8 +1674,11 @@ swiper is a tool for performing searches, powered by Ivy, all while
   (ivy-prescient-enable-sorting t)
   :config
   (ivy-prescient-mode 1))
+#+END_SRC
 
-;; Ivy-rich
+*ivy-rich*
+
+#+BEGIN_SRC emacs-lisp :tangle yes
 (use-package ivy-rich
   :custom
   (ivy-rich-path-style 'abbreviate)
@@ -1614,8 +1691,11 @@ swiper is a tool for performing searches, powered by Ivy, all while
   :custom
   (all-the-icons-ivy-rich-icon-size 1.0)
   :config (all-the-icons-ivy-rich-mode 1))
+#+END_SRC
 
-;; Ivy-posframe
+*ivy-posframe*
+
+#+BEGIN_SRC emacs-lisp :tangle yes
 (use-package ivy-posframe
   :custom
   (ivy-posframe-parameters
@@ -1634,11 +1714,17 @@ swiper is a tool for performing searches, powered by Ivy, all while
    (flyspell-correct-ivy . ivy-posframe-display-at-point)
      (t . ivy-posframe-display-at-frame-center)))
   :config (ivy-posframe-mode 1))
+#+END_SRC
 
+*counsel-projectile*
+
+#+BEGIN_SRC emacs-lisp :tangle yes
 (use-package counsel-projectile)
+#+END_SRC
 
-;; ----------Isearch improvements
+*isearch improvements*
 
+#+BEGIN_SRC emacs-lisp :tangle yes
 (use-package isearch
   :straight nil
   :custom
@@ -1649,12 +1735,15 @@ swiper is a tool for performing searches, powered by Ivy, all while
 
 (define-key isearch-mode-map (kbd "k") 'isearch-repeat-forward)
 (define-key isearch-mode-map (kbd "j") 'isearch-repeat-backward)
+#+END_SRC
 
+*counsel-fzf*
 
-;; ---------- counsel-fzf
-;; do not hide files from  .gitignore
-;; ignore files in ~/.config/fd/ignore
+note:
+do not hide project files in .gitignore
+use ~/.config/fd/ignore to ignore files
 
+#+BEGIN_SRC emacs-lisp :tangle yes
 (when (zerop (length (getenv "FZF_DEFAULT_COMMAND")))
     (setenv "FZF_DEFAULT_COMMAND"
             (and (executable-find "fd")
@@ -1684,7 +1773,7 @@ swiper is a tool for performing searches, powered by Ivy, all while
 (bind-key "M-H" 'switch-window wakib-keys-overriding-map)
 #+END_SRC
 
-*** REVIEW Git integration
+*** Git integration
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package magit)
@@ -1709,7 +1798,7 @@ swiper is a tool for performing searches, powered by Ivy, all while
 ;; (add-hook 'org-mode-hook 'disable-gutter)
 #+END_SRC
 
-*** Templates and Snippets
+*** TODO Templates and Snippets
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 ;; (use-package yasnippet-snippets
@@ -1788,9 +1877,22 @@ Write in Org mode and export to HTML with reveal.js
 ;; set content of initial slide to %t - Title
 (setq org-reveal-title-slide "%t")
 
+#+END_SRC
 
+*** Compilation mode
 
+Deals with terminal escape codes.
 
+this should make compilation buffers handle ANSI escape sequences instead of displaying them as raw strings.
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package ansi-color)
+(defun my/ansi-colorize-buffer ()
+  (let ((buffer-read-only nil))
+    (ansi-color-apply-on-region (point-min) (point-max))))
+(add-hook 'compilation-filter-hook 'my/ansi-colorize-buffer)
+
+(setq compilation-scroll-output t) ;; the compilation buffer always scrolls to follow output as it comes in
 #+END_SRC
 
 *** Other smaller additions
@@ -1847,14 +1949,13 @@ Write in Org mode and export to HTML with reveal.js
 (use-package avy
   :bind ("M-m" . avy-goto-char))
 
-;; (use-package ibuffer-vc)
 
+;; (use-package ibuffer-vc)
 
 
 (use-package comment-dwim-2)
 (bind-key "C-«" 'comment-dwim-2)
 (bind-key "C-«" 'org-comment-dwim-2 org-mode-map)
-
 
 
 ;; (use-package symbolword-mode)
@@ -1865,33 +1966,82 @@ Write in Org mode and export to HTML with reveal.js
 
 Some of these entries are just to add syntax highlighting. Others add more features.
 
-*** Markdown syntax
+*** Markdown
 
-Add syntax highlighting.
+Adds:
+    - syntax highlighting
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package markdown-mode
   :mode "\\.\\(m\\(ark\\)?down\\|md\\)$")
+
+(setq markdown-command "marked")
 #+END_SRC
 
-*** YAML syntax
+*** YAML
 
-Add syntax highlighting.
+Adds:
+    - syntax highlighting
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package yaml-mode
   :mode "\\.yml\\'")
 #+END_SRC
 
-*** C# syntax
+*** C#
 
-Add syntax highlighting.
+Adds:
+    - syntax highlighting
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package csharp-mode
    :mode ("\\.cs\\'" . csharp-mode)
    :interpreter ("csharp" . csharp-mode))
 #+END_SRC
+
+*** Terraform
+
+Adds:
+    - syntax highlighting
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package terraform-mode
+  :mode "\\.tf\\'")
+#+END_SRC
+
+*** HCL (Hashicorp Configuration Language)
+
+Adds:
+    - syntax highlighting
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package hcl-mode
+  :disabled
+  :mode "\\.tf.json\\'")
+#+END_SRC
+
+*** Dockerfile
+
+Adds:
+    - syntax highlighting
+    - image building
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package dockerfile-mode
+  :mode "Dockerfile\\'")
+
+(put 'dockerfile-image-name 'safe-local-variable #'stringp)
+#+END_SRC
+
+**** Basic usage
+
+To build a docker image with emacs, use C-d C-b (normally C-c C-b), and add the following to the top of a Dockerfile:
+
+#+BEGIN_EXAMPLE
+## -*- docker-image-name: "your-image-name-here" -*-
+#+END_EXAMPLE
+
+This variable is declared as safe in the previous source block so you aren't asked if it's safe every time you load a Dockerfile.
 
 *** TODO Lisp
 *** TODO Plain Text
@@ -1912,10 +2062,7 @@ This is where you put sensitive information like emails and credentials.
 things to do after making changes and right before startup
 
 #+BEGIN_SRC emacs-lisp :tangle yes
-;; start in org mode by default
-(setq-default major-mode 'org-mode)
 (setq debug-on-error nil)
-
 
 ;;; config.el ends here
 #+END_SRC
@@ -1923,6 +2070,7 @@ things to do after making changes and right before startup
 
 
 This next part is not relative to the emacs configuration.
+It makes changes that make this file easier to navigate in Org mode.
 Here, we make the config file show 2 heading levels at startup, to make navigation easier.
 
 ;;; Local Variables:
