@@ -11,12 +11,12 @@
 - [[#early-init-file][Early Init file]]
   - [[#file-header][File Header]]
   - [[#start-time-optimizations][Start time optimizations]]
-  - [[#gui-changes][GUI changes]]
+  - [[#user-interface][User Interface]]
 - [[#configuration-file][Configuration file]]
   - [[#file-header-1][File Header]]
   - [[#initial-setup][Initial Setup]]
   - [[#bootstrap][Bootstrap]]
-  - [[#user-interface][User Interface]]
+  - [[#appearance][Appearance]]
   - [[#functions][Functions]]
   - [[#keybindings][Keybindings]]
   - [[#defaults][Defaults]]
@@ -44,6 +44,7 @@ In order for everything to work correctly, you should have the following install
 - aspell or hunspell
 - git
 - marked (or some other markdown parser)
+- python
 
 For markdown, you need to customize the command to run the markdown parser if you use something else.
 
@@ -98,44 +99,67 @@ Todo:
 - [X] ctrl+shift+left/right doesnt work
 - [X] a hex color should count as a full word when selecting it (double click or C-S-left/right) (disable subword navigation)
 - [X] selecting with S-<home> and pressing delete only removes indentation (untabify)
+- [X] make alt+arrow work in org mode for headlines without shift (custom function)
+- [X] use straight.el so only packages declared in the config file are loaded
+- [X] compare latest version with old version in git. load time went from 0.7-0.8 -> 1.0-1.2 seconds.
+- [X] package-quickstart needs to be deleted after package update or else there's an error. sometimes also custom.el
+- [X] arrow indicating visual line doesn't appear
+- [X] figure out how to deal with new file (C-n) while using bufler groups
+- [X] bufler groups show same file 2 times, in its own group and without a group
+- [X] make C-backspace delete until first non whitespace character
+- [X] make new line indicator appear only on right fringe
+- [X] bufler workspace name in modeline doesn't fade to grey in inactive window
+- [X] magit and dired buffers end up without  any bufler workspace
+- [X] C-k should not copy to clipboard
+- [X] make visual-regexp work with active region as input
 - [ ] ctrl+shift+o to open directory in sidebar
 - [ ] add projectile hydras
-- [ ] use flymake/flycheck for elisp (for config file)
+- [ ] add treemacs hydras
+- [ ] use flycheck for elisp (for config file)
+- [ ] error indicator in fringe for flyspell and flycheck
+- [ ] git gutter on left and flycheck gutter on right side
 - [ ] add keybindings tables in config.org
-- [ ] make alt+arrow work in org mode for headlines without shift (custom function)
 - [ ] alt-shift-up/down conflict in org mode with multiple cursors (mc bind disabled for now)
 - [ ] commenting inside source block jumps to top of block. happens with just 'emacs -Q' and comment-dwim
 - [ ] query-replace with current selection as input (Replace+ package maybe?)
-- [ ] make the M-o keybinding available outside of ivy, so the default wakib function can be used
 - [ ] M-o isnt working for C-o and flyspell-correct
-- [ ] error indicator in fringe for flyspell and flycheck/flymake
 - [ ] maybe incorporate previous/next concept from wakib-emacs? (it uses ';')
-- [ ] add shortcuts for dashboard and init file
+- [ ] add shortcuts for dashboard and init file (maybe hydras)
 - [ ] new keybindings for project find and project replace
 - [ ] when opening a treemacs workspace in dashboard, it should ask for a file
 - [ ] vr/replace doesnt auto open org headings
 - [ ] use 'C-.' to fix any type of error
 - [ ] apostrophes should not be selected when selecting words
-- [ ] use straight.el so only packages declared in the config file are loaded
-- [ ] compare latest version with old version in git. load time went from 0.7-0.8 -> 1.0-1.2 seconds.
-- [ ] replace "cua-selection-mode" with "set-rectangular-region-anchor" from "rectangular-region-mode"
-- [ ] package-quickstart needs to be deleted after package update or else there's an error. sometimes also custom.el
+- [ ] replace "cua-selection-mode" with "set-rectangular-region-anchor" from "rectangular-region-mode" (figure out what's the best option)
 - [ ] org-mode unordered lists should also have bullets (org-superstar seems to solve this)
-- [ ] arrow indicating visual line doesn't appear
-- [ ] figure out how to deal with new file (C-n) while using bufler groups
-- [ ] counsel-find-file should order items alphabetically
-- [ ] change swiper match colours (each regex group has a different colour)
-- [ ] bufler groups show file 2 times, in its own group and without a group (maybe it should use ivy options?)
 - [ ] replace org-bullets with org-superstar
-- [ ] make C-backspace delete until first non whitespace character
-- [ ] opening a new file in terminal should add a new buffer to existing emacs frame
-- [ ] make new line indicator appear only on right fringe
-- [ ] bufler workspace name in modeline doesn't fade to grey in inactive window
+- [ ] counsel-find-file should order items alphabetically
+- [ ] improve swiper regex groups colours for matches
+- [ ] opening a new file in terminal should add a new buffer to existing emacs frame (maybe use emacsclient)
+- [ ] allow C-page up/down to cycle when at first/last tab
+- [ ] implement C-S-page up/down to move tabs
+- [ ] allow jumping between git hunks (git-gutter) or modified buffer areas
+- [ ] use smerge hydra for better merging conflict resolution (https://github.com/alphapapa/unpackaged.el#hydra)
+- [ ] be able to see git gutter, company errors and visual line arrows all at the same time, without conflicts
+- [ ] when flyspell is active, show indicator, along with selected dictionary language
+- [ ] C-tab = tab-recent doesnt work (also for C-S-tab)
+- [ ] look at other modelines (spaceline and telephone-line)
+- [ ] add mouse-over boxes to modeline custom segments
+- [ ] being able to change the directory of a search (C-S-f)
+- [ ] add functions converting indentation to tabs/spaces
+- [ ] org-indent sometimes does not indent the top-most line in the buffer
+- [ ] why does reloading the init file mess up doom-modeline (and why does it only happen in the currently open buffer)
+- [ ] improve appearance of tab-line arrows (they appear when the bar is too full)
+
+
+Warning (annotate-mode): The file ’~/.emacs.d/config.org’ has changed on disk from the last time the annotations were saved.
+Chances are that they will not be displayed correctly.
+
 
 
 also:
 - [ ] look at vscode settings + extensions and import anything I like
-- [X] look at things in org mode file from KMPG
+- [ ] look at sublime settings + extensions and import anything I like
 
 * Early Init file
 
@@ -166,7 +190,7 @@ Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before p
     file-name-handler-alist file-name-handler-alist-original)))
 #+END_SRC
 
-** GUI changes
+** User Interface
 
 For the GUI changes that deserve to be in early-init. It is more efficient to disable UI elements before they are even loaded than to load them with the wrong configuration than change them.
 
@@ -307,7 +331,7 @@ To see the results, run:
     - benchmark-init/show-durations-tabulated
     - benchmark-init/show-durations-tree
 
-** User Interface
+** Appearance
 
 Most GUI changes are done in early-init.el
 
@@ -316,6 +340,11 @@ Most GUI changes are done in early-init.el
 #+BEGIN_SRC emacs-lisp :tangle yes
 ;; (set-frame-font "IBM Plex Mono-11" nil t)
 (set-frame-font "Cartograph CF-12" nil t)
+
+(custom-set-faces
+  '(mode-line ((t (:family "Cartograph CF" :height 0.9))))
+  '(mode-line-inactive ((t (:family "Cartograph CF" :height 0.9))))
+  '(tab-line-tab ((t (:family "Cartograph CF" :height 0.9)))))
 #+END_SRC
 
 *** Theme
@@ -326,7 +355,7 @@ Most GUI changes are done in early-init.el
     (load-theme 'cyberpunk t))
 #+END_SRC
 
-*** Theme Customization
+*** Theme Faces
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (setq custom--inhibit-theme-enable nil)
@@ -342,28 +371,31 @@ Most GUI changes are done in early-init.el
    '(whitespace-tab ((t (:background nil))))
    '(whitespace-trailing ((t (:background nil))))
    '(font-lock-keyword-face ((t (:foreground "#21D7D7"))))
-   '(line-number ((t (:foreground "#6b6b6b"))))
-   '(line-number-current-line ((t (:background "#14141D"))))
+
+   ;; line numbers
+   '(line-number ((t (:foreground "gray30"))))
+   '(line-number-current-line ((t (:background "#14141D" :foreground "#dedede"))))
 
    ;; tab-line
    '(tab-line ((t (:background "#14141D" :foreground "white" :height 1.0))))
-   '(tab-line-tab ((t (:inherit tab-line :foreground "MediumOrchid4"))))              ; selected but not in focus
-   '(tab-line-tab-current ((t (:inherit tab-line-tab :foreground "MediumOrchid1"))))  ; selected
-   '(tab-line-tab-inactive ((t (:inherit tab-line-tab :foreground "gray60"))))        ; not selected
-   '(tab-line-highlight ((t (:inherit tab-line-tab :background "orange"))))
+   '(tab-line-tab ((t (:inherit tab-line :background "#14141D" :foreground "#dedede"))))                ; selected but window not in focus
+   '(tab-line-tab-current ((t (:inherit tab-line-tab :overline "#12F292"))))                            ; selected
+   '(tab-line-tab-inactive ((t (:inherit tab-line-tab :foreground "gray50"))))                         ; not selected
+   '(tab-line-highlight ((t (:inherit tab-line-tab :background "orange" :foreground "#efefef"))))       ; on mouse-over
 
    ;; modeline
    '(doom-modeline-bar-inactive ((t (:background "#1A1A1A"))))
    '(doom-modeline-bar ((t (:background "#251F33"))))
-   '(doom-modeline-project-dir ((t (:foreground "dark orange"))))
-   '(doom-modeline-buffer-path ((t (:inherit (mode-line-emphasis bold) :foreground "gray60"))))
+   '(doom-modeline-buffer-path ((t (:inherit (mode-line-emphasis) :foreground "gray60"))))
+   '(doom-modeline-project-dir ((t (:inherit (doom-modeline-buffer-path) :foreground "#12F292"))))
    '(doom-modeline-persp-buffer-not-in-persp ((t (:inherit (font-lock-comment-face italic)))))
    '(doom-modeline-persp-name ((t (:inherit (font-lock-doc-face italic bold)))))
-   '(mode-line ((t (:background "#251F33" :foreground "gray66" :box (:line-width -1 :color "#0d1a1e")))))
+   '(mode-line ((t (:background "#251F33" :foreground "gray60" :box (:line-width -1 :color "#0d1a1e")))))
    '(mode-line-inactive ((t (:background "#1A1A1A" :foreground "#4D4D4D" :box (:line-width -1 :color "#0d1a1e")))))
-   '(mode-line-highlight ((t (:box (:line-width 2 :color "grey54")))))
-   '(mode-line-buffer-id ((t (:foreground "#21D7D7" :weight bold))))
+   '(mode-line-highlight ((t (:box (:line-width 2 :color "gray70")))))
+   '(mode-line-buffer-id ((t (:foreground "gray70" :weight bold))))  ;; #21D7D7
    '(mode-line-emphasis ((t (:foreground "#12F292" :weight bold))))
+   '(doom-modeline-info ((t (:foreground "gray60" ))))
 
    ;; ivy
    '(minibuffer-prompt ((t (:background "#02242b" :foreground "medium spring green"))))
@@ -395,11 +427,14 @@ Most GUI changes are done in early-init.el
 
    ;; other packages
    '(dashboard-banner-logo-title ((t (:foreground "#A840F4" :height 1.0))))
+
    '(diff-hl-insert ((t (:background "green4" :foreground "green4"))))
    '(diff-hl-change ((t (:background "yellow4" :foreground "yellow4"))))
    '(diff-hl-delete ((t (:background "red4" :foreground "red4"))))
+
    ;; '(anzu-replace-highlight ((t (:foreground "red"))))
    ;; '(anzu-replace-to ((t (:foreground "green"))))
+
    '(vr/match-0 ((t (:background "#5654ca" :foreground "#ffffff"))))
    '(vr/match-1 ((t (:background "#8b4887" :foreground "#ffffff"))))
 ))
@@ -412,7 +447,7 @@ General user created functions.
 These functions aren't associated with any package since they only use default emacs functionality.
 
 #+BEGIN_SRC emacs-lisp :tangle yes
-(defun user/reload-init-file ()
+(defun my/reload-init-file ()
   "Reload emacs cofiguration"
   (interactive)
   (message "Reloading init.el...")
@@ -420,64 +455,72 @@ These functions aren't associated with any package since they only use default e
   (message "Reloading init.el... done."))
 
 
-(defun user/select-current-line ()
+(defun my/select-current-line ()
   "Select the current line"
   (interactive)
   (beginning-of-line) ; move to end of line
   (set-mark (line-end-position)))
 
 
-(defun user/kill-emacs ()
+(defun my/kill-emacs ()
   "save some buffers, then exit unconditionally"
   (interactive)
   (save-some-buffers nil t)
   (kill-emacs))
 
 
-(defun user/toggle-fullscreen ()
+(defun my/toggle-fullscreen ()
   "Toggle fullscreen"
   (interactive)
   (toggle-frame-fullscreen))
 
 
-(defun user/delete-word-no-clipboard (arg)
-  "Delete characters forward until encountering the end of a word.
+(defun my/delete-word-no-clipboard (arg)
+  "If the next character is whitespace, delete whitespace until the next character.
+Otherwise, delete characters forward until encountering the end of a word.
 With argument, do this that many times.
 This command does not push text to `kill-ring'."
   (interactive "p")
-  (delete-region
-   (point)
-   (progn
-     (forward-word arg)
-     (point))))
+  (if (looking-at "[ \t\n]")
+      (let ((pos (point)))
+        (re-search-forward "[^ \t\n]" nil t arg)
+        (forward-char (- (cl-signum arg)))
+        (delete-region pos (point)))
+    (delete-region
+     (point)
+     (progn
+       (forward-word arg)
+       (point)))
+    ))
 
 
-(defun user/backward-delete-word-no-clipboard (arg)
-  "Delete characters backward until encountering the beginning of a word.
+(defun my/backward-delete-word-no-clipboard (arg)
+  "If the next character is whitespace, delete whitespace until the next character.
+Otherwise, delete characters forward until encountering the end of a word.
 With argument, do this that many times.
 This command does not push text to `kill-ring'."
   (interactive "p")
-  (user/delete-word-no-clipboard (- arg)))
+  (my/delete-word-no-clipboard (- arg)))
 
 
-(defun user/genius-beginning-of-line ()
-   "Move point to the first non-whitespace character on this line.
+(defun my/genius-beginning-of-line ()
+  "Move point to the first non-whitespace character on this line.
  If point was already at that position, move point to beginning of line.
  If line is empty, indent the line relative to the preceding line.
  "
-   (interactive "^")
-   (let ((oldpos (point)))
-     (back-to-indentation)
-     (and (= oldpos (point))
-          (progn (move-beginning-of-line nil)
-                 (when (=
-                        (line-beginning-position)
-                        (line-end-position))
-                   (save-excursion
-                     (indent-according-to-mode)))))))
+  (interactive "^")
+  (let ((oldpos (point)))
+    (back-to-indentation)
+    (and (= oldpos (point))
+         (progn (move-beginning-of-line nil)
+                (when (=
+                       (line-beginning-position)
+                       (line-end-position))
+                  (save-excursion
+                    (indent-according-to-mode)))))))
 
 
-(defun user/smarter-move-beginning-of-line (arg)
+(defun my/smarter-move-beginning-of-line (arg)
   "Move point back to indentation of beginning of line.
 
 Move point to the first non-whitespace character on this line.
@@ -501,14 +544,7 @@ point reaches the beginning or end of the buffer, stop there."
       (move-beginning-of-line 1))))
 
 
-
-
-
-
-
-
-
-(defun indent-region-custom(numSpaces)
+(defun my/indent-region-custom(numSpaces)
   (progn
     ;; default to start and end of current line
     (setq regionStart (line-beginning-position))
@@ -531,22 +567,66 @@ point reaches the beginning or end of the buffer, stop there."
     )
   )
 
-(defun untab-region (N)
-  (interactive "p")
-  (indent-region-custom -4)
-  )
 
-(defun tab-region (N)
+
+
+
+
+
+(defun my/untab-region (N)
+  (interactive "p")
+  (my/indent-region-custom (- N)))
+
+(defun my/tab-region (N)
   (interactive "p")
   (if (active-minibuffer-window)
       (minibuffer-complete)    ; tab is pressed in minibuffer window -> do completion
-    (indent-region-custom 4) ; call indent-region-custom
-    )
-  )
+    (my/indent-region-custom N) ; call my/indent-region-custom
+    ))
 
 ;; can't use this yet because it would interfere with ivy
 ;;(bind-key "<backtab>" 'untab-region)
 ;;(bind-key "<tab>" 'tab-region)
+
+
+(defun my/set-buffer-large-fringe ()
+  "The fringe is smaller than default because of the git gutter functionality.
+   Some buffers like magit and bufler use the fringe for indicators and need more space.
+   Other buffers that allow folding and unfolding with tab should also use this."
+  (setq left-fringe-width 16
+        right-fringe-width 8))
+
+
+
+
+
+;; used as such: (my/pad-string "some string" 10)
+(defun my/pad-string (string size)
+  (let* ((padding (- size (length string)))
+         (lpad (+ (length string) padding))
+         (lformat (format "%%%ds" lpad))
+         (rformat (format "%%%ds" (- size))))
+    (format rformat (format lformat string))))
+
+
+
+
+;; taken from doom-modeline indentation segment
+(defun my/get-buffer-indentation-size ()
+  (let ((lookup-var
+         (seq-find (lambda (var)
+                     (and var (boundp var) (symbol-value var)))
+                   (cdr (assoc major-mode doom-modeline-indent-alist)) nil)))
+    (if lookup-var
+        (symbol-value lookup-var)
+      tab-width)))
+
+
+
+
+
+
+
 
 
 
@@ -598,48 +678,45 @@ Others add convenient things like zoom, reloading, fullscreen, etc.
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 ;; Add keyboard shortcut for reloading emacs config file
-(bind-key "<f5>" 'user/reload-init-file wakib-keys-overriding-map)
+(bind-key "<f5>" 'my/reload-init-file wakib-keys-overriding-map)
 
 ;; make 'C-SPC' select in a rectangle instead of the normal selection
 (bind-key "C-SPC" 'cua-rectangle-mark-mode wakib-keys-overriding-map)
 
 ;; alternative way to quit emacs besides C-x C-c
-(bind-key "C-q" 'user/kill-emacs wakib-keys-overriding-map)
+(bind-key "C-q" 'my/kill-emacs wakib-keys-overriding-map)
 
 ;; add a fullscreen toggle
-(bind-key "<f11>" 'user/toggle-fullscreen wakib-keys-overriding-map)
+(bind-key "<f11>" 'my/toggle-fullscreen wakib-keys-overriding-map)
 
 (bind-key "C-+" 'text-scale-increase wakib-keys-overriding-map)
 (bind-key "C--" 'text-scale-decrease wakib-keys-overriding-map)
 
 (bind-key "<escape>" 'keyboard-escape-quit wakib-keys-overriding-map)
 
-(bind-key "C-l" 'user/select-current-line wakib-keys-overriding-map)
-(bind-key "C-k" 'kill-whole-line wakib-keys-overriding-map)
+(bind-key "C-l" 'my/select-current-line wakib-keys-overriding-map)
 
 ;; C-S-up/down to select paragraphs is activated with shift-select-mode
 (bind-key "C-<left>" 'backward-word wakib-keys-overriding-map)
 (bind-key "C-<right>" 'forward-word wakib-keys-overriding-map)
 
 
-;; indent blocks of text
-(bind-key "M-<left>" 'untab-region wakib-keys-overriding-map)
-(bind-key "M-<right>" 'tab-region wakib-keys-overriding-map)
 
 (bind-key "M-o" nil wakib-keys-overriding-map) ;; the default bind interferes with ivy (show options command)
 
 (bind-key "<backspace>" 'backward-delete-char-untabify)
 
 
-(bind-key "C-<delete>" 'user/delete-word-no-clipboard wakib-keys-overriding-map)
-(bind-key "C-<backspace>" 'user/backward-delete-word-no-clipboard wakib-keys-overriding-map)
+(bind-key "C-<delete>" 'my/delete-word-no-clipboard wakib-keys-overriding-map)
+(bind-key "C-<backspace>" 'my/backward-delete-word-no-clipboard wakib-keys-overriding-map)
 
 ;; cant use bind-key for C-c keybinds
 (global-set-key (kbd "C-c h") help-map)
 
-(bind-key "<home>" 'user/smarter-move-beginning-of-line wakib-keys-overriding-map)
+(bind-key "<home>" 'my/smarter-move-beginning-of-line wakib-keys-overriding-map)
 
-
+;; switch to a recent tab
+(bind-key "<C-tab>" 'tab-recent wakib-keys-overriding-map)
 
 
 
@@ -723,6 +800,8 @@ Some nice-to have things and general settings.
 
 ;; For all text modes use visual-line-mode
 (add-hook 'text-mode-hook 'visual-line-mode)
+;; only show an indicator on the right fringe and not the left fringe
+(setq-default visual-line-fringe-indicators '(nil right-curly-arrow))
 
 
 ;; for files with the same name, include part of directory name at the beginning of the buffer name
@@ -773,6 +852,13 @@ Some nice-to have things and general settings.
 ;;(pixel-scroll-mode) ; this makes it a bit laggy
 
 
+(setq scroll-conservatively 101
+        scroll-margin 2
+        scroll-preserve-screen-position 't)
+
+
+
+
 ;; change cursor blink speed. default = 0.5
 (setq blink-cursor-interval 1)
 
@@ -784,11 +870,15 @@ Some nice-to have things and general settings.
 
 ;; make numbers column width a little bigger so it never changes size and moves the buffer. (refering to line numbers)
 ;; with a value of 3 digits, the buffer only moves when the line number is 1000 or hifher
-(setq-default display-line-numbers-width 3)
+(setq-default display-line-numbers-width 4)
 
 
 ;; open new buffers in the same frame
 ;; (setq ns-pop-up-frames nil)
+
+
+;; set size in pixels of left and right fringes (default is 8)
+(fringe-mode '(4 . 8))
 #+END_SRC
 
 *** Indentation
@@ -816,17 +906,32 @@ Some nice-to have things and general settings.
 
 (setq backward-delete-char-untabify-method 'untabify)
 
-;; function to call from the menu
-(defun user/switch-indentation-use-spaces ()
+;; functions to call from the M-x menu
+(defun my/switch-indentation-use-spaces ()
   "Use spaces for indentation"
   (interactive)
   (setq indent-tabs-mode nil))
 
-(defun user/switch-indentation-use-tabs  ()
+(defun my/switch-indentation-use-tabs  ()
   "Use tabs for indentation"
   (interactive)
   (local-set-key (kbd "TAB") 'tab-to-tab-stop)
   (setq indent-tabs-mode t))
+#+END_SRC
+
+*** Tabs
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+;; disable "close" (x) button for each tab
+(setq tab-line-close-button-show nil)
+
+;; disable "new tab" (+) button at the right end of the tab-line
+(setq tab-line-new-button-show nil)
+
+;; redefine function for tab names
+(defun my/tab-line-tab-name-buffer (buffer &optional _buffers)
+  (format "  %s  " (buffer-name buffer)))
+(setq tab-line-tab-name-function #'my/tab-line-tab-name-buffer)
 #+END_SRC
 
 ** Features
@@ -948,7 +1053,7 @@ Currently using: bufler with optional bufler-tabs-mode
 (tab-bar-mode 0)
 
 ;; always switch workspace when switching buffers with bufler
-;;(setq bufler-workspace-switch-buffer-sets-workspace t)
+(setq bufler-workspace-switch-buffer-sets-workspace t)
 
 (bind-key "C-S-b" 'bufler wakib-keys-overriding-map)
 
@@ -1008,17 +1113,24 @@ Currently using: bufler with optional bufler-tabs-mode
          ;; Remaining special buffers are grouped automatically by mode.
          (auto-mode))
 
-
+        (group
+         (group-or "Agenda: Org notes"
+                   ;; Subgroup collecting buffers in `org-directory' (or "~/org" if
+                   ;; `org-directory' is not yet defined).
+                   (dir (if (bound-and-true-p org-directory)
+                            org-directory
+                          "~/Documents/Notes/org/"))))
 
         (group
-         (group-or "Files"
+         (group-or "All Files"
                    (filename-match "Files" (rx bol (zero-or-more anything)))
                    (mode-match "Dashboard" (rx bos "dashboard"))
+                   (mode-match "**Magit**" (rx bos "magit-status"))
                    )
-                   (group
-                   ;; Subgroup collecting buffers in a projectile project.
-                   (auto-projectile)
-                   )
+         (group
+          ;; Subgroup collecting buffers in a projectile project.
+          (auto-projectile))
+
          )
 
         )
@@ -1029,12 +1141,13 @@ Currently using: bufler with optional bufler-tabs-mode
 
 
 ;; redefine lighter function
-(defun user/bufler-workspace-mode-lighter ()
+(defun my/bufler-workspace-mode-lighter ()
   "Return lighter string for mode line."
   (frame-parameter nil 'bufler-workspace-path-formatted))
 
 
 
+(add-hook 'bufler-list-mode-hook 'my/set-buffer-large-fringe)
 
 #+END_SRC
 
@@ -1207,51 +1320,242 @@ Taking this into account, projectile is a good start but it doesnt give me every
   :init
   (add-hook 'dashboard-mode-hook #'hide-mode-line-mode))
 
+;; disable tabs in dashboard mode
 (add-hook 'dashboard-mode-hook (lambda () (tab-line-mode -1)))
 #+END_SRC
 
 *** Modeline
+**** doom-modeline
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package doom-modeline
   :init
-  ;;  (doom-modeline-mode 1)
   (setq doom-modeline-height 24)
   (setq doom-modeline-major-mode-icon nil)
+  (setq doom-modeline-major-mode-color-icon nil)
   (setq doom-modeline-indent-info t)
+  (setq doom-modeline-buffer-state-icon t)
+  (setq doom-modeline-buffer-modification-icon t)
+  (setq doom-modeline-buffer-file-name-style 'truncate-upto-project))
 
-  (setq doom-modeline-buffer-file-name-style 'relative-to-project)
-  )
+
+;; (doom-modeline-def-segment my/bufler-workspace
+;;   "Display current bufler workspace name"
+;;   (if (and (boundp 'bufler-workspace-tabs-mode) bufler-workspace-tabs-mode)
+;;       (propertize (format "  %s" (replace-regexp-in-string "Projectile:" "" (my/bufler-workspace-mode-lighter)))
+;;                   'face '(:foreground "gray60" :weight bold))
+;;     ""))
+
+;; note: should use something like (all-the-icons-alltheicon "git") instead
 
 
 
-(doom-modeline-def-segment user/bufler-workspace
+(doom-modeline-def-segment my/bufler-workspace
   "Display current bufler workspace name"
   (if (and (boundp 'bufler-workspace-tabs-mode) bufler-workspace-tabs-mode)
-      (propertize (format "  %s" (replace-regexp-in-string "Projectile:" (all-the-icons-alltheicon "git") (user/bufler-workspace-mode-lighter)))
-                  'face '(:foreground "dark orange" :weight bold))
+      (let ((active (doom-modeline--active)))
+      (when-let (text
+                 (propertize (format "  %s" (replace-regexp-in-string "Projectile:" "" (my/bufler-workspace-mode-lighter)))
+                             'face '(:foreground "gray60")))
+        (if active
+            text
+          (propertize text 'face 'mode-line-inactive))))
     ""))
 
 
-(doom-modeline-def-modeline 'user/main
-  '(user/bufler-workspace bar window-number matches buffer-info remote-host buffer-position parrot " " selection-info)
-  '(objed-state grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info buffer-encoding major-mode process vcs checker))
 
-;; default modeline
-;; (doom-modeline-def-modeline 'main
-;;   '(bar workspace-name window-number modals matches buffer-info remote-host buffer-position word-count parrot selection-info)
-;;   '(objed-state misc-info persp-name battery grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info buffer-encoding major-mode process vcs checker))
+
+
+;; For the position
+(setq-default mode-line-position
+              '((mode-line-percent-position (" " mode-line-percent-position))
+                (line-number-mode
+                 (column-number-mode
+                  (column-number-indicator-zero-based " %06l L,%03c C" " %l:%C")
+                  " %l")
+                 (column-number-mode (column-number-indicator-zero-based " :%c" " :%C")))
+                (:eval (when (or line-number-mode mode-line-percent-position column-number-mode) " "))))
+
+(doom-modeline-def-segment my/buffer-position
+  '(" " mode-line-position))
+
+
+
+
+(doom-modeline-def-segment my/vcs
+  "Displays the current branch, colored based on its state."
+  (let ((active (doom-modeline--active)))
+    (when-let ((icon doom-modeline--vcs-icon)
+               (text doom-modeline--vcs-text))
+      (concat
+       (doom-modeline-spc)
+       (doom-modeline-spc)
+       (propertize
+        (concat
+         (if active
+             icon
+           (doom-modeline-propertize-icon icon 'mode-line-inactive))
+         (doom-modeline-vspc))
+        'mouse-face 'mode-line-highlight
+        'help-echo (get-text-property 1 'help-echo vc-mode)
+        'local-map (get-text-property 1 'local-map vc-mode))
+       (if active
+           text
+         (propertize text 'face 'mode-line-inactive))
+       (doom-modeline-spc)
+))))
+
+
+
+
+(doom-modeline-def-modeline 'my/main
+  '(" " my/bufler-workspace " " my/vcs bar window-number matches buffer-info remote-host parrot " " selection-info)
+  '(objed-state grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info " " buffer-encoding process checker major-mode my/buffer-position))
 
 (defun setup-initial-doom-modeline ()
-  (doom-modeline-set-modeline 'user/main t))
+  (interactive)
+  (doom-modeline-set-modeline 'my/main 'default))
+
+
 
 (add-hook 'doom-modeline-mode-hook 'setup-initial-doom-modeline)
 
 
-
-
 (doom-modeline-mode 1)
-;; (doom-modeline-set-modeline 'user/main t)
+
+
+;; (doom-modeline-set-modeline 'my/main 'default)
+#+END_SRC
+
+
+The default doom modeline, for reference:
+
+#+BEGIN_EXAMPLE
+(doom-modeline-def-modeline 'main
+  '(bar workspace-name window-number modals matches buffer-info remote-host buffer-position word-count parrot selection-info)
+  '(objed-state misc-info persp-name battery grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info buffer-encoding major-mode process vcs checker))
+#+END_EXAMPLE
+
+**** spaceline
+
+#+BEGIN_SRC emacs-lisp :tangle no
+(use-package spaceline)
+
+;(spaceline-toggle-minor-modes-off)
+;(spaceline-toggle-buffer-modified-on)
+;(spaceline-toggle-buffer-id-on)
+;(spaceline-toggle-version-control-on)
+;(spaceline-toggle-selection-info-on)
+;(spaceline-toggle-input-method-on)
+;(spaceline-toggle-buffer-encoding-abbrev-on)
+;(spaceline-toggle-buffer-encoding-on)
+;(spaceline-toggle-line-column-on)
+;(spaceline-toggle-buffer-position-on)
+;(spaceline-toggle-hud-off)
+
+
+(spaceline-compile
+  ; left side
+  '(((persp-name)
+     :fallback evil-state
+     :face highlight-face
+     :priority 100)
+    (anzu :priority 95)
+    auto-compile
+    ((buffer-modified buffer-id remote-host)
+     :priority 98)
+    (major-mode :priority 79)
+    (process :when active)
+    ((flycheck-error flycheck-warning flycheck-info)
+     :when active
+     :priority 89)
+    (erc-track :when active)
+    (version-control :when active
+                     :priority 78)
+    )
+  ; right side
+  '(which-function
+    (python-pyvenv :fallback python-pyenv)
+    (purpose :priority 94)
+    (selection-info :priority 95)
+    input-method
+    ((buffer-encoding-abbrev
+      point-position
+      line-column)
+     :separator " | "
+     :priority 96)
+    (global :when active)
+    (buffer-position :priority 99)
+    (hud :priority 99)))
+
+
+
+;;(spaceline-emacs-theme)
+#+END_SRC
+
+**** telephone-line
+
+#+BEGIN_SRC emacs-lisp :tangle no
+(use-package telephone-line)
+
+(telephone-line-defsegment* telephone-line-my-buffer-modified-segment ()
+"Circle thatchanges color based on buffer modification status"
+    (if (buffer-modified-p)
+        (propertize (telephone-line-raw " ") 'face '(:foreground "dark orange" :weight bold))
+      (telephone-line-raw " ")))
+
+(telephone-line-defsegment* telephone-line-my-bufler-workspaces ()
+"Display current bufler workspace name"
+  (if (and (boundp 'bufler-workspace-tabs-mode) bufler-workspace-tabs-mode)
+      (propertize (format " %s" (replace-regexp-in-string "Projectile:" "" (my/bufler-workspace-mode-lighter)))
+                  'face '(:foreground "dark orange" :weight bold))
+    "a"))
+
+
+  (telephone-line-defsegment my-coding-segment ()
+    (when (telephone-line-selected-window-active)
+      (let* ((code (symbol-name buffer-file-coding-system))
+             (eol-type (coding-system-eol-type buffer-file-coding-system))
+             (eol (cond
+                   ((eq 0 eol-type) "unix")
+                   ((eq 1 eol-type) "dos")
+                   ((eq 2 eol-type) "mac")
+                   (t "-"))))
+        (format  "%s " eol))))
+
+(setq telephone-line-secondary-left-separator 'telephone-line-nil)
+
+(defface my-red '((t (:foreground "white" :background "red3"))) "")
+(defface my-cyan '((t (:foreground "dim grey" :background "cyan"))) "")
+
+(setq telephone-line-faces
+      '((evil . (my-red . my-red))
+        (accent . (telephone-line-accent-active . telephone-line-accent-inactive))
+        (nil . (mode-line . mode-line-inactive))))
+
+(setq telephone-line-lhs
+      '((evil   . (telephone-line-my-bufler-workspaces))
+        (accent . (telephone-line-vc-segment
+                   telephone-line-erc-modified-channels-segment
+                   telephone-line-process-segment))
+        (nil    . (telephone-line-my-buffer-modified-segment
+                   telephone-line-file-name-absolute-path-segment))))
+(setq telephone-line-rhs
+      '((nil    . (telephone-line-atom-eol-segment
+                   telephone-line-atom-encoding-segment))
+        (accent . (telephone-line-major-mode-segment))
+        (evil   . (telephone-line-airline-position-segment))))
+
+(telephone-line-mode)
+#+END_SRC
+
+**** mood-line
+
+#+BEGIN_SRC emacs-lisp :tangle no
+(use-package mood-line)
+(setq mood-line-show-encoding-information t)
+(setq mood-line-show-eol-style t)
+(mood-line-mode)
 #+END_SRC
 
 *** Search tool
@@ -1287,13 +1591,10 @@ Other options are:
 
 ;; you can use actual regex with this package, instead of emacs specific regex
 ;; this seems better than Anzu for my uses
-(use-package visual-regexp-steroids)
+(use-package visual-regexp)
 
 ;; the default engine is python
 (setq vr/engine 'pcre2el)
-
-
-
 
 
 
@@ -1308,23 +1609,103 @@ Other options are:
     (while (re-search-forward pattern nil t)
       (replace-match replacement))))
 
+;; can also use this stuff to do a global replace in whole buffer
+;; (let ((current-point (point)))
+;;     (vr/query-replace "regexp" "replace" current-point (point-max))
+;;     (vr/query-replace "regexp" "replace" (point-min) current-point)
+;;   ))
 
 
 
-(defun user/query-replace-regexp-from-top ()
+(defun my/query-replace-regexp-from-top ()
   "query-replace-regexp from the beginning of the buffer."
   (interactive)
   (goto-char (point-min))
   (call-interactively 'vr/query-replace))
 
 
-(bind-key "C-h" 'vr/query-replace wakib-keys-overriding-map)
-;; (bind-key "C-S-h" 'my wakib-keys-overriding-map)
+(bind-key "C-h" 'my/visual-replace-with-active-region-support wakib-keys-overriding-map)
+
+;; using C-7 inside swiper seems better. it does the same thing
+;; (bind-key "C-S-h" 'vr/mc-mark wakib-keys-overriding-map)
+
+#+END_SRC
 
 
-;; (bind-key "C-S-h" 'vr/replace wakib-keys-overriding-map)  ;; this should be "replace in project"
-;; (bind-key "\C-ch" help-map)
+This next part changes the package's base code to allow using active region as the input regex pattern.
+The parts that were changed have comments that identify them.
 
+#+BEGIN_SRC emacs-lisp :tangle yes
+;; these are mine
+(defvar my/visual-regexp-region-flag nil)
+(defvar my/visual-regexp-region-val "default string")
+
+;; use active region as replace regexp defeult input
+(defun my/visual-replace-from-active-region (beginning end)
+  (interactive "r")
+  (setq my/visual-regexp-region-flag t)
+  (setq my/visual-regexp-region-val (buffer-substring-no-properties (region-beginning) (region-end)))
+  (goto-char beginning)
+  (deactivate-mark)
+  (call-interactively 'vr/query-replace))
+
+;; wrapper function that checks if there is an active region or not
+(defun my/visual-replace-with-active-region-support ()
+  (interactive)
+  (if (region-active-p)
+      (call-interactively 'my/visual-replace-from-active-region)
+    (call-interactively 'vr/query-replace)))
+
+
+;; this is the core function that was changed
+(defun vr--set-regexp-string ()
+  (save-excursion
+    ;; deactivate mark so that we can see our faces instead of region-face.
+    (deactivate-mark)
+    (setq vr--in-minibuffer 'vr--minibuffer-regexp)
+    (setq vr--last-minibuffer-contents "")
+    (custom-reevaluate-setting 'vr/match-separator-string)
+    (let* ((minibuffer-allow-text-properties t)
+           (history-add-new-input nil)
+           (text-property-default-nonsticky
+            (cons '(separator . t) text-property-default-nonsticky))
+           ;; seperator and query-replace-from-to-history copy/pasted from replace.el
+           (separator
+            (when vr/match-separator-string
+              (propertize "\0"
+                          'display vr/match-separator-string
+                          'separator t)))
+           (query-replace-from-to-history
+            (append
+             (when separator
+               (mapcar (lambda (from-to)
+                         (concat (query-replace-descr (car from-to))
+                                 separator
+                                 (query-replace-descr (cdr from-to))))
+                       (symbol-value vr/query-replace-defaults-variable)))
+             (symbol-value vr/query-replace-from-history-variable)))
+
+           ;; Changes I made: the next two lines
+           (my-var my/visual-regexp-region-flag))
+      (setq my/visual-regexp-region-flag nil)
+
+      (setq vr--regexp-string
+            (read-from-minibuffer
+             " " ;; prompt will be set in vr--minibuffer-setup
+
+             ;; I also added these three lines
+             (if my-var
+                 my/visual-regexp-region-val
+               nil)
+
+             vr/minibuffer-keymap
+             nil 'query-replace-from-to-history))
+      (let ((split (vr--query-replace--split-string vr--regexp-string)))
+        (if (not (consp split))
+            (add-to-history vr/query-replace-from-history-variable vr--regexp-string nil t)
+          (add-to-history vr/query-replace-from-history-variable (car split) nil t)
+          (add-to-history vr/query-replace-to-history-variable (cdr split) nil t)
+          (add-to-history vr/query-replace-defaults-variable split nil t))))))
 #+END_SRC
 
 *** Org mode
@@ -1343,19 +1724,19 @@ The code below, executes org-babel-tangle asynchronously when config.org is save
 (defvar *show-async-tangle-results* nil
   "Keeps *emacs* async buffers around for later inspection.")
 
-(defun user/config-updated ()
+(defun my/config-updated ()
   "Checks if the configuration file has been updated since the last time."
   (time-less-p *config-last-change*
                (nth 5 (file-attributes *config-file*))))
 
-(defun user/config-tangle ()
+(defun my/config-tangle ()
   "Tangles the user configuration org file asynchronously."
-  (when (user/config-updated)
+  (when (my/config-updated)
     (setq *config-last-change*
           (nth 5 (file-attributes *config-file*)))
-    (user/async-babel-tangle *config-file*)))
+    (my/async-babel-tangle *config-file*)))
 
-(defun user/async-babel-tangle (org-file)
+(defun my/async-babel-tangle (org-file)
   "Tangles an org file asynchronously."
   (let ((init-tangle-start-time (current-time))
         (file (buffer-file-name))
@@ -1380,7 +1761,7 @@ The code below, executes org-babel-tangle asynchronously when config.org is save
 (use-package org
   :straight org-plus-contrib
   :demand t
-  :hook ((after-save . user/config-tangle)))
+  :hook ((after-save . my/config-tangle)))
 
 ;; Org Bullets
 (use-package org-bullets
@@ -1430,11 +1811,11 @@ The code below, executes org-babel-tangle asynchronously when config.org is save
      (define-key org-mode-map (kbd "<C-S-down>") nil)
 ))
 
-;; the default M-arrow binds are in conflict with some global binds
-(bind-key "M-S-<left>" 'org-metaleft org-mode-map)
-(bind-key "M-S-<right>" 'org-metaright org-mode-map)
-(bind-key "M-S-<up>" 'org-metaup org-mode-map)
-(bind-key "M-S-<down>" 'org-metadown org-mode-map)
+;; ;; the default M-arrow binds are in conflict with some global binds
+;; (bind-key "M-S-<left>" 'org-metaleft org-mode-map)
+;; (bind-key "M-S-<right>" 'org-metaright org-mode-map)
+;; (bind-key "M-S-<up>" 'org-metaup org-mode-map)
+;; (bind-key "M-S-<down>" 'org-metadown org-mode-map)
 
 
 
@@ -1508,8 +1889,8 @@ The code below, executes org-babel-tangle asynchronously when config.org is save
    ;; (push '("#+end_quote" . "⇤" ) prettify-symbols-alist)
    ;; (push '("#+begin_example" . "↦" ) prettify-symbols-alist)
    ;; (push '("#+end_example" . "⇤" ) prettify-symbols-alist)
-   ;; (push '("#+BEGIN_SRC" . "↦" ) prettify-symbols-alist)
-   ;; (push '("#+END_SRC" . "⇤" ) prettify-symbols-alist)
+   ;; (push '("#+begin_src" . "↦" ) prettify-symbols-alist)
+   ;; (push '("#+end_src" . "⇤" ) prettify-symbols-alist)
    (prettify-symbols-mode)))
 #+END_SRC
 
@@ -1639,7 +2020,7 @@ swiper is a tool for performing searches, powered by Ivy, all while
 (bind-key "C-f" 'swiper-isearch-with-selection wakib-keys-overriding-map)
 
 ;; put a cursor on every swiper search result
-;;(bind-key "C-h" 'swiper-mc swiper-map)
+;; (bind-key "C-h" 'swiper-mc swiper-map)
 #+END_SRC
 
 **** Ivy extensions
@@ -1667,7 +2048,7 @@ Ivy sorts large lists using flx's scoring mechanism, if it's installed.
   :custom
   (ivy-prescient-sort-commands
    ;; things that shouldnt be sorted go n this list
-   '(:not swiper swiper-isearch ivy-switch-buffer counsel-switch-buffer flyspell-correct-ivy counsel-find-file find-file))
+   '(:not swiper swiper-isearch ivy-switch-buffer counsel-switch-buffer flyspell-correct-ivy counsel-find-file find-file bufler-workspace-switch-buffer bufler-switch-buffer))
   (ivy-prescient-excluded-commands '(counsel-find-file find-file))
   (ivy-prescient-retain-classic-highlighting t)
   (ivy-prescient-enable-filtering nil)
@@ -1775,21 +2156,40 @@ use ~/.config/fd/ignore to ignore files
 
 *** Git integration
 
+**** Magit
+
+#+BEGIN_QUOTE
+*Magit*
+Magit is a complete text-based user interface to Git. It fills the glaring gap between the Git command-line interface and various GUIs, letting you perform trivial as well as elaborate version control tasks with just a couple of mnemonic key presses.
+#+END_QUOTE
+
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package magit)
 
-;; has a conflict with org mode. new headings display ellipsis as a block
-;; (use-package git-gutter)
-;; ;; (global-git-gutter-mode +1)
-;; (set-face-foreground 'git-gutter:modified "#f7bc0a")
-;; (custom-set-variables
-;;  '(git-gutter:update-interval 2))
+(add-hook 'magit-mode-hook 'my/set-buffer-large-fringe)
+#+END_SRC
 
+**** git gutter
+
+#+BEGIN_QUOTE
+*diff-hl*
+Emacs package for highlighting uncommitted changes
+#+END_QUOTE
+
+#+BEGIN_SRC emacs-lisp :tangle yes
 (use-package diff-hl)
 (global-diff-hl-mode)
 (diff-hl-flydiff-mode)
 (add-hook 'magit-pre-refresh-hook 'diff-hl-magit-pre-refresh)
 (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
+
+
+
+
+;; (use-package git-gutter)
+;; (setq git-gutter:update-interval 1)
+;; (global-git-gutter-mode)
+
 
 ;; ;; lines that are 'inserted' cause problems with org headings ellipsis symbol
 ;; (defun disable-gutter()
@@ -1825,6 +2225,10 @@ use ~/.config/fd/ignore to ignore files
   :config
   (define-key mc/keymap [remap keyboard-quit] 'mc/keyboard-quit)
   (define-key rectangular-region-mode-map [remap keyboard-quit] 'rrm/keyboard-quit)
+
+  ;; use C-7 to add a cursor to every swiper selection
+  (add-to-list 'mc/cmds-to-run-once 'swiper-mc)
+
   :bind
   (("M-S" . set-rectangular-region-anchor)
    :map mc/keymap
@@ -1851,17 +2255,19 @@ use ~/.config/fd/ignore to ignore files
 (bind-key "C-c" 'whole-line-or-region-kill-ring-save wakib-keys-overriding-map)
 (bind-key "C-x" 'whole-line-or-region-kill-region wakib-keys-overriding-map)
 
+(bind-key "C-k" 'whole-line-or-region-delete-region wakib-keys-overriding-map)
 
-;; keep selection after indenting (with alt+left/right)
-(defadvice whole-line-or-region-indent-rigidly-right-to-tab-stop (after keep-transient-mark-active ())
-  "Override the deactivation of the mark."
-  (setq deactivate-mark nil))
-(ad-activate 'whole-line-or-region-indent-rigidly-right-to-tab-stop)
 
-(defadvice whole-line-or-region-indent-rigidly-left-to-tab-stop (after keep-transient-mark-active ())
-  "Override the deactivation of the mark."
-  (setq deactivate-mark nil))
-(ad-activate 'whole-line-or-region-indent-rigidly-left-to-tab-stop)
+;; ;; keep selection after indenting (with alt+left/right)
+;; (defadvice whole-line-or-region-indent-rigidly-right-to-tab-stop (after keep-transient-mark-active ())
+;;   "Override the deactivation of the mark."
+;;   (setq deactivate-mark nil))
+;; (ad-activate 'whole-line-or-region-indent-rigidly-right-to-tab-stop)
+
+;; (defadvice whole-line-or-region-indent-rigidly-left-to-tab-stop (after keep-transient-mark-active ())
+;;   "Override the deactivation of the mark."
+;;   (setq deactivate-mark nil))
+;; (ad-activate 'whole-line-or-region-indent-rigidly-left-to-tab-stop)
 #+END_SRC
 
 *** Presentations
@@ -1877,6 +2283,8 @@ Write in Org mode and export to HTML with reveal.js
 ;; set content of initial slide to %t - Title
 (setq org-reveal-title-slide "%t")
 
+;; necessary to highlight source code
+(use-package htmlize)
 #+END_SRC
 
 *** Compilation mode
@@ -1893,6 +2301,58 @@ this should make compilation buffers handle ANSI escape sequences instead of dis
 (add-hook 'compilation-filter-hook 'my/ansi-colorize-buffer)
 
 (setq compilation-scroll-output t) ;; the compilation buffer always scrolls to follow output as it comes in
+#+END_SRC
+
+*** Moving text
+
+Moving text both horizontally and vertically.
+I use the M + arrow keys for this. Since this interferes with org-mode, we use the default org-mode keybinds when the cursor is in a org-heading.
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(defun my/meta-right-org-heading-detect ()
+  "Executes a different function if the cursor is in a org heading.
+Otherwise, just execute the normal behaviour"
+(interactive)
+  (if (and (equal major-mode 'org-mode) (org-at-heading-p))
+      (org-do-demote)
+    (my/tab-region (my/get-buffer-indentation-size))))
+
+(defun my/meta-left-org-heading-detect ()
+  "Executes a different function if the cursor is in a org heading.
+Otherwise, just execute the normal behaviour"
+(interactive)
+  (if (and (equal major-mode 'org-mode) (org-at-heading-p))
+      (org-do-promote)
+    (my/untab-region (my/get-buffer-indentation-size))))
+
+
+
+;; alt+up/down to move line or region
+(use-package drag-stuff)
+
+(defun my/meta-up-org-heading-detect ()
+  "Executes a different function if the cursor is in a org heading.
+Otherwise, just execute the normal behaviour"
+(interactive)
+  (if (org-at-heading-p)
+      (org-move-subtree-up)
+    (call-interactively 'drag-stuff-up)))
+
+(defun my/meta-down-org-heading-detect ()
+  "Executes a different function if the cursor is in a org heading.
+Otherwise, just execute the normal behaviour"
+(interactive)
+  (if (org-at-heading-p)
+      (org-move-subtree-down)
+    (call-interactively 'drag-stuff-down)))
+
+
+
+;; indent blocks of text
+(bind-key "M-<left>" 'my/meta-left-org-heading-detect wakib-keys-overriding-map)
+(bind-key "M-<right>" 'my/meta-right-org-heading-detect wakib-keys-overriding-map)
+(bind-key "M-<up>" 'my/meta-up-org-heading-detect wakib-keys-overriding-map)
+(bind-key "M-<down>" 'my/meta-down-org-heading-detect wakib-keys-overriding-map)
 #+END_SRC
 
 *** Other smaller additions
@@ -1913,11 +2373,6 @@ this should make compilation buffers handle ANSI escape sequences instead of dis
 ;; Key Rebinding utility. Will be used in the keybinds section
 (use-package bind-key)
 
-
-;; alt+up/down to move line or region
-(use-package drag-stuff)
-(bind-key "M-<up>" 'drag-stuff-up wakib-keys-overriding-map)
-(bind-key "M-<down>" 'drag-stuff-down wakib-keys-overriding-map)
 
 
 ;; display available keybindings in popup after a prefix key is pressed
@@ -1960,6 +2415,23 @@ this should make compilation buffers handle ANSI escape sequences instead of dis
 
 ;; (use-package symbolword-mode)
 ;; (symbolword-mode 1)
+
+
+;; use this so magit can actually use the system's ssh keys
+(use-package ssh-agency)
+
+
+(use-package yascroll)
+(global-yascroll-bar-mode)
+
+(use-package annotate)
+(add-hook 'org-mode-hook 'annotate-mode)
+(add-hook 'save-buffer 'annotate-save-annotations)
+
+
+
+(use-package modern-fringes)
+
 #+END_SRC
 
 ** Programming languages
@@ -2063,6 +2535,17 @@ things to do after making changes and right before startup
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (setq debug-on-error nil)
+
+;; new buffers are opened in org-mode by default
+(setq-default major-mode 'org-mode)
+
+
+
+;; use this next snippet to add blank space at the top of the window
+;; note: the background should be set to the same as the buffer
+;; (setq header-line-format " ")
+
+
 
 ;;; config.el ends here
 #+END_SRC
