@@ -51,14 +51,14 @@ For markdown, you need to customize the command to run the markdown parser if yo
 
 ** Installation
 
+Eventually, this config will work on windows, but for now, only unix is supported.
+
 optional backup:
 cp ~/.emacs.d ~/.emacs.d_backup
-
 
 installation:
 cd ~/.emacs.d/
 git clone https://github.com/kyukee/emacs-config.git
-
 
 then, inside emacs, open the command menu with M-x and run 'all-the-icons-install-fonts'
 
@@ -122,6 +122,7 @@ Todo:
 - [X] when dashboard is opened with a hydra, the hydra menu stays open
 - [X] for every package, use as much use-package integration as possible
 - [X] C-backspace deletes previous word. it should only delete whitespace
+- [X] swiper sometimes shows the match behind the modeline
 - [ ] ctrl+shift+o to open directory in sidebar
 - [ ] use flycheck for elisp (for config file)
 - [ ] error indicator in fringe for flyspell and flycheck
@@ -161,7 +162,6 @@ Todo:
 - [ ] give every doom modeline segment a mouse-over menu
 - [ ] change bufler group for dashboard and magit-status
 - [ ] swiper always uses multiple cursor after pressing RET. Changing from C-m fixes it, but now it doesn't work with C-r.
-- [ ] swiper sometimes shows the match behind the modeline
 
 
 also:
@@ -326,11 +326,11 @@ This isn't in the same section as the other features because it needs to loaded 
 
 not using it because it doesn't really work well with early-init file
 
-#+BEGIN_SRC emacs-lisp :tangle yes
-;; (use-package esup
-;;   :commands (esup)
-;;   :config
-;;   (setq esup-depth 0))
+#+BEGIN_SRC emacs-lisp :tangle no
+(use-package esup
+  :commands (esup)
+  :config
+  (setq esup-depth 0))
 #+END_SRC
 
 **** Package: benchmark-init
@@ -358,12 +358,14 @@ Most GUI changes are done in early-init.el
 *** Font
 **** Source block: set-face-attribute
 
-#+BEGIN_SRC emacs-lisp :tangle yes
-;; (set-frame-font "Cartograph CF-12" nil t)
-;; (set-frame-font "IBM Plex Mono-11" nil t)
-(set-face-attribute 'default nil :font "Cartograph CF-12")
+Some of my font options:
+    - IBM Plex Mono
+    - Cartograph CF
 
-;; height unit is 1/10pt, which means a height of 100 is 10pt
+The unit for the 'height' attribute is 1/10pt, which means a height of 100 is 10pt.
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(set-face-attribute 'default nil :font "Cartograph CF-12")
 
 (custom-set-faces
   '(mode-line ((t (:family "Cartograph CF" :height 110))))
@@ -475,7 +477,7 @@ Most GUI changes are done in early-init.el
 General user created functions.
 These functions aren't associated with any package since they only use default emacs functionality.
 
-**** Source block: emacs actions (reload, quit, etc)
+**** Source block: emacs reload, quit, etc
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (defun my/reload-init-file ()
@@ -638,8 +640,9 @@ This command does not push text to `kill-ring'."
 
 
 (defun my/set-buffer-dashboard-fringe ()
-  (setq left-fringe-width 20
-        right-fringe-width 20))
+  (setq left-fringe-width 12
+        right-fringe-width 12))
+
 
 ;; used as such: (my/pad-string "some string" 10)
 (defun my/pad-string (string size)
@@ -814,12 +817,6 @@ Others add convenient things like zoom, reloading, fullscreen, etc.
 ;;     on Windows, the menu/apps key syntax is <apps>
 ;;     make the syntax equal
 (define-key key-translation-map (kbd "<apps>") (kbd "<menu>"))
-
-
-;; (bind-key "<menu>" nil)
-;; (bind-key* "<menu> h" help-map)
-;; (bind-key* "<menu> g" 'keyboard-escape-quit)
-;; (bind-key* "<menu> x" ctl-x-map)
 #+END_SRC
 
 ** Defaults
@@ -971,7 +968,7 @@ Some nice-to have things and general settings.
 #+BEGIN_SRC emacs-lisp :tangle yes
 ;; try to improve scrolling in emacs. still not ideal though
 
-(setq scroll-conservatively 101)
+(setq scroll-conservatively 100)  ;; this value shoul not be higher than 100, or else swiper has issues
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
 (setq scroll-margin 3)
 (setq scroll-preserve-screen-position 't)
@@ -1094,41 +1091,40 @@ Currently using: bufler with optional bufler-tabs-mode
 
 **** Package: persp-mode                                        :disabled:
 
-#+BEGIN_SRC emacs-lisp :tangle yes
-;; (use-package persp-mode
-;;   :config
-;;   (setq persp-auto-resume-time -1
-;;         persp-auto-save-opt 0
-;;         persp-auto-save-num-of-backups 0
-;;         persp-set-last-persp-for-new-frames nil
-;;         persp-reset-windows-on-nil-window-conf t
-;;         persp-autokill-buffer-on-remove t
-;;         persp-add-buffer-on-after-change-major-mode t
-;;         persp-kill-foreign-buffer-behaviour 'kill)
-;;   (persp-mode 1))
+#+BEGIN_SRC emacs-lisp :tangle no
+(use-package persp-mode
+  :config
+  (setq persp-auto-resume-time -1
+        persp-auto-save-opt 0
+        persp-auto-save-num-of-backups 0
+        persp-set-last-persp-for-new-frames nil
+        persp-reset-windows-on-nil-window-conf t
+        persp-autokill-buffer-on-remove t
+        persp-add-buffer-on-after-change-major-mode t
+        persp-kill-foreign-buffer-behaviour 'kill)
+  (persp-mode 1))
 
 
-;; (persp-load-state-from-file (expand-file-name "var/persp-mode/persp-auto-save" user-emacs-directory))
+(persp-load-state-from-file (expand-file-name "var/persp-mode/persp-auto-save" user-emacs-directory))
+
+#+END_SRC
 
 
+#+BEGIN_SRC emacs-lisp :tangle no
+(use-package perspective
+  :config
+  (persp-mode))
 
-;; (use-package perspective
-;;   :config
-;;   (persp-mode))
+(persp-turn-off-modestring)
 
-;; (persp-turn-off-modestring)
+(setq persp-state-default-file (expand-file-name "var/persp-mode/persp-auto-save" user-emacs-directory))
+;; (add-hook 'after-init-hook (persp-state-load persp-state-default-file))
 
-;; (setq persp-state-default-file (expand-file-name "var/persp-mode/persp-auto-save" user-emacs-directory))
-;; ;; (add-hook 'after-init-hook (persp-state-load persp-state-default-file))
+(bind-key "C-b" 'projectile-switch-to-buffer wakib-keys-overriding-map)
 
-
-
-
-;; (bind-key "C-b" 'projectile-switch-to-buffer wakib-keys-overriding-map)
-
-;; (add-to-list 'persp-filter-save-buffers-functions
-;;               (lambda (b) (string-prefix-p "todo" (buffer-name b)))
-;;               )
+(add-to-list 'persp-filter-save-buffers-functions
+             (lambda (b) (string-prefix-p "todo" (buffer-name b)))
+             )
 #+END_SRC
 
 **** Package: bufler
@@ -1276,7 +1272,7 @@ Packages I looked at:
     - cant make it load save file at startup without resuming session
     - the list of buffers in current perspective shows a bunch or useless buffers
 
-*** Sidebar File Explorer
+*** File Explorer
 **** Information
 
 Since I am using Treemacs worspaces I will explain my view on projects and workspaces.
@@ -1319,12 +1315,12 @@ Taking this into account, projectile is a good start but it doesnt give me every
 ;; (defun dashboard-insert-treemacs-workspaces (list-size)
 ;;   (treemacs--maybe-load-workspaces)
 ;;   (dashboard-insert-section
-;;   "Workspaces:"
-;; 	(dashboard-subseq (mapcar 'treemacs-workspace->name (treemacs-workspaces)) 0 list-size)
-;; 	list-size
-;; 	"w"
-;; 	`(lambda (&rest ignore) (my-treemacs-switch-workspace ,el))
-;; 	el)
+;;    "Workspaces:"
+;;    (dashboard-subseq (mapcar 'treemacs-workspace->name (treemacs-workspaces)) 0 list-size)
+;;    list-size
+;;    "w"
+;;    `(lambda (&rest ignore) (my-treemacs-switch-workspace ,el))
+;;    el)
 #+END_SRC
 
 **** Package: treemacs integrations
@@ -1337,7 +1333,7 @@ Taking this into account, projectile is a good start but it doesnt give me every
 :after treemacs magit)
 #+END_SRC
 
-*** Startup Screen Dashboard
+*** Dashboard
 **** Package: hide-mode-line
 
 #+BEGIN_SRC emacs-lisp :tangle yes
@@ -1665,7 +1661,7 @@ This can be used to define a segment for any modeline.
 ;; note: should use something like (all-the-icons-alltheicon "git") instead
 #+END_SRC
 
-*** Search across multiple files
+*** Search Multiple Files
 **** Information
 
 My option for this is rg.
@@ -1692,7 +1688,7 @@ Other options are:
     :flags ("--hidden")))
 #+END_SRC
 
-*** Interactive visual replace
+*** Interactive Visual Replace
 **** Package: pcre2el
 
 #+BEGIN_SRC emacs-lisp :tangle yes
@@ -1989,7 +1985,7 @@ Org Bullets
 
 **** Basic usage
 
-Use 'toggle-spellcheck' to enable/disable.
+Use hydra menu to enable/disable.
 
 *** REVIEW Code Completion
 **** Package: company
@@ -2203,7 +2199,7 @@ use ~/.config/fd/ignore to ignore files
 
 When using swiper, press C-7 to add a cursor to all highlighted items
 
-*** Window switcher
+*** Window Switcher
 **** Package: switch-window
 
 #+BEGIN_SRC emacs-lisp :tangle yes
@@ -2213,7 +2209,7 @@ When using swiper, press C-7 to add a cursor to all highlighted items
         ("M-H" . switch-window)))    ;; for some reason writing it as M-S-h doesn't work
 #+END_SRC
 
-*** Git integration
+*** Git Integration
 **** Package: magit
 
 #+BEGIN_QUOTE
@@ -2329,11 +2325,12 @@ Write in Org mode and export to HTML with reveal.js
 (use-package htmlize)
 #+END_SRC
 
-*** Terminal color support
+*** Terminal Colors
 **** Package: ansi-color
 
 Deals with terminal escape codes in compilation-mode.
 This should make compilation buffers handle ANSI escape sequences instead of displaying them as raw strings.
+This mostly helps by adding support for terminal colors.
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package ansi-color
@@ -2691,6 +2688,14 @@ Better formatting for help buffers
         counsel-describe-variable-function #'helpful-variable))
 #+END_SRC
 
+**** Package: exec-path-from-shell
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package exec-path-from-shell
+  :config
+  (exec-path-from-shell-initialize))
+#+END_SRC
+
 ** Programming languages
 
 Some of these entries are just to add syntax highlighting. Others add more features.
@@ -2711,11 +2716,21 @@ Adds:
   :mode (("README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode))
-  :init (setq markdown-command "pandoc"))
+  :init (setq markdown-command "pandoc --css $HOME/.emacs.d/markdown-css/github.css"))
+#+END_SRC
 
-(use-package markdown-preview-mode)
+#+BEGIN_SRC emacs-lisp :tangle yes
+;; (use-package markdown-preview-mode)
 
+;; Fast GitHub-flavored live preview
 (use-package vmd-mode)
+
+;; ;; Or using hooks
+;; (use-package grip-mode
+;;   :config
+;;   (setq grip-preview-use-webkit t)
+;;   :bind (:map markdown-mode-command-map
+;;          ("g" . grip-mode)))
 #+END_SRC
 
 *** YAML
