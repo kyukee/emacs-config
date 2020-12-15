@@ -12,7 +12,7 @@
 (add-hook 'after-init-hook
   (lambda ()
     (setq gc-cons-threshold (* 16 8 1024 1024) ; 16MB
-    file-name-handler-alist file-name-handler-alist-original)))
+          file-name-handler-alist file-name-handler-alist-original)))
 
 ;; Only show cursor in the active window.
 (setq-default cursor-in-non-selected-windows nil)

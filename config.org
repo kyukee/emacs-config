@@ -114,17 +114,21 @@ Todo:
 - [X] C-k should not copy to clipboard
 - [X] make visual-regexp work with active region as input
 - [X] org-indent sometimes does not indent the top-most line in the buffer (looks like changing line numbers font height fixed it)
+- [X] add projectile hydras
+- [X] add treemacs hydras
+- [X] query-replace with current selection as input (Replace+ package maybe?)
+- [X] M-o isnt working for C-o and flyspell-correct
+- [X] why does reloading the init file mess up doom-modeline (and why does it only happen in the currently open buffer)
+- [X] when dashboard is opened with a hydra, the hydra menu stays open
+- [X] for every package, use as much use-package integration as possible
+- [X] C-backspace deletes previous word. it should only delete whitespace
 - [ ] ctrl+shift+o to open directory in sidebar
-- [ ] add projectile hydras
-- [ ] add treemacs hydras
 - [ ] use flycheck for elisp (for config file)
 - [ ] error indicator in fringe for flyspell and flycheck
 - [ ] git gutter on left and flycheck gutter on right side
 - [ ] add keybindings tables in config.org
 - [ ] alt-shift-up/down conflict in org mode with multiple cursors (mc bind disabled for now)
 - [ ] commenting inside source block jumps to top of block. happens with just 'emacs -Q' and comment-dwim
-- [ ] query-replace with current selection as input (Replace+ package maybe?)
-- [ ] M-o isnt working for C-o and flyspell-correct
 - [ ] maybe incorporate previous/next concept from wakib-emacs? (it uses ';')
 - [ ] add shortcuts for dashboard and init file (maybe hydras)
 - [ ] new keybindings for project find and project replace
@@ -139,7 +143,7 @@ Todo:
 - [ ] improve swiper regex groups colours for matches
 - [ ] opening a new file in terminal should add a new buffer to existing emacs frame (maybe use emacsclient)
 - [ ] allow C-page up/down to cycle when at first/last tab
-- [ ] implement C-S-page up/down to move tabs
+- [ ] use C-S-page up/down to move tabs
 - [ ] allow jumping between git hunks (git-gutter) or modified buffer areas
 - [ ] use smerge hydra for better merging conflict resolution (https://github.com/alphapapa/unpackaged.el#hydra)
 - [ ] be able to see git gutter, company errors and visual line arrows all at the same time, without conflicts
@@ -149,16 +153,15 @@ Todo:
 - [ ] add mouse-over boxes to modeline custom segments
 - [ ] being able to change the directory of a search (C-S-f)
 - [ ] add functions converting indentation to tabs/spaces
-- [ ] why does reloading the init file mess up doom-modeline (and why does it only happen in the currently open buffer)
 - [ ] improve appearance of tab-line arrows (they appear when the bar is too full)
 - [ ] make C-f and C-h use similar colors
 - [ ] add C-S-s (save all)
 - [ ] for every package, add a quote from their git repo explaining what the package does
-- [ ] remove dashboard from current bufler group
-- [ ] when dashboard is opened with a hydra, the hydra menu stays open
-- [ ] for every package, use as much use-package integration as possible
+- [ ] remove dashboard from initial bufler group
 - [ ] give every doom modeline segment a mouse-over menu
 - [ ] change bufler group for dashboard and magit-status
+- [ ] swiper always uses multiple cursor after pressing RET. Changing from C-m fixes it, but now it doesn't work with C-r.
+- [ ] swiper sometimes shows the match behind the modeline
 
 
 also:
@@ -192,7 +195,7 @@ Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before p
 (add-hook 'after-init-hook
   (lambda ()
     (setq gc-cons-threshold (* 16 8 1024 1024) ; 16MB
-    file-name-handler-alist file-name-handler-alist-original)))
+          file-name-handler-alist file-name-handler-alist-original)))
 #+END_SRC
 
 ** User Interface
@@ -314,10 +317,6 @@ Make emacs configuration directory more organized and keep it clean.
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package no-littering)
-
-;; change auto-save location
-(setq auto-save-file-name-transforms
-      `((".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
 #+END_SRC
 
 *** Startup Profiler
@@ -336,12 +335,11 @@ not using it because it doesn't really work well with early-init file
 
 **** Package: benchmark-init
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle no
 (use-package benchmark-init
-  :disabled
   :config
-  (add-hook 'after-init-hook 'benchmark-init/deactivate)
-  (benchmark-init/activate))
+  (benchmark-init/activate)
+  :hook (after-init . benchmark-init/deactivate))
 #+END_SRC
 
 **** Basic usage
@@ -559,9 +557,10 @@ point reaches the beginning or end of the buffer, stop there."
   "If the next character is whitespace, delete whitespace until the next character.
 Otherwise, delete characters forward until encountering the end of a word.
 With argument, do this that many times. Argument can be negative to go backwards.
+If the argument is negative, look at previous character instead of next one.
 This command does not push text to `kill-ring'."
   (interactive "p")
-  (if (looking-at "[ \t\n]")
+  (if (or (and (looking-at "[ \t\n]") (> arg 0)) (and (looking-back "[ \t\n]") (< arg 0)))
       (let ((pos (point)))
         (re-search-forward "[^ \t\n]" nil t arg)
         (forward-char (- (cl-signum arg)))
@@ -637,6 +636,10 @@ This command does not push text to `kill-ring'."
   (setq left-fringe-width 16
         right-fringe-width 8))
 
+
+(defun my/set-buffer-dashboard-fringe ()
+  (setq left-fringe-width 20
+        right-fringe-width 20))
 
 ;; used as such: (my/pad-string "some string" 10)
 (defun my/pad-string (string size)
@@ -754,10 +757,10 @@ Here's my history with trying to use "standard" keybinds packages in emacs:
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package wakib-keys
   :init
-  (add-hook 'after-change-major-mode-hook 'wakib-update-major-mode-map)
-  (add-hook 'menu-bar-update-hook 'wakib-update-minor-mode-maps))
-  :config
   (wakib-keys 1)
+  :hook
+  (after-change-major-mode . wakib-update-major-mode-map)
+  (menu-bar-update . wakib-update-minor-mode-maps))
 #+END_SRC
 
 *** Global Keybindings
@@ -842,18 +845,6 @@ Some nice-to have things and general settings.
 (add-hook 'dired-mode-hook 'auto-revert-mode)
 
 
-;; put auto-save files in designated folder
-(setq auto-save-default t)
-
-
-;; disable file backup
-(setq backup-inhibited t)
-
-
-;; stop emacs from creating temoporary symbolic link file named “#something”
-(setq create-lockfiles nil)
-
-
 ;; disable default startup screen
 (setq inhibit-startup-screen t)
 
@@ -915,6 +906,11 @@ Some nice-to have things and general settings.
 ;; open new buffers in an already existing frame
 ;; (setq ns-pop-up-frames nil)
 
+
+;; When using "show-paren-mode", if code contains an angled bracket (">") is treated as a matching paren, which creates a mismatch.
+;; This disables matching for the angle bracket character.
+(modify-syntax-entry ?< ".")
+(modify-syntax-entry ?> ".")
 #+END_SRC
 
 *** Indentation
@@ -955,7 +951,7 @@ Some nice-to have things and general settings.
   (setq indent-tabs-mode t))
 #+END_SRC
 
-*** Tabs
+*** Tabs (tab-line)
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 ;; disable "close" (x) button for each tab
@@ -994,6 +990,25 @@ Some nice-to have things and general settings.
 
 ;; set size in pixels of left and right fringes (default is 8)
 (fringe-mode '(4 . 8))
+#+END_SRC
+
+*** Backup, Autosave and Lockfiles
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+;; change auto-save location
+(setq auto-save-file-name-transforms
+      `((".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
+
+;; put auto-save files in designated folder
+(setq auto-save-default t)
+
+
+;; disable file backup
+(setq backup-inhibited t)
+
+
+;; stop emacs from creating temoporary symbolic link file named “#something”
+(setq create-lockfiles nil)
 #+END_SRC
 
 ** Features
@@ -1284,14 +1299,9 @@ Taking this into account, projectile is a good start but it doesnt give me every
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package treemacs
-  :hook (treemacs-mode . (lambda() (display-line-numbers-mode -1)))) ;; dont show line numbers in the sidebar
-
-;; single mouse click to open files and folders
-(define-key treemacs-mode-map [mouse-1] #'treemacs-single-click-expand-action)
-
-
-;; (define-key global-map (kbd "<f9>") 'treemacs)
-
+  :hook (treemacs-mode . (lambda() (display-line-numbers-mode -1)))  ;; dont show line numbers in the sidebar
+  :bind (:map treemacs-mode-map
+              ("<mouse-1>" . treemacs-single-click-expand-action)))  ;; single mouse click to open files and folders
 
 
 ;; you actually have to always run this manually
@@ -1317,73 +1327,85 @@ Taking this into account, projectile is a good start but it doesnt give me every
 ;; 	el)
 #+END_SRC
 
-**** Package: treemacs extras
+**** Package: treemacs integrations
 
 #+BEGIN_SRC emacs-lisp :tangle yes
-(use-package treemacs-projectile)
-(use-package treemacs-magit)
+(use-package treemacs-projectile
+:after treemacs projectile)
+
+(use-package treemacs-magit
+:after treemacs magit)
 #+END_SRC
 
 *** Startup Screen Dashboard
+**** Package: hide-mode-line
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+;; hide the modeline in the dashboard buffer
+(use-package hide-mode-line)
+#+END_SRC
+
+**** Package: page-break-lines
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package page-break-lines
+  :config
+  ;; some fonts make the line break too long or too short.
+  ;; so we just use something that is common and we know that works
+  (custom-set-faces
+   '(page-break-lines ((t (:family "Noto Sans Mono")))))
+
+  (global-page-break-lines-mode 1))
+#+END_SRC
+
 **** Package: dashboard
 
 #+BEGIN_SRC emacs-lisp :tangle yes
-(defun dashboard-insert-persp-mode (list-size)
-  (dashboard-insert-section
-   "Perspectives:"
-   bufler-workspace-name
-   list-size
-   "p"
-   `(lambda (&rest ignore) (persp-switch ,el))
-   el))
-
-
 (use-package dashboard
   :defer nil
+  :after hide-mode-line page-break-lines
   :config
   (dashboard-setup-startup-hook)
+
+  (defun dashboard-insert-persp-mode (list-size)
+    (dashboard-insert-section
+     "Perspectives:"
+     bufler-workspace-name
+     list-size
+     "p"
+     `(lambda (&rest ignore) (persp-switch ,el))
+     el))
+
+  (defun my/open-dashboard ()
+    (interactive)
+    (switch-to-buffer (get-buffer "*dashboard*")))
+
   (add-to-list 'dashboard-item-generators '(perspectives . dashboard-insert-persp-mode))
 
   ;;  (add-to-list 'dashboard-heading-icons '(treemacs-workspaces . "book"))
   ;;  (dashboard-modify-heading-icons '((treemacs-workspaces . "book")))
 
-  (setq dashboard-items '((projects  . 5)
-                          (bookmarks . 5)
-                          (recents   . 5)
-                          (agenda    . 5)))
-  (setq dashboard-center-content t)
-  (setq dashboard-set-heading-icons t)
-  (setq dashboard-startup-banner (expand-file-name "config-resources/Emacs-logo.svg" user-emacs-directory))
-  (setq dashboard-banner-logo-title (format "GNU Emacs version %d.%d" emacs-major-version emacs-minor-version))
-  (setq dashboard-set-init-info t)
-  (setq dashboard-init-info (format "%d packages loaded with straight. finished in %s"
-                                    (length (hash-table-keys straight--success-cache)) (emacs-init-time)))
-  (setq dashboard-set-footer nil)
-  (setq dashboard-set-navigator t)
-  (setq dashboard-navigator-buttons
-        `(
-          ((,(all-the-icons-octicon "dashboard" :height 1.1 :v-adjust 0.0)
-            "config file"
-            "Open Config File"
-            (lambda (&rest _) (find-file "~/.emacs.d/config.org")))))
-        )
-  )
+  (setq dashboard-items            '((projects  . 5)
+                                     (bookmarks . 5)
+                                     (recents   . 5)
+                                     (agenda    . 5))
+        dashboard-center-content    t
+        dashboard-set-heading-icons t
+        dashboard-set-init-info     t
+        dashboard-set-footer        nil
+        dashboard-set-navigator     t
+        dashboard-startup-banner    (expand-file-name "config-resources/Emacs-logo.svg" user-emacs-directory)
+        dashboard-banner-logo-title (format "GNU Emacs version %d.%d" emacs-major-version emacs-minor-version)
+        dashboard-init-info         (format "%d packages loaded with straight. finished in %s"
+                                            (length (hash-table-keys straight--success-cache)) (emacs-init-time))
+        dashboard-navigator-buttons `(((,(all-the-icons-octicon "dashboard" :height 1.1 :v-adjust 0.0)
+                                        "config file"
+                                        "Open Config File"
+                                        (lambda (&rest _) (find-file "~/.emacs.d/config.org"))))))
 
-;; disable tabs in dashboard mode
-(add-hook 'dashboard-mode-hook (lambda () (tab-line-mode -1)))
-
-(defun my/open-dashboard ()
-  (interactive)
-  (switch-to-buffer (get-buffer "*dashboard*")))
-#+END_SRC
-
-**** Package: hide-mode-line
-
-#+BEGIN_SRC emacs-lisp :tangle yes
-;; hide the modeline in the dashboard buffer
-(use-package hide-mode-line
-  :init
-  (add-hook 'dashboard-mode-hook #'hide-mode-line-mode))
+  :hook ((dashboard-mode . (lambda () (tab-line-mode -1)))
+         (dashboard-mode . hide-mode-line-mode)
+         (dashboard-mode . my/set-buffer-dashboard-fringe)))
 #+END_SRC
 
 *** Modeline
@@ -1392,125 +1414,109 @@ Taking this into account, projectile is a good start but it doesnt give me every
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package doom-modeline
   :init
-  (setq doom-modeline-height 24
-        doom-modeline-major-mode-icon nil
-        doom-modeline-major-mode-color-icon nil
-        doom-modeline-indent-info t
-        doom-modeline-buffer-state-icon t
+  (setq doom-modeline-height                   24
+        doom-modeline-major-mode-icon          nil
+        doom-modeline-major-mode-color-icon    nil
+        doom-modeline-indent-info              t
+        doom-modeline-buffer-state-icon        t
         doom-modeline-buffer-modification-icon t
-        doom-modeline-buffer-file-name-style 'truncate-upto-project))
+        doom-modeline-buffer-file-name-style   'truncate-upto-project)
+
+  :config
+  ;; ------ Segment - Bufler ------
+  (doom-modeline-def-segment my/bufler-workspace
+    "Display current bufler workspace name"
+    (if (and (boundp 'bufler-workspace-tabs-mode) bufler-workspace-tabs-mode)
+        (let ((active (doom-modeline--active)))
+          (when-let (text
+                     (propertize (format " %s" (replace-regexp-in-string "Projectile:" "" (my/bufler-workspace-mode-lighter)))
+                                 'face '(:foreground "gray60")))
+            (if active
+                text
+              (propertize text 'face 'mode-line-inactive))))
+      ""))
 
 
-;; (doom-modeline-def-segment my/bufler-workspace
-;;   "Display current bufler workspace name"
-;;   (if (and (boundp 'bufler-workspace-tabs-mode) bufler-workspace-tabs-mode)
-;;       (propertize (format "  %s" (replace-regexp-in-string "Projectile:" "" (my/bufler-workspace-mode-lighter)))
-;;                   'face '(:foreground "gray60" :weight bold))
-;;     ""))
+  ;; ------ Segment - Buffer Position ------
+  ;; Provides information to the buffer position segment
+  (setq-default mode-line-position
+                '((mode-line-percent-position (" " mode-line-percent-position))
+                  (line-number-mode
+                   (column-number-mode
+                    (column-number-indicator-zero-based " %06l L,%03c C" " %l:%C")
+                    " %l")
+                   (column-number-mode (column-number-indicator-zero-based " :%c" " :%C")))
+                  (:eval (when (or line-number-mode mode-line-percent-position column-number-mode) " "))))
 
-;; note: should use something like (all-the-icons-alltheicon "git") instead
-
-
-(doom-modeline-def-segment my/bufler-workspace
-  "Display current bufler workspace name"
-  (if (and (boundp 'bufler-workspace-tabs-mode) bufler-workspace-tabs-mode)
-      (let ((active (doom-modeline--active)))
-      (when-let (text
-                 (propertize (format " %s" (replace-regexp-in-string "Projectile:" "" (my/bufler-workspace-mode-lighter)))
-                             'face '(:foreground "gray60")))
-        (if active
-            text
-          (propertize text 'face 'mode-line-inactive))))
-    ""))
+  (doom-modeline-def-segment my/buffer-position
+    '(" " mode-line-position))
 
 
-;; Provides information to the buffer position segment
-(setq-default mode-line-position
-              '((mode-line-percent-position (" " mode-line-percent-position))
-                (line-number-mode
-                 (column-number-mode
-                  (column-number-indicator-zero-based " %06l L,%03c C" " %l:%C")
-                  " %l")
-                 (column-number-mode (column-number-indicator-zero-based " :%c" " :%C")))
-                (:eval (when (or line-number-mode mode-line-percent-position column-number-mode) " "))))
-
-
-(doom-modeline-def-segment my/buffer-position
-  '(" " mode-line-position)
-)
-
-
-(doom-modeline-def-segment my/vcs
-  "Displays the current branch, colored based on its state."
-  (let ((active (doom-modeline--active)))
-    (when-let ((icon doom-modeline--vcs-icon)
-               (text doom-modeline--vcs-text))
-      (concat
-       (doom-modeline-spc)
-       (doom-modeline-spc)
-       (propertize
+  ;; ------ Segment - VCS ------
+  (doom-modeline-def-segment my/vcs
+    "Displays the current branch, colored based on its state."
+    (let ((active (doom-modeline--active)))
+      (when-let ((icon doom-modeline--vcs-icon)
+                 (text doom-modeline--vcs-text))
         (concat
+         (doom-modeline-spc)
+         (doom-modeline-spc)
+         (propertize
+          (concat
+           (if active
+               icon
+             (doom-modeline-propertize-icon icon 'mode-line-inactive))
+           (doom-modeline-vspc))
+          'mouse-face 'mode-line-highlight
+          'help-echo (get-text-property 1 'help-echo vc-mode)
+          'local-map (get-text-property 1 'local-map vc-mode))
          (if active
-             icon
-           (doom-modeline-propertize-icon icon 'mode-line-inactive))
-         (doom-modeline-vspc))
-        'mouse-face 'mode-line-highlight
-        'help-echo (get-text-property 1 'help-echo vc-mode)
-        'local-map (get-text-property 1 'local-map vc-mode))
-       (if active
-           text
-         (propertize text 'face 'mode-line-inactive))
-       (doom-modeline-spc)
-))))
+             text
+           (propertize text 'face 'mode-line-inactive))
+         (doom-modeline-spc)))))
 
-
-;; when the buffer is modified only show icon with 'modified' font, not the file name
-(defsubst doom-modeline--buffer-name-custom ()
-  "The current buffer name."
-  ;; Only display the buffer name if the window is small, but doesn't need to
-  ;; respect file-name style.
-  (if (and (not (eq doom-modeline-buffer-file-name-style 'file-name))
-           doom-modeline--limited-width-p)
-      (propertize "%b"
-                  'face (cond ((doom-modeline--active) 'doom-modeline-buffer-file)
-                              (t 'mode-line-inactive))
-                  'mouse-face 'mode-line-highlight
-                  'help-echo "Buffer name
+  ;; when the buffer is modified only show icon with 'modified' font, not the file name
+  (defsubst doom-modeline--buffer-name-custom ()
+    "The current buffer name."
+    ;; Only display the buffer name if the window is small, but doesn't need to
+    ;; respect file-name style.
+    (if (and (not (eq doom-modeline-buffer-file-name-style 'file-name))
+             doom-modeline--limited-width-p)
+        (propertize "%b"
+                    'face (cond ((doom-modeline--active) 'doom-modeline-buffer-file)
+                                (t 'mode-line-inactive))
+                    'mouse-face 'mode-line-highlight
+                    'help-echo "Buffer name
 mouse-1: Previous buffer\nmouse-3: Next buffer"
-                  'local-map mode-line-buffer-identification-keymap)
-    (when-let ((name (or doom-modeline--buffer-file-name
-                         (doom-modeline-update-buffer-file-name))))
-      (if (doom-modeline--active)
+                    'local-map mode-line-buffer-identification-keymap)
+      (when-let ((name (or doom-modeline--buffer-file-name
+                           (doom-modeline-update-buffer-file-name))))
+        (if (doom-modeline--active)
             name
-        (propertize name 'face 'mode-line-inactive)))))
+          (propertize name 'face 'mode-line-inactive)))))
 
-
-(doom-modeline-def-segment buffer-info
-  "Combined information about the current buffer, including the current working
+  (doom-modeline-def-segment buffer-info
+    "Combined information about the current buffer, including the current working
 directory, the file name, and its state (modified, read-only or non-existent)."
-  (concat
-   (doom-modeline-spc)
-   (doom-modeline--buffer-state-icon)
-   (doom-modeline--buffer-mode-icon)
-   (doom-modeline--buffer-name-custom)))
+    (concat
+     (doom-modeline-spc)
+     (doom-modeline--buffer-state-icon)
+     (doom-modeline--buffer-mode-icon)
+     (doom-modeline--buffer-name-custom)))
 
 
+  ;; ------ Modeline Segments ------
+  (doom-modeline-def-modeline 'my/main
+    '(" " my/bufler-workspace " " my/vcs bar window-number matches buffer-info remote-host parrot " " selection-info)
+    '(objed-state grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info " " buffer-encoding process checker major-mode my/buffer-position " "))
 
-(doom-modeline-def-modeline 'my/main
-  '(" " my/bufler-workspace " " my/vcs bar window-number matches buffer-info remote-host parrot " " selection-info)
-  '(objed-state grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info " " buffer-encoding process checker major-mode my/buffer-position " "))
+  ;; ------ Setup Modeline ------
+  (defun setup-initial-doom-modeline ()
+    (interactive)
+    (doom-modeline-set-modeline 'my/main 'default))
 
-
-(defun setup-initial-doom-modeline ()
-  (interactive)
-  (doom-modeline-set-modeline 'my/main 'default))
-
-
-(add-hook 'doom-modeline-mode-hook 'setup-initial-doom-modeline)
-(doom-modeline-mode 1)
-
-
-;; (doom-modeline-set-modeline 'my/main 'default)
+  :hook ((after-init . doom-modeline-mode)
+         (doom-modeline-mode . setup-initial-doom-modeline)))
 #+END_SRC
 
 The default doom modeline, for reference:
@@ -1643,6 +1649,22 @@ The default doom modeline, for reference:
 (mood-line-mode)
 #+END_SRC
 
+**** bufler segment
+
+This part is the bufler segment, without the doom-modeline specific stuff.
+This can be used to define a segment for any modeline.
+
+#+BEGIN_SRC emacs-lisp :tangle no
+(doom-modeline-def-segment my/bufler-workspace
+  "Display current bufler workspace name"
+  (if (and (boundp 'bufler-workspace-tabs-mode) bufler-workspace-tabs-mode)
+      (propertize (format "  %s" (replace-regexp-in-string "Projectile:" "" (my/bufler-workspace-mode-lighter)))
+                  'face '(:foreground "gray60" :weight bold))
+    ""))
+
+;; note: should use something like (all-the-icons-alltheicon "git") instead
+#+END_SRC
+
 *** Search across multiple files
 **** Information
 
@@ -1659,16 +1681,15 @@ Other options are:
 (use-package rg
   :bind
   (:map wakib-keys-overriding-map
-        ("C-S-f" . rg-search-current-dir)))  ; replace 'occur' with rg
-
-
-(rg-define-search rg-search-current-dir
-  "Search in the directory of the currently open file or buffer"
-  :query ask
-  :format literal
-  :files "everything"
-  :dir "current"
-  :flags ("--hidden"))
+        ("C-S-f" . rg-search-current-dir))  ;; replace 'occur' with rg
+  :config
+  (rg-define-search rg-search-current-dir
+    "Search in the directory of the currently open file or buffer"
+    :query ask
+    :format literal
+    :files "everything"
+    :dir "current"
+    :flags ("--hidden")))
 #+END_SRC
 
 *** Interactive visual replace
@@ -1686,51 +1707,42 @@ Other options are:
 ;; you can use actual regex with this package, instead of emacs specific regex
 ;; this seems better than Anzu for my uses
 (use-package visual-regexp
-  :bind
-  (:map wakib-keys-overriding-map
-        ("C-h" . my/visual-replace-with-active-region-support)))
-
-
-;; using C-7 inside swiper seems better. it does the same thing
-;; (bind-key "C-S-h" 'vr/mc-mark wakib-keys-overriding-map)
-
-
-
-;; visual-regexp-steroids allows using python engine
-(setq vr/engine 'pcre2el)
-
-
-(defun replace-regexp-entire-buffer (pattern replacement)
-  "Perform regular-expression replacement throughout buffer."
-  (interactive
-   (let ((args (query-replace-read-args "Replace" t)))
-     (setcdr (cdr args) nil)    ; remove third value returned from query---args
-     args))
-  (save-excursion
-    (goto-char (point-min))
-    (while (re-search-forward pattern nil t)
-      (replace-match replacement))))
-
-;; can also use this stuff to do a global replace in whole buffer
-;; (let ((current-point (point)))
-;;     (vr/query-replace "regexp" "replace" current-point (point-max))
-;;     (vr/query-replace "regexp" "replace" (point-min) current-point)
-;;   ))
-
-
-(defun my/query-replace-regexp-from-top ()
-  "query-replace-regexp from the beginning of the buffer."
-  (interactive)
-  (goto-char (point-min))
-  (call-interactively 'vr/query-replace))
-
+  :init
+  ;; visual-regexp-steroids allows using python engine
+  ;; (setq vr/engine 'pcre2el)
 #+END_SRC
+
+**** visual-regexp patch: search whole buffer
+
+This is a change to allow searching the whole buffer.
+Copied from a fork of the visual-regexp repository: https://github.com/grahnen/visual-regexp.el/commit/248f5716f8de092c1915d91821681aed7b31f808
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(defvar vr--full-buffer 'nil)
+(setq vr--full-buffer t)
+
+(defun vr--set-target-buffer-start-end ()
+  (if vr--full-buffer
+      (setq vr--target-buffer-start (point-min)
+            vr--target-buffer-end (point-max))
+    (setq vr--target-buffer-start
+          (if (region-active-p)
+              (region-beginning)
+            (point))
+          vr--target-buffer-end
+          (if (region-active-p)
+              (region-end)
+            (point-max)))))
+#+END_SRC
+
+**** visual-regexp patch: use region as input
 
 This next part changes the package's base code to allow using active region as the input regex pattern.
 The parts that were changed have comments that identify them.
 
 #+BEGIN_SRC emacs-lisp :tangle yes
-;; these are mine
+:config
+;; these are my own variables
 (defvar my/visual-regexp-region-flag nil)
 (defvar my/visual-regexp-region-val "default string")
 
@@ -1749,7 +1761,6 @@ The parts that were changed have comments that identify them.
   (if (region-active-p)
       (call-interactively 'my/visual-replace-from-active-region)
     (call-interactively 'vr/query-replace)))
-
 
 ;; this is the core function that was changed
 (defun vr--set-regexp-string ()
@@ -1802,52 +1813,64 @@ The parts that were changed have comments that identify them.
           (add-to-history vr/query-replace-defaults-variable split nil t))))))
 #+END_SRC
 
+**** Package: visual-regexp part 2
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+  :bind
+  (:map wakib-keys-overriding-map
+        ("C-h" . my/visual-replace-with-active-region-support)))
+
+;; using C-7 inside swiper seems better. it does the same thing
+;; (bind-key "C-S-h" 'vr/mc-mark wakib-keys-overriding-map)
+#+END_SRC
+
 *** Org mode
 **** Package: async
 
 The code below executes org-babel-tangle asynchronously when config.org is saved.
 
 #+BEGIN_SRC emacs-lisp :tangle yes
-(use-package async)
+(use-package async
+  :config
+  (defvar *config-file* (expand-file-name "config.org" user-emacs-directory)
+    "The configuration file.")
 
-(defvar *config-file* (expand-file-name "config.org" user-emacs-directory)
-  "The configuration file.")
+  (defvar *config-last-change* (nth 5 (file-attributes *config-file*))
+    "Last modification time of the configuration file.")
 
-(defvar *config-last-change* (nth 5 (file-attributes *config-file*))
-  "Last modification time of the configuration file.")
+  (defvar *show-async-tangle-results* nil
+    "Keeps *emacs* async buffers around for later inspection.")
 
-(defvar *show-async-tangle-results* nil
-  "Keeps *emacs* async buffers around for later inspection.")
+  (defun my/config-updated ()
+    "Checks if the configuration file has been updated since the last time."
+    (time-less-p *config-last-change*
+                 (nth 5 (file-attributes *config-file*))))
 
-(defun my/config-updated ()
-  "Checks if the configuration file has been updated since the last time."
-  (time-less-p *config-last-change*
-               (nth 5 (file-attributes *config-file*))))
+  (defun my/config-tangle ()
+    "Tangles the user configuration org file asynchronously."
+    (when (my/config-updated)
+      (setq *config-last-change*
+            (nth 5 (file-attributes *config-file*)))
+      (my/async-babel-tangle *config-file*)))
 
-(defun my/config-tangle ()
-  "Tangles the user configuration org file asynchronously."
-  (when (my/config-updated)
-    (setq *config-last-change*
-          (nth 5 (file-attributes *config-file*)))
-    (my/async-babel-tangle *config-file*)))
-
-(defun my/async-babel-tangle (org-file)
-  "Tangles an org file asynchronously."
-  (let ((init-tangle-start-time (current-time))
-        (file (buffer-file-name))
-        (async-quiet-switch "-q"))
-    (async-start
-     `(lambda ()
-        (require 'org)
-        (org-babel-tangle-file ,org-file))
-     (unless *show-async-tangle-results*
-       `(lambda (result)
-          (if result
-              (message "SUCCESS: %s successfully tangled (%.2fs)."
-                       ,org-file
-                       (float-time (time-subtract (current-time)
-                                                  ',init-tangle-start-time)))
-            (message "ERROR: %s as tangle failed." ,org-file)))))))
+  (defun my/async-babel-tangle (org-file)
+    "Tangles an org file asynchronously."
+    (let ((init-tangle-start-time (current-time))
+          (file (buffer-file-name))
+          (async-quiet-switch "-q"))
+      (async-start
+       `(lambda ()
+          (require 'org)
+          (org-babel-tangle-file ,org-file))
+       (unless *show-async-tangle-results*
+         `(lambda (result)
+            (if result
+                (message "SUCCESS: %s successfully tangled (%.2fs)."
+                         ,org-file
+                         (float-time (time-subtract (current-time)
+                                                    ',init-tangle-start-time)))
+              (message "ERROR: %s as tangle failed." ,org-file)))))))
+  )
 #+END_SRC
 
 **** Package: org
@@ -1856,138 +1879,76 @@ The code below executes org-babel-tangle asynchronously when config.org is saved
 (use-package org
   :straight org-plus-contrib
   :demand t
-  :hook ((after-save . my/config-tangle)))
+  :config
+  (setq org-startup-indented              t             ;; indent text to heading level
+        org-startup-folded                'content      ;; set initial view to 'content' (show all headlines)
+        org-descriptive-links             t             ;; highlight links
+        org-agenda-dim-blocked-tasks      t             ;; dim blocked tasks
+        org-agenda-skip-deadline-if-done  t             ;; avoid showing unecessary tasks
+        org-agenda-skip-scheduled-if-done t
+        org-agenda-skip-archived-trees    nil
+        org-cycle-separator-lines         2             ;; set how may real newlines are necessary to display a newline when folded.
+        org-todo-keywords                 '((sequence "TODO" "ONGOING" "REVIEW" "|" "DONE" "CANCEL"))  ;; default todo keywords
+        org-directory                     "~/Documents/Notes/org/"   ;; set agenda location
+        org-agenda-files                  '("~/Documents/Notes/org/")
+        org-log-done                      (quote time)  ;; insert a note in a task when it is marked as done, which includes a timestamp
+        org-support-shift-select          t             ;; allows using the shif key for selecting text
+        org-fontify-done-headline         t             ;; grey out completed tasks
+        org-src-preserve-indentation      t             ;; do not put two spaces on the left
+        org-src-tab-acts-natively         t             ;; make tab behave as it would normally for that language
+        org-ellipsis                      " ⤵"          ;; Changing the org-mode ellipsis
+        ;; setq org-ellipsis              " ▼"
+        org-image-actual-width            nil)          ;; if there is something like #+ATTR_ORG: width="200", resize to 200, otherwise don't resize
 
-;; Org Bullets
+  ;; customize face for 'DONE' headings
+  (custom-set-faces '(org-headline-done
+                      ((((class color) (min-colors 16) (background dark))
+                        (:foreground "dim gray")))))
+
+  ;; allow C-S-<arrow> selection of text
+  (eval-after-load "org"
+    '(progn
+       (define-key org-mode-map (kbd "<C-S-left>") nil)
+       (define-key org-mode-map (kbd "<C-S-right>") nil)
+       (define-key org-mode-map (kbd "<C-S-up>") nil)
+       (define-key org-mode-map (kbd "<C-S-down>") nil)))
+
+  :bind
+  (:map org-mode-map
+        ("C-d g" . counsel-org-goto)
+        ("C-d C-<up>" . org-previous-visible-heading)
+        ("C-d C-<down>" . org-next-visible-heading))
+
+  :hook ((after-save . my/config-tangle)
+         (org-mode . (lambda ()
+                       "Beautify Org Checkbox Symbol"
+                       (push '("[ ]" .  "☐") prettify-symbols-alist)
+                       (push '("[X]" . "☑" ) prettify-symbols-alist)
+                       (push '("[-]" . "❍" ) prettify-symbols-alist)
+                       ;; replace text of org blocks with symbols
+                       ;; (push '("#+BEGIN_SRC" . "↦" ) prettify-symbols-alist)
+                       ;; (push '("#+END_SRC" . "⇤" ) prettify-symbols-alist)
+                       ;; (push '("#+BEGIN_EXAMPLE" . "↦" ) prettify-symbols-alist)
+                       ;; (push '("#+END_EXAMPLE" . "⇤" ) prettify-symbols-alist)
+                       ;; (push '("#+BEGIN_QUOTE" . "↦" ) prettify-symbols-alist)
+                       ;; (push '("#+END_QUOTE" . "⇤" ) prettify-symbols-alist)
+                       ;; (push '("#+begin_quote" . "↦" ) prettify-symbols-alist)
+                       ;; (push '("#+end_quote" . "⇤" ) prettify-symbols-alist)
+                       ;; (push '("#+begin_example" . "↦" ) prettify-symbols-alist)
+                       ;; (push '("#+end_example" . "⇤" ) prettify-symbols-alist)
+                       ;; (push '("#+begin_src" . "↦" ) prettify-symbols-alist)
+                       ;; (push '("#+end_src" . "⇤" ) prettify-symbols-alist)
+                       (prettify-symbols-mode)))))
+
+#+END_SRC
+
+**** Package: org-bullets
+
+Org Bullets
+
+#+BEGIN_SRC emacs-lisp :tangle yes
 (use-package org-bullets
     :hook (org-mode . org-bullets-mode))
-
-;; indent text to heading level
-(setq org-startup-indented t)
-
-;; set initial view to 'content' (show all headlines)
-(setq org-startup-folded 'content)
-
-;; highlight links
-(setq org-descriptive-links t)
-
-;; dim blocked tasks
-(setq org-agenda-dim-blocked-tasks t)
-
-;; avoid showing unecessary tasks
-(setq
-    org-agenda-skip-deadline-if-done t
-    org-agenda-skip-scheduled-if-done t
-    org-agenda-skip-archived-trees nil
-)
-
-;; set how may real newlines are necessary to display a newline when folded.
-(setq org-cycle-separator-lines 2)
-
-;; default todo keywords
-(setq org-todo-keywords
-      '((sequence "TODO" "ONGOING" "REVIEW" "|" "DONE" "CANCEL")))
-
-;; set agenda location
-(setq org-directory "~/Documents/Notes/org/")
-(setq org-agenda-files '("~/Documents/Notes/org/"))
-
-;; insert an annotation in a task when it is marked as done, including a timestamp
-(setq org-log-done (quote time))
-
-(setq org-support-shift-select t)
-
-;; allow C-S-<arrow> selection of paragraphs
-(eval-after-load "org"
-  '(progn
-     (define-key org-mode-map (kbd "<C-S-left>") nil)
-     (define-key org-mode-map (kbd "<C-S-right>") nil)
-     (define-key org-mode-map (kbd "<C-S-up>") nil)
-     (define-key org-mode-map (kbd "<C-S-down>") nil)
-))
-
-;; ;; the default M-arrow binds are in conflict with some global binds
-;; (bind-key "M-S-<left>" 'org-metaleft org-mode-map)
-;; (bind-key "M-S-<right>" 'org-metaright org-mode-map)
-;; (bind-key "M-S-<up>" 'org-metaup org-mode-map)
-;; (bind-key "M-S-<down>" 'org-metadown org-mode-map)
-
-
-
-
-;; ;; allow usage of ctrl+shift+<left/right> selection
-;; (defadvice org-call-for-shift-select (before org-call-for-shift-select-cua activate)
-;;   (if (and cua-mode
-;;            org-support-shift-select
-;;            (not (use-region-p)))
-;;       (cua-set-mark)))
-
-
-;; ;; allow usage of ctrl+shift+<up/down>
-;; (setq org-replace-disputed-keys t)
-;; (setq org-disputed-keys
-;;       '(
-;;         ([(control shift right)] . [(meta +)])         ; status of group
-;;         ([(control shift left)]  . [(meta -)])         ;
-;;         ([(control shift up)]    . [(control meta +)]) ; change clock logs
-;;         ([(control shift down)]  . [(control meta -)]) ;
-;;         ))
-
-;; (defadvice org-backward-paragraph
-;;     (before set-up-shift-select-backward-paragraph activate)
-;;   (interactive "^"))
-;; (defadvice org-forward-paragraph
-;;     (before set-up-shift-select-forward-paragraph activate)
-;;   (interactive "^"))
-
-
-;; grey out completed tasks
-(setq org-fontify-done-headline t)
-
-(custom-set-faces
- '(org-headline-done
-   ((((class color) (min-colors 16) (background dark))
-     (:foreground "dim gray"))))
-)
-
-
-(setq org-src-preserve-indentation t ;; do not put two spaces on the left
-      org-src-tab-acts-natively t) ;; make tab behave as it would normally for that language
-
-;; Changing the org-mode ellipsis
-(setq org-ellipsis " ⤵")
-;; (setq org-ellipsis " ▼")
-
-
-;; if there is something like #+ATTR_ORG: width="200", resize to 200, otherwise don't resize
-(setq org-image-actual-width nil)
-
-
-;; replace text of org blocks with symbols
-(add-hook 'org-mode-hook (lambda ()
-   "Beautify Org Checkbox Symbol"
-   (push '("[ ]" .  "☐") prettify-symbols-alist)
-   (push '("[X]" . "☑" ) prettify-symbols-alist)
-   (push '("[-]" . "❍" ) prettify-symbols-alist)
-   ;; (push '("#+BEGIN_SRC" . "↦" ) prettify-symbols-alist)
-   ;; (push '("#+END_SRC" . "⇤" ) prettify-symbols-alist)
-   ;; (push '("#+BEGIN_EXAMPLE" . "↦" ) prettify-symbols-alist)
-   ;; (push '("#+END_EXAMPLE" . "⇤" ) prettify-symbols-alist)
-   ;; (push '("#+BEGIN_QUOTE" . "↦" ) prettify-symbols-alist)
-   ;; (push '("#+END_QUOTE" . "⇤" ) prettify-symbols-alist)
-   ;; (push '("#+begin_quote" . "↦" ) prettify-symbols-alist)
-   ;; (push '("#+end_quote" . "⇤" ) prettify-symbols-alist)
-   ;; (push '("#+begin_example" . "↦" ) prettify-symbols-alist)
-   ;; (push '("#+end_example" . "⇤" ) prettify-symbols-alist)
-   ;; (push '("#+begin_src" . "↦" ) prettify-symbols-alist)
-   ;; (push '("#+end_src" . "⇤" ) prettify-symbols-alist)
-   (prettify-symbols-mode)))
-
-(bind-key "C-d g" 'counsel-org-goto org-mode-map)
-
-(bind-key "C-d C-<up>" 'org-previous-visible-heading org-mode-map)
-(bind-key "C-d C-<down>" 'org-next-visible-heading org-mode-map)
-
 #+END_SRC
 
 **** Package: toc-org
@@ -2004,30 +1965,14 @@ The code below executes org-babel-tangle asynchronously when config.org is saved
 ;; defer is used to only load package when mode is activated
 (use-package flyspell
   :defer t
+  :config
+  ;; set backend and language
+  (setq ispell-program-name "aspell"
+        ispell-local-dictionary "en_US")
   :bind
   (:map wakib-keys-overriding-map
-     ("C-." . flyspell-correct-at-point)))
-
-
-;; set backend and language
-(setq ispell-program-name "aspell")
-(setq ispell-local-dictionary "en_US")
-
-
-(defun toggle-spellcheck ()
-  "Toggle spell checking, using Flyspell"
-  (interactive)
-  (if (bound-and-true-p flyspell-mode)
-      (progn
-        (flyspell-mode -1)
-        (message "Spell checker disabled in current buffer"))
-    (progn
-      (flyspell-mode 1)
-      (message "Spell checker enabled in current buffer"))))
-
-
-;; automatically enable spellchecker for org files (doesn't affect source blocks)
-(add-hook 'org-mode-hook 'flyspell-mode)
+        ("C-." . flyspell-correct-at-point))
+  :hook (org-mode . flyspell-mode)) ;; automatically enable spellchecker for org files (doesn't affect source blocks)
 #+END_SRC
 
 **** Package: flyspell-correct-ivy
@@ -2036,8 +1981,10 @@ The code below executes org-babel-tangle asynchronously when config.org is saved
 (use-package flyspell-correct-ivy
   :config
   (setq flyspell-correct-interface #'flyspell-correct-ivy)
-  (define-key flyspell-mouse-map [mouse-2] nil)
-  (define-key flyspell-mouse-map [mouse-3] 'flyspell-correct-word))
+  :bind
+  (:map flyspell-mouse-map
+   ("<mouse-2>" . nil)
+   ("<mouse-3>" . flyspell-correct-word)))
 #+END_SRC
 
 **** Basic usage
@@ -2050,9 +1997,8 @@ Use 'toggle-spellcheck' to enable/disable.
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package company
   :config
+  (setq company-global-modes '(not org-mode))
   (global-company-mode 1))
-
-(setq company-global-modes '(not org-mode))
 #+END_SRC
 
 *** Generic Completion Framework
@@ -2094,10 +2040,11 @@ swiper is a tool for performing searches, powered by Ivy, all while
   ;; (ivy-sort-functions-alist
   ;;     '((t)
   ;;       (counsel-find-file . ivy-sort-file-function-default)))
-  :config (ivy-mode))
-
-;; make one tab enough to autocomplete. default behaviour is 2 tab presses
-(define-key ivy-minibuffer-map (kbd "TAB") 'ivy-alt-done)
+  :config
+  (ivy-mode)
+  :bind
+  (:map ivy-minibuffer-map
+        ("TAB" . ivy-alt-done)))
 #+END_SRC
 
 **** Package: counsel
@@ -2105,33 +2052,31 @@ swiper is a tool for performing searches, powered by Ivy, all while
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package counsel
   :after ivy
-  :config (counsel-mode))
-
-;; use C-p to switch between files in project directory
-(bind-key "C-p" 'counsel-fzf wakib-keys-overriding-map)
-
-(bind-key "C-o" 'counsel-find-file wakib-keys-overriding-map)
-
-(bind-key "C-S-v" 'counsel-yank-pop wakib-keys-overriding-map)
+  :config (counsel-mode)
+  :bind
+  (:map wakib-keys-overriding-map
+        ("C-p" . counsel-fzf)
+        ("C-o" . counsel-find-file)
+        ("C-S-v" . counsel-yank-pop)))
 #+END_SRC
 
 **** Package: swiper
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package swiper
-  :after ivy)
-
-(defun swiper-isearch-with-selection ()
-  "Swiper-isearch, but uses active selection as input if it exists"
-  (interactive)
-  (if (region-active-p) (swiper-isearch-thing-at-point)
-    (swiper-isearch nil)))
-
-;; replace 'isearch' with swiper
-(bind-key "C-f" 'swiper-isearch-with-selection wakib-keys-overriding-map)
-
-;; put a cursor on every swiper search result
-;; (bind-key "C-h" 'swiper-mc swiper-map)
+  :after ivy
+  :config
+  (defun swiper-isearch-with-selection ()
+    "Swiper-isearch, but uses active selection as input if it exists"
+    (interactive)
+    (if (region-active-p) (swiper-isearch-thing-at-point)
+      (swiper-isearch nil)))
+  :bind
+  (:map wakib-keys-overriding-map
+        ("C-f" . swiper-isearch-with-selection))   ;; replace 'isearch' with swiper
+  (:map swiper-map
+        ("C-r" . swiper-mc))   ;; put a cursor on every swiper search result
+)
 #+END_SRC
 
 **** Package: flx
@@ -2221,13 +2166,13 @@ Ivy sorts large lists using flx's scoring mechanism, if it's installed.
   (search-whitespace-regexp ".*?")
   (isearch-lax-whitespace t)
   (isearch-regexp-lax-whitespace nil)
-)
-
-(define-key isearch-mode-map (kbd "k") 'isearch-repeat-forward)
-(define-key isearch-mode-map (kbd "j") 'isearch-repeat-backward)
+  :bind
+  (:map isearch-mode-map
+        ("j" . isearch-repeat-backward)
+        ("k" . isearch-repeat-forward)))
 #+END_SRC
 
-**** Package: counsel-fzf
+**** Package: counsel-fzf configuration
 
 note:
 do not hide project files in .gitignore
@@ -2262,10 +2207,10 @@ When using swiper, press C-7 to add a cursor to all highlighted items
 **** Package: switch-window
 
 #+BEGIN_SRC emacs-lisp :tangle yes
-(use-package switch-window)
-
-;; for some reason writing it as M-S-h doesn't work
-(bind-key "M-H" 'switch-window wakib-keys-overriding-map)
+(use-package switch-window
+  :bind
+  (:map wakib-keys-overriding-map
+        ("M-H" . switch-window)))    ;; for some reason writing it as M-S-h doesn't work
 #+END_SRC
 
 *** Git integration
@@ -2276,9 +2221,8 @@ Magit is a complete text-based user interface to Git. It fills the glaring gap b
 #+END_QUOTE
 
 #+BEGIN_SRC emacs-lisp :tangle yes
-(use-package magit)
-
-(add-hook 'magit-mode-hook 'my/set-buffer-large-fringe)
+(use-package magit
+  :hook (magit-mode . my/set-buffer-large-fringe))
 #+END_SRC
 
 **** Package: diff-hl
@@ -2288,42 +2232,46 @@ Emacs package for highlighting uncommitted changes
 #+END_QUOTE
 
 #+BEGIN_SRC emacs-lisp :tangle yes
-(use-package diff-hl)
-(global-diff-hl-mode)
-(diff-hl-flydiff-mode)
-(add-hook 'magit-pre-refresh-hook 'diff-hl-magit-pre-refresh)
-(add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
+(use-package diff-hl
+  :config
+  (global-diff-hl-mode)
+  (diff-hl-flydiff-mode)  ;; see changes in real time
+  :hook ((magit-pre-refresh . diff-hl-magit-pre-refresh)
+         (magit-post-refresh . diff-hl-magit-post-refresh)
+         (org-mode . (lambda () (diff-hl-mode -1)))))         ;; disable git gutter for org mode
+#+END_SRC
 
+#+BEGIN_SRC emacs-lisp :tangle no
+(use-package git-gutter
+  :config
+  (setq git-gutter:update-interval 1)
+  (global-git-gutter-mode)
 
-;; (use-package git-gutter)
-;; (setq git-gutter:update-interval 1)
-;; (global-git-gutter-mode)
+  ;; lines that are 'inserted' cause problems with org headings ellipsis symbol
+  (defun disable-gutter()
+    (interactive)
+    (diff-hl-mode 0))
 
-
-;; ;; lines that are 'inserted' cause problems with org headings ellipsis symbol
-;; (defun disable-gutter()
-;;   (interactive)
-;;   (diff-hl-mode 0))
-;; (add-hook 'org-mode-hook 'disable-gutter)
+  :hook
+  (org-mode . disable-gutter))
 #+END_SRC
 
 *** TODO Templates and Snippets
 **** Package: yasnippet
 
-#+BEGIN_SRC emacs-lisp :tangle yes
-;; (use-package yasnippet-snippets
-;;   :defer t)
+#+BEGIN_SRC emacs-lisp :tangle no
+(use-package yasnippet-snippets
+  :defer t)
 
-;; (use-package yasnippet
-;;   :hook
-;;   ((prog-mode . yas-minor-mode))
-;;   :config
-;;   (require 'yasnippet-snippets)
-;;   (yas-reload-all))
+(use-package yasnippet
+  :hook
+  ((prog-mode . yas-minor-mode))
+  :config
+  (require 'yasnippet-snippets)
+  (yas-reload-all))
 
-
-;; (use-package ivy-yasnippet
-;;   :bind ("M-y" . ivy-yasnippet))
+(use-package ivy-yasnippet
+  :bind ("M-y" . ivy-yasnippet))
 #+END_SRC
 
 *** REVIEW Multiple Cursors
@@ -2349,35 +2297,18 @@ Emacs package for highlighting uncommitted changes
 *** Cut/Copy whole line or region
 **** Package: whole-line-or-region
 
-#+BEGIN_SRC emacs-lisp :tangle yes
-;; when c-x or c-c are pressed with no active selection, cut/copy the line instead
-;; default behaviour is to do the operation between the cursor and the mark, which is hidden
-(use-package whole-line-or-region)
+when C-x or C-c are pressed with no active selection, cut/copy the line instead
+default behaviour is to do the operation between the cursor and the mark, which is hidden
 
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package whole-line-or-region
+  :bind (:map wakib-keys-overriding-map
+              ("C-c" . whole-line-or-region-kill-ring-save)
+              ("C-x" . whole-line-or-region-kill-region)
+              ("C-k" . whole-line-or-region-delete-region)))
 
 ;; Comment code lines, command reacts based on the major mode.
-;;(bind-key "C-«" 'whole-line-or-region-comment-dwim wakib-keys-overriding-map)
-
-;; for some reason, this line breaks undo-tree
-;;(bind-key "C-/" 'whole-line-or-region-comment-dwim wakib-keys-overriding-map)
-
-
-(bind-key "C-c" 'whole-line-or-region-kill-ring-save wakib-keys-overriding-map)
-(bind-key "C-x" 'whole-line-or-region-kill-region wakib-keys-overriding-map)
-
-(bind-key "C-k" 'whole-line-or-region-delete-region wakib-keys-overriding-map)
-
-
-;; ;; keep selection after indenting (with alt+left/right)
-;; (defadvice whole-line-or-region-indent-rigidly-right-to-tab-stop (after keep-transient-mark-active ())
-;;   "Override the deactivation of the mark."
-;;   (setq deactivate-mark nil))
-;; (ad-activate 'whole-line-or-region-indent-rigidly-right-to-tab-stop)
-
-;; (defadvice whole-line-or-region-indent-rigidly-left-to-tab-stop (after keep-transient-mark-active ())
-;;   "Override the deactivation of the mark."
-;;   (setq deactivate-mark nil))
-;; (ad-activate 'whole-line-or-region-indent-rigidly-left-to-tab-stop)
+;; (bind-key "C-«" 'whole-line-or-region-comment-dwim wakib-keys-overriding-map)
 #+END_SRC
 
 *** Presentations
@@ -2386,14 +2317,14 @@ Emacs package for highlighting uncommitted changes
 Write in Org mode and export to HTML with reveal.js
 
 #+BEGIN_SRC emacs-lisp :tangle yes
-(use-package ox-reveal)
+(use-package ox-reveal
+  :config
+  ;; (setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
+  (setq org-reveal-root        "~/.reveal/reveal.js-master"
+        org-reveal-title-slide "%t"))     ;; set content of initial slide to %t - Title
+#+END_SRC
 
-(setq org-reveal-root "/home/kyukee/.reveal/reveal.js-master")
-;; (setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
-
-;; set content of initial slide to %t - Title
-(setq org-reveal-title-slide "%t")
-
+#+BEGIN_SRC emacs-lisp :tangle yes
 ;; necessary to highlight source code
 (use-package htmlize)
 #+END_SRC
@@ -2402,17 +2333,18 @@ Write in Org mode and export to HTML with reveal.js
 **** Package: ansi-color
 
 Deals with terminal escape codes in compilation-mode.
-
-this should make compilation buffers handle ANSI escape sequences instead of displaying them as raw strings.
+This should make compilation buffers handle ANSI escape sequences instead of displaying them as raw strings.
 
 #+BEGIN_SRC emacs-lisp :tangle yes
-(use-package ansi-color)
-(defun my/ansi-colorize-buffer ()
-  (let ((buffer-read-only nil))
-    (ansi-color-apply-on-region (point-min) (point-max))))
-(add-hook 'compilation-filter-hook 'my/ansi-colorize-buffer)
+(use-package ansi-color
+  :config
+  (setq compilation-scroll-output t) ;; the compilation buffer always scrolls to follow output as it comes in
 
-(setq compilation-scroll-output t) ;; the compilation buffer always scrolls to follow output as it comes in
+  (defun my/ansi-colorize-buffer ()
+    (let ((buffer-read-only nil))
+      (ansi-color-apply-on-region (point-min) (point-max))))
+
+  :hook (compilation-filter . my/ansi-colorize-buffer))
 #+END_SRC
 
 *** Move text
@@ -2422,56 +2354,56 @@ Moving text both horizontally and vertically.
 I use the M + arrow keys for this. Since this interferes with org-mode, we use the default org-mode keybinds when the cursor is in a org-heading.
 
 #+BEGIN_SRC emacs-lisp :tangle yes
-;; alt + left/right to indent blocks of text
-;; moving text left and right doesn't actually use this package
-(defun my/meta-right-org-heading-detect ()
-  "Executes a different function if the cursor is in a org heading.
-Otherwise, just execute the normal behaviour"
-(interactive)
-  (if (and (equal major-mode 'org-mode) (org-at-heading-p))
-      (org-do-demote)
-    (my/tab-region (my/get-buffer-indentation-size))))
-
-(defun my/meta-left-org-heading-detect ()
-  "Executes a different function if the cursor is in a org heading.
-Otherwise, just execute the normal behaviour"
-(interactive)
-  (if (and (equal major-mode 'org-mode) (org-at-heading-p))
-      (org-do-promote)
-    (my/untab-region (my/get-buffer-indentation-size))))
-
-
 ;; alt+up/down to move line or region
-(use-package drag-stuff)
+(use-package drag-stuff
+  :config
 
-(defun my/meta-up-org-heading-detect ()
-  "Executes a different function if the cursor is in a org heading.
+  ;; alt + left/right to indent blocks of text
+  ;; moving text left and right doesn't actually use this package
+  (defun my/meta-right-org-heading-detect ()
+    "Executes a different function if the cursor is in a org heading.
 Otherwise, just execute the normal behaviour"
-(interactive)
-  (if (org-at-heading-p)
-      (org-move-subtree-up)
-    (call-interactively 'drag-stuff-up)))
+    (interactive)
+    (if (and (equal major-mode 'org-mode) (org-at-heading-p))
+        (org-do-demote)
+      (my/tab-region (my/get-buffer-indentation-size))))
 
-(defun my/meta-down-org-heading-detect ()
-  "Executes a different function if the cursor is in a org heading.
+  (defun my/meta-left-org-heading-detect ()
+    "Executes a different function if the cursor is in a org heading.
 Otherwise, just execute the normal behaviour"
-(interactive)
-  (if (org-at-heading-p)
-      (org-move-subtree-down)
-    (call-interactively 'drag-stuff-down)))
+    (interactive)
+    (if (and (equal major-mode 'org-mode) (org-at-heading-p))
+        (org-do-promote)
+      (my/untab-region (my/get-buffer-indentation-size))))
 
+  (defun my/meta-up-org-heading-detect ()
+    "Executes a different function if the cursor is in a org heading.
+Otherwise, just execute the normal behaviour"
+    (interactive)
+    (if (org-at-heading-p)
+        (org-move-subtree-up)
+      (call-interactively 'drag-stuff-up)))
 
-(bind-key "M-<left>" 'my/meta-left-org-heading-detect wakib-keys-overriding-map)
-(bind-key "M-<right>" 'my/meta-right-org-heading-detect wakib-keys-overriding-map)
-(bind-key "M-<up>" 'my/meta-up-org-heading-detect wakib-keys-overriding-map)
-(bind-key "M-<down>" 'my/meta-down-org-heading-detect wakib-keys-overriding-map)
+  (defun my/meta-down-org-heading-detect ()
+    "Executes a different function if the cursor is in a org heading.
+Otherwise, just execute the normal behaviour"
+    (interactive)
+    (if (org-at-heading-p)
+        (org-move-subtree-down)
+      (call-interactively 'drag-stuff-down)))
+
+  :bind
+  (:map wakib-keys-overriding-map
+        ("M-<left>" . my/meta-left-org-heading-detect)
+        ("M-<right>" . my/meta-right-org-heading-detect)
+        ("M-<up>" . my/meta-up-org-heading-detect)
+        ("M-<down>" . my/meta-down-org-heading-detect)))
 #+END_SRC
 
-*** scroll on jump
+*** Scroll on Jump
 **** Package: scroll-on-jump                                    :disabled:
 
 #+BEGIN_SRC emacs-lisp :tangle no
-
 (use-package scroll-on-jump
   :config
   (setq scroll-on-jump-duration 0.6)
@@ -2479,11 +2411,10 @@ Otherwise, just execute the normal behaviour"
   (scroll-on-jump
     :type git
     :host gitlab
-    :repo "ideasman42/emacs-scroll-on-jump"))
-
-(bind-key "<prior>" (scroll-on-jump-interactive 'scroll-down-command))
-(bind-key "<next>" (scroll-on-jump-interactive 'scroll-up-command))
-
+    :repo "ideasman42/emacs-scroll-on-jump")
+  :bind
+  ("<prior>" . (scroll-on-jump-interactive 'scroll-down-command))
+  ("<next>" . (scroll-on-jump-interactive 'scroll-up-command)))
 #+END_SRC
 
 *** Hydras
@@ -2504,12 +2435,14 @@ The other packages first have to create their hydras and only after that should 
     (("o" hydra-open/body "open"))
     "Git Repository"
     (("g" hydra-git/body "git"))
-    "Packages"
+    "Package Manager"
     (("P" hydra-packages/body "packages"))
     ))
   :bind
   ("<menu>" . hydra-hydra/body))
+#+END_SRC
 
+#+BEGIN_SRC emacs-lisp :tangle yes
 (use-package hydra-posframe
   :hook (after-init . hydra-posframe-enable)
   :disabled
@@ -2518,12 +2451,13 @@ The other packages first have to create their hydras and only after that should 
    :type git
    :host github
    :repo "Ladicle/hydra-posframe"))
+#+END_SRC
 
-
-;; show a different main hydra, depending on major moda
-;; (use-package major-mode-hydra
-;;   :bind
-;;   ("M-SPC" . major-mode-hydra))
+#+BEGIN_SRC emacs-lisp :tangle no
+show a different main hydra, depending on major moda
+(use-package major-mode-hydra
+  :bind
+  ("M-SPC" . major-mode-hydra))
 #+END_SRC
 
 **** Hydra: toggles
@@ -2537,7 +2471,7 @@ The other packages first have to create their hydras and only after that should 
     ("r" rainbow-mode "rainbow" :toggle t)
     ("L" page-break-lines-mode "page break lines" :toggle t))
    "Highlight"
-   (("s" symbol-overlay-mode "symbol" :toggle t)
+   (;;("s" symbol-overlay-mode "symbol" :toggle t)
     ("l" hl-line-mode "line" :toggle t)
     ;;("t" hl-todo-mode "todo" :toggle t)
     ("x" highlight-sexp-mode "sexp" :toggle t))
@@ -2545,7 +2479,8 @@ The other packages first have to create their hydras and only after that should 
    (("p" smartparens-mode "smartparens" :toggle t)
     ("P" smartparens-strict-mode "smartparens strict" :toggle t)
     ("S" show-smartparens-mode "show smartparens" :toggle t)
-    ("f" flycheck-mode "flycheck" :toggle t))
+    ("f" flycheck-mode "flycheck" :toggle t)
+    ("s" flyspell-mode "spellcheck" :toggle t))
    "UI"
    (("e" treemacs "file explorer" :toggle t)
     ("t" tab-line-mode "show tabs" :toggle t))
@@ -2574,12 +2509,12 @@ The other packages first have to create their hydras and only after that should 
     )))
 #+END_SRC
 
-**** Hydra: packages
+**** Hydra: package manager
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (pretty-hydra-define hydra-packages
   (:color teal :quit-key "q")
-  ("Packages"
+  ("Package Manager"
    (("u" straight-use-package "use package (install temporarily)")
     ("r" straight-rebuild-all "rebuild all packages")
     )))
@@ -2603,42 +2538,50 @@ Behavior by color:
 *** Other smaller additions
 **** Package: undo-tree
 
+Change undo/redo behaviour
+
 #+BEGIN_SRC emacs-lisp :tangle yes
-;; Change undo/redo behaviour
 (use-package undo-tree
   :config
-  (global-undo-tree-mode))
-(bind-key "C-z" 'undo-tree-undo wakib-keys-overriding-map)
-(bind-key "C-y" 'undo-tree-redo wakib-keys-overriding-map)
+  (global-undo-tree-mode)
+  :bind
+  (:map wakib-keys-overriding-map
+        ("C-z" . undo-tree-undo)
+        ("C-y" . undo-tree-redo)))
 #+END_SRC
 
 **** Package: sudo-edit
 
+Edit files with elevated permissions
+
 #+BEGIN_SRC emacs-lisp :tangle yes
-;; Edit files with elevated permissions
 (use-package sudo-edit)
 #+END_SRC
 
 **** Package: bind-key
 
+ Key Rebinding utility. Will be used in the keybinds section
+
 #+BEGIN_SRC emacs-lisp :tangle yes
-;; Key Rebinding utility. Will be used in the keybinds section
 (use-package bind-key)
 #+END_SRC
 
 **** Package: which-key
 
+Display available keybindings in popup after a prefix key is pressed
+
 #+BEGIN_SRC emacs-lisp :tangle yes
-;; display available keybindings in popup after a prefix key is pressed
-(use-package which-key)
-(which-key-mode)
+(use-package which-key
+  :config
+  (which-key-mode))
 #+END_SRC
 
 **** Package: recentf
 
+Save a list of most recently edited files.
+We exclude elpa folder from recent files to prevent autoload files filling it up.
+
 #+BEGIN_SRC emacs-lisp :tangle yes
-;; Save a list of most recently edited files
-;; We exclude elpa folder from recent files to prevent autoload files filling it up
 (use-package recentf
   :config
   (recentf-mode)
@@ -2650,14 +2593,19 @@ Behavior by color:
 
 **** Package: restart-emacs
 
+Add an easy way to restart emacs
+
 #+BEGIN_SRC emacs-lisp :tangle yes
-;; add an easy way to restart emacs
 (use-package restart-emacs
-  :commands (restart-emacs))
-(bind-key "C-S-<f5>" 'restart-emacs wakib-keys-overriding-map)
+  :commands (restart-emacs)
+  :bind
+  (:map wakib-keys-overriding-map
+        ("C-S-<f5>" . restart-emacs)))
 #+END_SRC
 
 **** Package: expand-region
+
+Expand region in logical increments.
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package expand-region
@@ -2671,64 +2619,76 @@ Behavior by color:
   :bind ("M-m" . avy-goto-char))
 #+END_SRC
 
-**** Package: ibuffer-vc
+**** Package: ibuffer-vc                                        :disabled:
 
-#+BEGIN_SRC emacs-lisp :tangle yes
-;; (use-package ibuffer-vc)
+#+BEGIN_SRC emacs-lisp :tangle no
+(use-package ibuffer-vc)
+#+END_SRC
+
+**** Package: symbolword-mode                                   :disabled:
+
+#+BEGIN_SRC emacs-lisp :tangle no
+(use-package symbolword-mode
+  :init
+  (symbolword-mode 1))
 #+END_SRC
 
 **** Package: comment-dwim-2
 
 #+BEGIN_SRC emacs-lisp :tangle yes
-(use-package comment-dwim-2)
-(bind-key "C-«" 'comment-dwim-2)
-(bind-key "C-«" 'org-comment-dwim-2 org-mode-map)
-#+END_SRC
-
-**** Package: symbolword-mode
-
-#+BEGIN_SRC emacs-lisp :tangle yes
-;; (use-package symbolword-mode)
-;; (symbolword-mode 1)
+(use-package comment-dwim-2
+  :bind
+  ("C-«" . comment-dwim-2)
+  (:map org-mode-map
+        ("C-«" . org-comment-dwim-2)))
 #+END_SRC
 
 **** Package: ssh-agency
 
+Use this so magit can actually use the host system's ssh keys
+
 #+BEGIN_SRC emacs-lisp :tangle yes
-;; use this so magit can actually use the host system's ssh keys
 (use-package ssh-agency)
 #+END_SRC
 
 **** Package: yascroll
 
+Show a buffer position indicator on the right fringe
+
 #+BEGIN_SRC emacs-lisp :tangle yes
-;; show a buffer position indicator on the right fringe
-(use-package yascroll)
-(global-yascroll-bar-mode)
+(use-package yascroll
+  :config
+  (global-yascroll-bar-mode 1))
 #+END_SRC
 
 **** Package: annotate
 
 #+BEGIN_SRC emacs-lisp :tangle yes
-(use-package annotate)
-(add-hook 'org-mode-hook 'annotate-mode)
-(add-hook 'save-buffer 'annotate-save-annotations)
+(use-package annotate
+  :hook
+  (org-mode . annotate-mode)
+  (save-buffer . annotate-save-annotations))
 #+END_SRC
 
 **** Package: modern-fringes
 
+Replace the default fringe icons with better ones
+
 #+BEGIN_SRC emacs-lisp :tangle yes
-;; replace the default fringe icons with better ones
-(use-package modern-fringes)
+(use-package modern-fringes
+  :config
+  (modern-fringes-mode 1))
 #+END_SRC
 
 **** Package: helpful
 
+Better formatting for help buffers
+
 #+BEGIN_SRC emacs-lisp :tangle yes
-;; better formatting for help buffers
-(use-package helpful)
-(setq counsel-describe-function-function #'helpful-callable)
-(setq counsel-describe-variable-function #'helpful-variable)
+(use-package helpful
+  :config
+  (setq counsel-describe-function-function #'helpful-callable
+        counsel-describe-variable-function #'helpful-variable))
 #+END_SRC
 
 ** Programming languages
@@ -2736,9 +2696,12 @@ Behavior by color:
 Some of these entries are just to add syntax highlighting. Others add more features.
 
 *** REVIEW Markdown
+**** Information
 
 Adds:
     - syntax highlighting
+
+**** Package: markdown-mode
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 ;; (use-package markdown-mode
@@ -2756,9 +2719,12 @@ Adds:
 #+END_SRC
 
 *** YAML
+**** Information
 
 Adds:
     - syntax highlighting
+
+**** Package: yaml-mode
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package yaml-mode
@@ -2766,9 +2732,12 @@ Adds:
 #+END_SRC
 
 *** C#
+**** Information
 
 Adds:
     - syntax highlighting
+
+**** Package: csharp-mode
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package csharp-mode
@@ -2777,9 +2746,12 @@ Adds:
 #+END_SRC
 
 *** Terraform
+**** Information
 
 Adds:
     - syntax highlighting
+
+**** Package: terraform-mode
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package terraform-mode
@@ -2787,9 +2759,12 @@ Adds:
 #+END_SRC
 
 *** HCL (Hashicorp Configuration Language)
+**** Information
 
 Adds:
     - syntax highlighting
+
+**** Package: hcl-mode
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package hcl-mode
@@ -2798,10 +2773,13 @@ Adds:
 #+END_SRC
 
 *** Dockerfile
+**** Information
 
 Adds:
     - syntax highlighting
     - image building
+
+**** Package: dockerfile-mode
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package dockerfile-mode
@@ -2853,7 +2831,6 @@ things to do after making changes and right before startup
 
 
 
-(add-hook 'org-mode-hook (lambda () (diff-hl-mode -1)))
 
 ;;; config.el ends here
 #+END_SRC
