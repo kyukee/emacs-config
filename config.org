@@ -1,7 +1,7 @@
 #+title: Emacs Configuration
 #+startup: inlineimages
 
-* Table of contents                                                     :TOC_2:
+* Table of contents                                                     :TOC_3:
 - [[#introduction][Introduction]]
   - [[#what-is-this-and-who-is-it-for][What is this and who is it for?]]
   - [[#dependencies][Dependencies]]
@@ -16,12 +16,59 @@
   - [[#file-header-1][File Header]]
   - [[#initial-setup][Initial Setup]]
   - [[#bootstrap][Bootstrap]]
+    - [[#package-management][Package management]]
+    - [[#organize-configuration-directory][Organize configuration directory]]
+    - [[#startup-profiler][Startup Profiler]]
   - [[#appearance][Appearance]]
+    - [[#font][Font]]
+    - [[#theme][Theme]]
+    - [[#theme-faces][Theme Faces]]
   - [[#functions][Functions]]
+    - [[#custom-functions][Custom Functions]]
+    - [[#function-aliases][Function Aliases]]
   - [[#keybindings][Keybindings]]
+    - [[#change-default-keybindings-layout][Change default keybindings layout]]
+    - [[#global-keybindings][Global Keybindings]]
   - [[#defaults][Defaults]]
+    - [[#general][General]]
+    - [[#indentation][Indentation]]
+    - [[#tabs-tab-line][Tabs (tab-line)]]
+    - [[#scrolling][Scrolling]]
+    - [[#fringe-and-line-numbers][Fringe and line numbers]]
+    - [[#backup-autosave-and-lockfiles][Backup, Autosave and Lockfiles]]
   - [[#features][Features]]
+    - [[#icons][Icons]]
+    - [[#project-management][Project Management]]
+    - [[#workspaces][Workspaces]]
+    - [[#file-explorer][File Explorer]]
+    - [[#dashboard][Dashboard]]
+    - [[#modeline][Modeline]]
+    - [[#search-multiple-files][Search Multiple Files]]
+    - [[#interactive-visual-replace][Interactive Visual Replace]]
+    - [[#org-mode][Org mode]]
+    - [[#spellcheck][Spellcheck]]
+    - [[#review-code-completion][REVIEW Code Completion]]
+    - [[#generic-completion-framework][Generic Completion Framework]]
+    - [[#window-switcher][Window Switcher]]
+    - [[#git-integration][Git Integration]]
+    - [[#templates-and-snippets][Templates and Snippets]]
+    - [[#review-multiple-cursors][REVIEW Multiple Cursors]]
+    - [[#cutcopy-whole-line-or-region][Cut/Copy whole line or region]]
+    - [[#presentations][Presentations]]
+    - [[#terminal-colors][Terminal Colors]]
+    - [[#move-text][Move text]]
+    - [[#scroll-on-jump][Scroll on Jump]]
+    - [[#hydras][Hydras]]
+    - [[#other-smaller-additions][Other smaller additions]]
   - [[#programming-languages][Programming languages]]
+    - [[#review-markdown][REVIEW Markdown]]
+    - [[#yaml][YAML]]
+    - [[#c][C#]]
+    - [[#terraform][Terraform]]
+    - [[#hcl-hashicorp-configuration-language][HCL (Hashicorp Configuration Language)]]
+    - [[#dockerfile][Dockerfile]]
+    - [[#lisp][Lisp]]
+    - [[#latex][Latex]]
   - [[#personal-settings][Personal Settings]]
   - [[#final-setup][Final Setup]]
 
@@ -123,6 +170,7 @@ Todo:
 - [X] for every package, use as much use-package integration as possible
 - [X] C-backspace deletes previous word. it should only delete whitespace
 - [X] swiper sometimes shows the match behind the modeline
+- [X] regarding doom-modeline buffer name segment, when the file is deleted and there is a forbidden icon, there should be an extra space before it.
 - [ ] ctrl+shift+o to open directory in sidebar
 - [ ] use flycheck for elisp (for config file)
 - [ ] error indicator in fringe for flyspell and flycheck
@@ -567,11 +615,11 @@ This command does not push text to `kill-ring'."
         (re-search-forward "[^ \t\n]" nil t arg)
         (forward-char (- (cl-signum arg)))
         (if (= pos (point))
-          (delete-region
-           (point)
-           (progn
-             (forward-word arg)
-             (point)))
+            (delete-region
+             (point)
+             (progn
+               (forward-word arg)
+               (point)))
           (delete-region pos (point))
           ))
     (delete-region
@@ -599,8 +647,7 @@ This command does not push text to `kill-ring'."
     ;; if there's a selection, use that instead of the current line
     (when (use-region-p)
       (setq regionStart (region-beginning))
-      (setq regionEnd (region-end))
-      )
+      (setq regionEnd (region-end)))
     (save-excursion ; restore the position afterwards
       (goto-char regionStart) ; go to the start of region
       (setq start (line-beginning-position)) ; save the start of the line
@@ -618,7 +665,7 @@ This command does not push text to `kill-ring'."
 (defun my/tab-region (N)
   (interactive "p")
   (if (active-minibuffer-window)
-      (minibuffer-complete)    ; tab is pressed in minibuffer window -> do completion
+      (minibuffer-complete)     ; tab is pressed in minibuffer window -> do completion
     (my/indent-region-custom N) ; call my/indent-region-custom
     ))
 
@@ -828,86 +875,64 @@ Stuff that already comes with emacs. No package installation required.
 Some nice-to have things and general settings.
 
 #+BEGIN_SRC emacs-lisp :tangle yes
-;; Put Customize blocks in a separate file
-(setq custom-file (expand-file-name "etc/custom.el" user-emacs-directory))
-(when (file-exists-p custom-file)
-  (load custom-file))
-
-
-;; automatically reload files from disk when changed externally
-(global-auto-revert-mode 1)
-
-
-;; auto refresh dired when file changes
-(add-hook 'dired-mode-hook 'auto-revert-mode)
-
-
-;; disable default startup screen
-(setq inhibit-startup-screen t)
-
-
-;; For all text modes, use visual-line-mode
-(add-hook 'text-mode-hook 'visual-line-mode)
-
-
-;; for files with the same name, include part of directory name at the beginning of the buffer name
-(setq uniquify-buffer-name-style 'forward)
-
-
-;; allow marks to be set when shift arrow-ing
-(setq shift-select-mode t)
-
-
-;; replace the active region just by typing text and delete the selected text by hitting the Backspace key
-(delete-selection-mode 1)
-
-
-;; Only require to type 'y' or 'n' instead of 'yes' or 'no' when prompted
-(fset 'yes-or-no-p 'y-or-n-p)
-
-
-;; Try to always use utf8
-(prefer-coding-system 'utf-8)
-
-
-;; allow using mouse to switch between windows
-(setq focus-follows-mouse t)
-
-
-;; links and html files should be opened in a browser, instead of emacs
-(setq browse-url-browser-function 'browse-url-generic)
-(setq browse-url-generic-program "xdg-open")
-
-
-;; disable bell
-(setq ring-bell-function 'ignore)
-
-
-;; highlight matching parentheses
-(show-paren-mode)
-
-
-;; automatically add a pair to braces and quotes
-(electric-pair-mode)
-
-
-;; change cursor blink speed. default is 0.5
-(setq blink-cursor-interval 1)
-
-
-;; On save, automatically remove trailling whitespace and add final newline
-(add-hook 'before-save-hook 'delete-trailing-whitespace)
-(setq require-final-newline t)
-
+(setq custom-file                 (expand-file-name "etc/custom.el" user-emacs-directory)  ;; Put Customize blocks in a separate file
+      inhibit-startup-screen      t                   ;; disable default startup screen
+      uniquify-buffer-name-style  'forward            ;; for files with the same name, include part of directory name at the beginning of the buffer name
+      shift-select-mode           t                   ;; allow marks to be set when shift arrow-ing
+      focus-follows-mouse         t                   ;; allow using mouse to switch between windows
+      browse-url-browser-function 'browse-url-generic ;; links and html files should be opened in a browser, instead of emacs
+      browse-url-generic-program  "xdg-open"
+      ring-bell-function          'ignore             ;; disable bell
+      blink-cursor-interval       1                   ;; change cursor blink speed. default is 0.5
+      require-final-newline       t)                  ;; On save, automatically add final newline
 
 ;; open new buffers in an already existing frame
 ;; (setq ns-pop-up-frames nil)
+
+
 
 
 ;; When using "show-paren-mode", if code contains an angled bracket (">") is treated as a matching paren, which creates a mismatch.
 ;; This disables matching for the angle bracket character.
 (modify-syntax-entry ?< ".")
 (modify-syntax-entry ?> ".")
+
+;; Only require to type 'y' or 'n' instead of 'yes' or 'no' when prompted
+(fset 'yes-or-no-p 'y-or-n-p)
+
+;; Try to always use utf8
+(prefer-coding-system 'utf-8)
+
+;; load file with 'Customize' settings
+(when (file-exists-p custom-file)
+  (load custom-file))
+
+
+
+
+;; On save, automatically remove trailling whitespace
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
+
+;; For all text modes, use visual-line-mode
+(add-hook 'text-mode-hook 'visual-line-mode)
+
+;; auto refresh dired when file changes
+(add-hook 'dired-mode-hook 'auto-revert-mode)
+
+
+
+
+;; automatically reload files from disk when changed externally
+(global-auto-revert-mode 1)
+
+;; replace the active region just by typing text and delete the selected text by hitting the Backspace key
+(delete-selection-mode 1)
+
+;; highlight matching parentheses
+(show-paren-mode 1)
+
+;; automatically add a pair to braces and quotes
+(electric-pair-mode 1)
 #+END_SRC
 
 *** Indentation
@@ -944,7 +969,7 @@ Some nice-to have things and general settings.
 (defun my/switch-indentation-use-tabs  ()
   "Use tabs for indentation"
   (interactive)
-  (local-set-key (kbd "TAB") 'tab-to-tab-stop)
+  ;; (local-set-key (kbd "TAB") 'tab-to-tab-stop)
   (setq indent-tabs-mode t))
 #+END_SRC
 
@@ -1144,60 +1169,71 @@ Currently using: bufler with optional bufler-tabs-mode
   (bufler-tabs-mode 1)
   (tab-bar-mode 0)
 
+  (defun my/bufler-workspace-set-from-buffer-name (buffer-name)
+    (let ((selected-buffer (get-buffer buffer-name)))
+      (bufler-workspace-frame-set
+       (butlast (bufler-group-tree-leaf-path (bufler-buffers) selected-buffer)))))
+
   (setf bufler-groups
-      (bufler-defgroups
-        (group
-         ;; Subgroup collecting all named workspaces.
-         (auto-workspace))
-        (group
-         ;; Subgroup collecting all `help-mode' and `info-mode' buffers.
-         (group-or "*Help/Info*"
-                   (mode-match "*Help*" (rx bos "help-"))
-                   (mode-match "*Info*" (rx bos "info-"))))
-        (group
-         ;; Subgroup collecting all special buffers (i.e. ones that are not
-         ;; file-backed), except `magit-status-mode' buffers (which are allowed to fall
-         ;; through to other groups, so they end up grouped with their project buffers).
-         (group-and "*Special*"
-                    (lambda (buffer)
-                      (unless (or (funcall (mode-match "Magit" (rx bos "magit-status"))
-                                           buffer)
-                                  (funcall (mode-match "Dired" (rx bos "dired"))
-                                           buffer)
-                                  (funcall (mode-match "Dashboard" (rx bos "dashboard"))
-                                           buffer)
-                                  (funcall (auto-file) buffer))
-                        "*Special*")))
-         (group
-          ;; Subgroup collecting these "special special" buffers
-          ;; separately for convenience.
-          (name-match "**Special**"
-                      (rx bos "*" (or "Messages" "Warnings" "scratch" "Backtrace") "*")))
-         (group
-          ;; Subgroup collecting all other Magit buffers, grouped by directory.
-          (mode-match "*Magit* (non-status)" (rx bos (or "magit" "forge") "-"))
-          (auto-directory))
-         ;; Subgroup for Helm buffers.
-         (mode-match "*Helm*" (rx bos "helm-"))
-         ;; Remaining special buffers are grouped automatically by mode.
-         (auto-mode))
-        (group
-         (group-or "Agenda: Org notes"
-                   ;; Subgroup collecting buffers in `org-directory' (or "~/org" if
-                   ;; `org-directory' is not yet defined).
-                   (dir (if (bound-and-true-p org-directory)
-                            org-directory
-                          "~/Documents/Notes/org/"))))
-        (group
-         (group-or "All Files"
-                   (filename-match "Files" (rx bol (zero-or-more anything)))
-                   (mode-match "Dashboard" (rx bos "dashboard"))
-                   (mode-match "**Magit**" (rx bos "magit-status"))
-                   )
-         (group
-          ;; Subgroup collecting buffers in a projectile project.
-          (auto-projectile)))
-        ))
+        (bufler-defgroups
+          (group
+           ;; Subgroup collecting all named workspaces.
+           (auto-workspace))
+          (group
+           ;; Subgroup collecting all `help-mode' and `info-mode' buffers.
+           (group-or "*Help/Info*"
+                     (mode-match "*Help*" (rx bos "help-"))
+                     (mode-match "*Info*" (rx bos "info-"))))
+          (group
+           ;; Subgroup collecting all special buffers (i.e. ones that are not
+           ;; file-backed), except `magit-status-mode' buffers (which are allowed to fall
+           ;; through to other groups, so they end up grouped with their project buffers).
+           (group-and "*Special*"
+                      (lambda (buffer)
+                        (unless (or (funcall (mode-match "Magit" (rx bos "magit-status"))
+                                             buffer)
+                                    (funcall (mode-match "Dired" (rx bos "dired"))
+                                             buffer)
+                                    (funcall (mode-match "Scratch" (rx bos "lisp-interaction"))
+                                             buffer)
+                                    (funcall (auto-file) buffer))
+                          "*Special*")))
+           (group
+            ;; Subgroup collecting these "special special" buffers
+            ;; separately for convenience.
+            (name-match "**Special**"
+                        (rx bos "*" (or "Messages" "Warnings" "Backtrace") "*")))
+           (group
+            ;; Subgroup collecting all other Magit buffers, grouped by directory.
+            (mode-match "*Magit* (non-status)" (rx bos (or "magit" "forge") "-"))
+            (auto-directory))
+
+           ;; Subgroup for Helm buffers.
+           (mode-match "*Helm*" (rx bos "helm-"))
+           ;; Remaining special buffers are grouped automatically by mode.
+           (auto-mode))
+
+          (group
+           (group-or "Magit Status"
+                     (mode-match "**Magit**" (rx bos "magit-status"))))
+
+          (group
+           (group-or "Agenda and Notes"
+                     ;; Subgroup collecting buffers in `org-directory' (or "~/org" if
+                     ;; `org-directory' is not yet defined).
+                     (dir (if (bound-and-true-p org-directory)
+                              org-directory
+                            "~/Documents/Notes/org/"))))
+          (group
+           (group-or "All Files"
+                     (filename-match "Files" (rx bol (zero-or-more anything)))
+                     ;; (mode-match "Dashboard" (rx bos "dashboard"))
+                     (mode-match "Scratch" (rx bos "lisp-interaction"))
+                     )
+           (group
+            ;; Subgroup collecting buffers in a projectile project.
+            (auto-projectile)))
+          ))
 
   :bind (:map wakib-keys-overriding-map
               ("C-S-b" . bufler)
@@ -1205,12 +1241,12 @@ Currently using: bufler with optional bufler-tabs-mode
               ("C-<prior>" . tab-line-switch-to-prev-tab)
               ("C-<next>" . tab-line-switch-to-next-tab))
 
-  :hook (;; focus default workspace after starting emacs
-         (dashboard-mode . (lambda () (call-interactively #'bufler-workspace-focus-buffer)))
-         ;; focus current buffer workspace everytime a file is opened
+  :hook (;; focus current buffer workspace everytime a file is opened
          ;; (find-file . (lambda () (call-interactively #'bufler-workspace-focus-buffer)))
          (bufler-list-mode . my/set-buffer-large-fringe)
-))
+         ;; focus the workspace of the "scratch" buffer at startup, which is the "All Files" workspace
+         (dashboard-mode . (lambda() (my/bufler-workspace-set-from-buffer-name "*scratch*")))
+         ))
 #+END_SRC
 
 **** Basic usage
@@ -1445,7 +1481,7 @@ Taking this into account, projectile is a good start but it doesnt give me every
                   (:eval (when (or line-number-mode mode-line-percent-position column-number-mode) " "))))
 
   (doom-modeline-def-segment my/buffer-position
-    '(" " mode-line-position))
+    '("" mode-line-position))
 
 
   ;; ------ Segment - VCS ------
@@ -1468,9 +1504,9 @@ Taking this into account, projectile is a good start but it doesnt give me every
           'local-map (get-text-property 1 'local-map vc-mode))
          (if active
              text
-           (propertize text 'face 'mode-line-inactive))
-         (doom-modeline-spc)))))
+           (propertize text 'face 'mode-line-inactive))))))
 
+  ;; ------ Segment - Buffer Name ------
   ;; when the buffer is modified only show icon with 'modified' font, not the file name
   (defsubst doom-modeline--buffer-name-custom ()
     "The current buffer name."
@@ -1501,10 +1537,52 @@ directory, the file name, and its state (modified, read-only or non-existent)."
      (doom-modeline--buffer-name-custom)))
 
 
+  ;; ------ Segment - Buffer encoding and line endings ------
+  ;; this is modified to add or remove spaces, to make it look nicer
+  (doom-modeline-def-segment my/buffer-encoding
+    "Displays the eol and the encoding style of the buffer the same way Atom does."
+    (when doom-modeline-buffer-encoding
+      (let ((face (if (doom-modeline--active) 'mode-line 'mode-line-inactive))
+            (mouse-face 'mode-line-highlight))
+        (concat
+         (doom-modeline-spc)
+         ;; eol type
+         (let ((eol (coding-system-eol-type buffer-file-coding-system)))
+           (propertize
+            (pcase eol
+              (0 "LF  ")
+              (1 "CRLF  ")
+              (2 "CR  ")
+              (_ ""))
+            'face face
+            'mouse-face mouse-face
+            'help-echo (format "End-of-line style: %s\nmouse-1: Cycle"
+                               (pcase eol
+                                 (0 "Unix-style LF")
+                                 (1 "DOS-style CRLF")
+                                 (2 "Mac-style CR")
+                                 (_ "Undecided")))
+            'local-map (let ((map (make-sparse-keymap)))
+                         (define-key map [mode-line mouse-1] 'mode-line-change-eol)
+                         map)))
+         ;; coding system
+         (propertize
+          (let ((sys (coding-system-plist buffer-file-coding-system)))
+            (cond ((memq (plist-get sys :category)
+                         '(coding-category-undecided coding-category-utf-8))
+                   "UTF-8")
+                  (t (upcase (symbol-name (plist-get sys :name))))))
+          'face face
+          'mouse-face mouse-face
+          'help-echo 'mode-line-mule-info-help-echo
+          'local-map mode-line-coding-system-map)
+         ))))
+
+
   ;; ------ Modeline Segments ------
   (doom-modeline-def-modeline 'my/main
-    '(" " my/bufler-workspace " " my/vcs bar window-number matches buffer-info remote-host parrot " " selection-info)
-    '(objed-state grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info " " buffer-encoding process checker major-mode my/buffer-position " "))
+    '(" " my/bufler-workspace my/vcs bar window-number matches buffer-info remote-host parrot " " selection-info)
+    '(objed-state grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info my/buffer-encoding process checker major-mode my/buffer-position " "))
 
   ;; ------ Setup Modeline ------
   (defun setup-initial-doom-modeline ()
@@ -2423,17 +2501,17 @@ The other packages first have to create their hydras and only after that should 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package hydra
   :pretty-hydra
-  ((:color teal :quit-key "q" :title "Hydra Menu")
+  ((:color teal :quit-key "q" :title "Hydra Main Menu")
    ("Project"
-    (("p" projectile-hydra/body "projectile"))
-    "Toggle On/Off"
-    (("t" hydra-toggles/body "toggles"))
-    "Open Element"
-    (("o" hydra-open/body "open"))
-    "Git Repository"
-    (("g" hydra-git/body "git"))
-    "Package Manager"
-    (("P" hydra-packages/body "packages"))
+    (("p" projectile-hydra/body "projectile hydra"))
+    "Toggles"
+    (("t" hydra-toggles/body "toggles hydra"))
+    "Open"
+    (("o" hydra-open/body "open hydra"))
+    "Git"
+    (("g" hydra-git/body "git hydra"))
+    "Packages"
+    (("P" hydra-packages/body "packages hydra"))
     ))
   :bind
   ("<menu>" . hydra-hydra/body))
@@ -2461,26 +2539,31 @@ show a different main hydra, depending on major moda
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (pretty-hydra-define hydra-toggles
-  (:color amaranth :quit-key "q" :title "Toggles")
+  (:color amaranth :quit-key "q" :title "Toggle")
   ("Basic"
-   (("n" display-line-numbers-mode "line number" :toggle t)
-    ("w" whitespace-mode "whitespace" :toggle t)
-    ("r" rainbow-mode "rainbow" :toggle t)
-    ("L" page-break-lines-mode "page break lines" :toggle t))
+   (("n" display-line-numbers-mode "line numbers" :toggle t)
+    ("N" global-display-line-numbers-mode "line numbers (global)" :toggle t)
+    ;;("r" rainbow-mode "rainbow" :toggle t)
+    ("b" page-break-lines-mode "page break lines" :toggle t)
+    ("g" diff-hl-mode "git gutter" :toggle t))
    "Highlight"
    (;;("s" symbol-overlay-mode "symbol" :toggle t)
-    ("l" hl-line-mode "line" :toggle t)
+    ("l" global-hl-line-mode "current line (global)" :toggle t)
     ;;("t" hl-todo-mode "todo" :toggle t)
-    ("x" highlight-sexp-mode "sexp" :toggle t))
+    ;;("x" highlight-sexp-mode "sexp" :toggle t)
+    ("p" show-paren-mode "matching parens" :toggle t))
    "Coding"
-   (("p" smartparens-mode "smartparens" :toggle t)
-    ("P" smartparens-strict-mode "smartparens strict" :toggle t)
-    ("S" show-smartparens-mode "show smartparens" :toggle t)
-    ("f" flycheck-mode "flycheck" :toggle t)
-    ("s" flyspell-mode "spellcheck" :toggle t))
+   (("f" flycheck-mode "flycheck" :toggle t)
+    ("s" flyspell-mode "spellcheck" :toggle t)
+    ("c" company-mode "company" :toggle t)
+    ("P" electric-pair-mode "automatic parens pairing" :toggle t))
+   "Indentation"
+   (("T" my/switch-indentation-use-tabs "indent with tabs")
+    ("S" my/switch-indentation-use-spaces "indent with spaces"))
    "UI"
-   (("e" treemacs "file explorer" :toggle t)
-    ("t" tab-line-mode "show tabs" :toggle t))
+   (("e" treemacs "file explorer sidebar" :toggle t)
+    ("t" tab-line-mode "tab-line" :toggle t)
+    ("m" hide-mode-line-mode "modeline" :toggle t))
    "Emacs"
    (("D" toggle-debug-on-error "debug on error" :toggle (default-value 'debug-on-error))
     ("X" toggle-debug-on-quit "debug on quit" :toggle (default-value 'debug-on-quit)))))
@@ -2492,7 +2575,7 @@ show a different main hydra, depending on major moda
 (pretty-hydra-define hydra-open
   (:color teal :quit-key "q")
   ("Open"
-   (("d" my/open-dashboard "open dashboard")
+   (("d" my/open-dashboard "dashboard")
     )))
 #+END_SRC
 
@@ -2515,6 +2598,16 @@ show a different main hydra, depending on major moda
    (("u" straight-use-package "use package (install temporarily)")
     ("r" straight-rebuild-all "rebuild all packages")
     )))
+#+END_SRC
+
+**** Font fix
+
+Depending on the font, the line below the hydra title can be too long or too short.
+Here, we are replacing the font, only targeting the unicode symbol used to draw the line.
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(set-fontset-font "fontset-default"
+                  '(#x2500 . #x250F) (font-spec :name "SourceCodePro"))
 #+END_SRC
 
 **** Usage Notes
@@ -2843,6 +2936,7 @@ things to do after making changes and right before startup
 ;; (setq header-line-format " ")
 
 ;; another option is to use the tab-line. Just give the function responsible for tab names an error and the tab will be empty.
+
 
 
 
