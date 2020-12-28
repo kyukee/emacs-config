@@ -59,6 +59,7 @@
     - [[#move-text][Move text]]
     - [[#scroll-on-jump][Scroll on Jump]]
     - [[#hydras][Hydras]]
+    - [[#better-pdf-viewer][Better PDF viewer]]
     - [[#other-smaller-additions][Other smaller additions]]
   - [[#programming-languages][Programming languages]]
     - [[#review-markdown][REVIEW Markdown]]
@@ -111,6 +112,11 @@ then, inside emacs, open the command menu with M-x and run 'all-the-icons-instal
 
 ** Custom Keybindings
 
+*WARNING*
+Most of the keybinds are missing or out of date...
+I'll do something about it eventually...
+
+
 The conversion to use "modern" keybinds is mostly dealt with by [[https://github.com/darkstego/wakib-keys][wakib-keys]].
 I customized the commands and changed a few keys but it's still similar to the default package.
 
@@ -127,6 +133,7 @@ Note: this image was done using [[http://www.keyboard-layout-editor.com/#/][Keyb
 ** Fixes and improvements
 
 Todo:
+
 - [X] workspaces in dashboard
 - [X] org mode: when pressing enter at the end of line that starts with '-', it adds two spaces
 - [X] setting scroll margin messes up org indent mode. the first/last line sometimes appears unindented
@@ -171,6 +178,13 @@ Todo:
 - [X] C-backspace deletes previous word. it should only delete whitespace
 - [X] swiper sometimes shows the match behind the modeline
 - [X] regarding doom-modeline buffer name segment, when the file is deleted and there is a forbidden icon, there should be an extra space before it.
+- [X] do not show selection segment in modeline when clicking with the mouse
+- [X] add shortcuts for dashboard and init file (maybe hydras)
+- [X] new keybindings for project find and project replace
+- [X] remove dashboard from initial bufler group
+- [X] change bufler group for dashboard and magit-status
+- [X] swiper always uses multiple cursor after pressing RET. Not using C-m as the keybind fixes it.
+- [X] replace org-bullets with org-superstar
 - [ ] ctrl+shift+o to open directory in sidebar
 - [ ] use flycheck for elisp (for config file)
 - [ ] error indicator in fringe for flyspell and flycheck
@@ -179,23 +193,20 @@ Todo:
 - [ ] alt-shift-up/down conflict in org mode with multiple cursors (mc bind disabled for now)
 - [ ] commenting inside source block jumps to top of block. happens with just 'emacs -Q' and comment-dwim
 - [ ] maybe incorporate previous/next concept from wakib-emacs? (it uses ';')
-- [ ] add shortcuts for dashboard and init file (maybe hydras)
-- [ ] new keybindings for project find and project replace
 - [ ] when opening a treemacs workspace in dashboard, it should ask for a file
 - [ ] vr/replace doesnt auto open org headings
 - [ ] use 'C-.' to fix any type of error
 - [ ] apostrophes should not be selected when selecting words
 - [ ] replace "cua-selection-mode" with "set-rectangular-region-anchor" from "rectangular-region-mode" (figure out what's the best option)
 - [ ] org-mode unordered lists should also have bullets (org-superstar seems to solve this)
-- [ ] replace org-bullets with org-superstar
-- [ ] counsel-find-file should order items alphabetically
+- [ ] counsel-find-file should show folders before files
 - [ ] improve swiper regex groups colours for matches
-- [ ] opening a new file in terminal should add a new buffer to existing emacs frame (maybe use emacsclient)
+- [ ] opening a new file in terminal or explorer should add a new buffer to existing emacs frame (maybe use emacsclient)
 - [ ] allow C-page up/down to cycle when at first/last tab
 - [ ] use C-S-page up/down to move tabs
 - [ ] allow jumping between git hunks (git-gutter) or modified buffer areas
 - [ ] use smerge hydra for better merging conflict resolution (https://github.com/alphapapa/unpackaged.el#hydra)
-- [ ] be able to see git gutter, company errors and visual line arrows all at the same time, without conflicts
+- [ ] make it possible to see git gutter, company errors and visual line arrows all at the same time, without conflicts
 - [ ] when flyspell is active, show indicator, along with selected dictionary language
 - [ ] C-tab = tab-recent doesnt work (also for C-S-tab)
 - [ ] look at other modelines (spaceline and telephone-line)
@@ -206,13 +217,22 @@ Todo:
 - [ ] make C-f and C-h use similar colors
 - [ ] add C-S-s (save all)
 - [ ] for every package, add a quote from their git repo explaining what the package does
-- [ ] remove dashboard from initial bufler group
 - [ ] give every doom modeline segment a mouse-over menu
-- [ ] change bufler group for dashboard and magit-status
-- [ ] swiper always uses multiple cursor after pressing RET. Changing from C-m fixes it, but now it doesn't work with C-r.
+- [ ] add hydra to change dictionary language
+- [ ] make a hydra for my/org-latex-compile-and-open-pdf, org-sort, and org-goto
+- [ ] make pdf-tools work with scroll-other-window (M-<page_up/down>)
+- [ ] do something about keybinds that put the cursor in the center/top of the screen
+- [ ] add documentation for the following: (in org mode) M-left/right -> promote/demote single heading; M-S-left/right -> promote/demote heading subtree
+- [ ] show-paren-mode has issues in org-mode when encountering these symbol: "<" and ">"
+- [ ] apparently, the lines with "(modify-syntax-entry ?< ".")" are not being evaluated
+- [ ] make untitled buffers appear in the 'All files' bufler group, and also in the respective project subgroup, if it exists
 
 
-also:
+# NOTE: use org-sort and select 'X' to sort this list by what items are checked
+
+
+and also:
+
 - [ ] look at vscode settings + extensions and import anything I like
 - [ ] look at sublime settings + extensions and import anything I like
 - [ ] when this config is developed enough, see what it needs to work on Windows
@@ -460,7 +480,7 @@ The unit for the 'height' attribute is 1/10pt, which means a height of 100 is 10
    '(tab-line-tab ((t (:inherit tab-line :background "#14141D" :foreground "#dedede"))))                ; selected but window not in focus
    '(tab-line-tab-current ((t (:inherit tab-line-tab :overline "#12F292"))))                            ; selected
    '(tab-line-tab-inactive ((t (:inherit tab-line-tab :foreground "gray50"))))                          ; not selected
-   '(tab-line-highlight ((t (:inherit tab-line-tab :background "orange" :foreground "#efefef"))))       ; on mouse-over
+   '(tab-line-highlight ((t (:inherit tab-line-tab :background "orange" :foreground "#222222"))))       ; on mouse-over
 
    ;; modeline
    '(doom-modeline-bar-inactive ((t (:background "#1A1A1A"))))
@@ -494,12 +514,12 @@ The unit for the 'height' attribute is 1/10pt, which means a height of 100 is 10
    ;; org mode
    '(org-todo ((t (:foreground "#ffa500" :box (:line-width 1 :style none) :weight bold))))
    '(org-done ((t (:foreground "#00ff00" :box (:line-width 1 :style none) :weight bold))))
-   '(org-block ((t (:background "#151424"))))
-   '(org-block-begin-line ((t (:background "#151424" :foreground "#008ED1"))))
-   '(org-block-end-line ((t (:background "#151424" :foreground "#008ED1"))))
+   '(org-block ((t (:background "#14141D"))))
+   '(org-block-begin-line ((t (:background "#18172b" :foreground "#5e5e5e" :extend t))))  ; #151424
+   '(org-block-end-line ((t (:background "#18172b" :foreground "#5e5e5e" :extend t))))
    '(org-ellipsis ((t (:foreground "gainsboro"))))
    '(org-level-3 ((t (:foreground "#A840F4"))))
-   '(org-document-title ((t (:background "#14141D" :foreground "#add8e6" :weight bold :height 1.5))))
+   '(org-document-title ((t (:background "#14141D" :foreground "#add8e6" :weight bold :height 1.8))))
    '(org-checkbox ((t (:background "#14141D" :foreground "#dddddd"))))
    '(org-document-info ((t (:foreground "#add8e6" :weight bold))))
    '(org-document-info-keyword ((t (:foreground "#8B8989"))))
@@ -514,8 +534,15 @@ The unit for the 'height' attribute is 1/10pt, which means a height of 100 is 10
    ;; '(anzu-replace-highlight ((t (:foreground "red"))))
    ;; '(anzu-replace-to ((t (:foreground "green"))))
 
+
+   ;; change face of bullets for all headers
+   ;; '(org-superstar-header-bullet ((t (:height 1.4 :foreground "#21D7D7"))))
+
+
    '(vr/match-0 ((t (:background "#5654ca" :foreground "#ffffff"))))
    '(vr/match-1 ((t (:background "#8b4887" :foreground "#ffffff"))))
+
+   '(bufler-group ((t (:foreground "#21D7D7"))))
 ))
 #+END_SRC
 
@@ -534,6 +561,14 @@ These functions aren't associated with any package since they only use default e
   (message "Reloading init.el...")
   (load-file user-init-file)
   (message "Reloading init.el... done."))
+
+
+(defun my/open-init-file ()
+  "Open emacs cofiguration"
+  (interactive)
+  (message "Opening init.el...")
+  (find-file "~/.emacs.d/config.org")
+  (message "Opened init.el... done."))
 
 
 (defun my/kill-emacs ()
@@ -738,6 +773,16 @@ This command does not push text to `kill-ring'."
        (progn
          (message "File path copied: 「%s」" $fpath)
          $fpath )))))
+
+(defun my/org-latex-compile-and-open-pdf ()
+  "Compile an org document into a Latex pdf and open it
+   if the compilation is successful"
+  (interactive)
+  (let ((filename (file-name-sans-extension buffer-file-name))
+        (compilation-exit-code (shell-command "make")))  ;; compile is async, shell-command is synchronous
+    ;; check if the exit code is 0, which means there are no errors
+    (when (= 0 compilation-exit-code)
+      (find-file-other-window (expand-file-name (concat filename ".pdf"))))))
 #+END_SRC
 
 *** Function Aliases
@@ -761,6 +806,12 @@ These are the function used for bookmarks:
 #+BEGIN_SRC emacs-lisp :tangle yes
 (defalias 'bookmark-add-or-open 'counsel-bookmark)
 (defalias 'bookmark-remove 'bookmark-delete)
+#+END_SRC
+
+**** Source block: revert-buffer
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(defalias 'reload-buffer 'revert-buffer)
 #+END_SRC
 
 ** Keybindings
@@ -901,6 +952,8 @@ Some nice-to have things and general settings.
 (fset 'yes-or-no-p 'y-or-n-p)
 
 ;; Try to always use utf8
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
 (prefer-coding-system 'utf-8)
 
 ;; load file with 'Customize' settings
@@ -924,6 +977,10 @@ Some nice-to have things and general settings.
 
 ;; automatically reload files from disk when changed externally
 (global-auto-revert-mode 1)
+
+
+;; dont ask for confirmation for refreshing PDF buffers
+(setq revert-without-query '(".pdf"))
 
 ;; replace the active region just by typing text and delete the selected text by hitting the Backspace key
 (delete-selection-mode 1)
@@ -992,11 +1049,11 @@ Some nice-to have things and general settings.
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 ;; try to improve scrolling in emacs. still not ideal though
+(setq scroll-conservatively           99       ;; this value shoul not be higher than 100, or else swiper has issues (text behind modeline)
+      mouse-wheel-scroll-amount       '(1 ((shift) . 1) ((control) . nil))
+      scroll-margin                   3
+      scroll-preserve-screen-position 't)
 
-(setq scroll-conservatively 100)  ;; this value shoul not be higher than 100, or else swiper has issues
-(setq mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
-(setq scroll-margin 3)
-(setq scroll-preserve-screen-position 't)
 ;;(pixel-scroll-mode)   ; this makes it a bit laggy
 #+END_SRC
 
@@ -1009,6 +1066,10 @@ Some nice-to have things and general settings.
 ;; make numbers column width a little bigger so it never changes size and moves the buffer. (refering to line numbers)
 ;; with a value of 3 digits, the buffer only moves when the line number is 1000 or hifher
 (setq-default display-line-numbers-width 4)
+
+;; dont show line numbers for pdf files
+(add-hook 'doc-view-mode-hook (lambda () (display-line-numbers-mode -1)))
+(add-hook 'pdf-view-mode-hook (lambda () (display-line-numbers-mode -1)))
 
 ;; set size in pixels of left and right fringes (default is 8)
 (fringe-mode '(4 . 8))
@@ -1066,7 +1127,8 @@ Important: The first time this package is installed, you need to run 'all-the-ic
      ("fd"  projectile-find-file-in-directory "file curr dir")
      ("r"   projectile-recentf "file recent"))
     "Search Text"
-    (("a"   projectile-ag "search text in project with ag"))
+    (("a"   projectile-ag "search text in project with ag")
+     ("R"   projectile-replace "replace literal text in project"))
     "Buffers"
     (("b"   projectile-switch-to-buffer "switch to buffer"))
     "Projects"
@@ -1196,6 +1258,8 @@ Currently using: bufler with optional bufler-tabs-mode
                                              buffer)
                                     (funcall (mode-match "Scratch" (rx bos "lisp-interaction"))
                                              buffer)
+                                    (funcall (name-match "Untitled" (rx bos "untitled"))
+                                             buffer)
                                     (funcall (auto-file) buffer))
                           "*Special*")))
            (group
@@ -1229,6 +1293,7 @@ Currently using: bufler with optional bufler-tabs-mode
                      (filename-match "Files" (rx bol (zero-or-more anything)))
                      ;; (mode-match "Dashboard" (rx bos "dashboard"))
                      (mode-match "Scratch" (rx bos "lisp-interaction"))
+                     (name-match "Untitled" (rx bos "untitled"))
                      )
            (group
             ;; Subgroup collecting buffers in a projectile project.
@@ -1483,7 +1548,6 @@ Taking this into account, projectile is a good start but it doesnt give me every
   (doom-modeline-def-segment my/buffer-position
     '("" mode-line-position))
 
-
   ;; ------ Segment - VCS ------
   (doom-modeline-def-segment my/vcs
     "Displays the current branch, colored based on its state."
@@ -1577,6 +1641,44 @@ directory, the file name, and its state (modified, read-only or non-existent)."
           'help-echo 'mode-line-mule-info-help-echo
           'local-map mode-line-coding-system-map)
          ))))
+
+
+  ;; ------ Segment - Selection ------
+  ;; this is modified to not appear when the number of selected characters is equal to 0
+  (doom-modeline-def-segment selection-info
+    "Information about the current selection, such as how many characters and
+lines are selected, or the NxM dimensions of a block selection."
+    (when (and (or mark-active (and (bound-and-true-p evil-local-mode)
+                                    (eq evil-state 'visual)))
+               (doom-modeline--active))
+      (cl-destructuring-bind (beg . end)
+          (if (and (bound-and-true-p evil-local-mode) (eq evil-state 'visual))
+              (cons evil-visual-beginning evil-visual-end)
+            (cons (region-beginning) (region-end)))
+
+
+(when (not (= (- end beg) 0))
+
+
+        (propertize
+         (let ((lines (count-lines beg (min end (point-max)))))
+           (concat (doom-modeline-spc)
+                   (cond ((or (bound-and-true-p rectangle-mark-mode)
+                              (and (bound-and-true-p evil-visual-selection)
+                                   (eq 'block evil-visual-selection)))
+                          (let ((cols (abs (- (doom-modeline-column end)
+                                              (doom-modeline-column beg)))))
+                            (format "%dx%dB" lines cols)))
+                         ((and (bound-and-true-p evil-visual-selection)
+                               (eq evil-visual-selection 'line))
+                          (format "%dL" lines))
+                         ((> lines 1)
+                          (format "%dC %dL" (- end beg) lines))
+                         ((format "%dC" (- end beg))))
+                   (when doom-modeline-enable-word-count
+                     (format " %dW" (count-words beg end)))
+                   (doom-modeline-spc)))
+         'face 'doom-modeline-highlight)))))
 
 
   ;; ------ Modeline Segments ------
@@ -1723,7 +1825,7 @@ The default doom modeline, for reference:
 (mood-line-mode)
 #+END_SRC
 
-**** bufler segment
+**** bufler segment example
 
 This part is the bufler segment, without the doom-modeline specific stuff.
 This can be used to define a segment for any modeline.
@@ -1775,7 +1877,7 @@ Other options are:
 (use-package pcre2el)
 #+END_SRC
 
-**** Package: visual-regexp
+**** Package: visual-regexp (part 1)
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 ;; you can use actual regex with this package, instead of emacs specific regex
@@ -1887,7 +1989,7 @@ The parts that were changed have comments that identify them.
           (add-to-history vr/query-replace-defaults-variable split nil t))))))
 #+END_SRC
 
-**** Package: visual-regexp part 2
+**** Package: visual-regexp (part 2)
 
 #+BEGIN_SRC emacs-lisp :tangle yes
   :bind
@@ -1956,6 +2058,7 @@ The code below executes org-babel-tangle asynchronously when config.org is saved
   :config
   (setq org-startup-indented              t             ;; indent text to heading level
         org-startup-folded                'content      ;; set initial view to 'content' (show all headlines)
+        org-indent-indentation-per-level  2
         org-descriptive-links             t             ;; highlight links
         org-agenda-dim-blocked-tasks      t             ;; dim blocked tasks
         org-agenda-skip-deadline-if-done  t             ;; avoid showing unecessary tasks
@@ -2016,13 +2119,88 @@ The code below executes org-babel-tangle asynchronously when config.org is saved
 
 #+END_SRC
 
-**** Package: org-bullets
+**** Package: org-superstar
 
-Org Bullets
+Org Bullets (not used anymore)
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle no
 (use-package org-bullets
     :hook (org-mode . org-bullets-mode))
+#+END_SRC
+
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package org-superstar
+  :after org
+  :hook (org-mode . org-superstar-mode)
+
+  :init
+  (dolist (face '((org-level-1 . 1.15)
+                  (org-level-2 . 1.1)
+                  (org-level-3 . 1.05)
+                  (org-level-4 . 1.0)
+                  (org-level-5 . 1.0)
+                  (org-level-6 . 1.0)
+                  (org-level-7 . 1.0)
+                  (org-level-8 . 1.0)))
+    (set-face-attribute (car face) nil :weight 'regular :height (cdr face)))
+  ;; :font "DejaVu Sans Mono"
+
+  :custom
+  (org-superstar-headline-bullets-list '("◈" "✤" "●" "○" "✚" "✛" "✝" "†"))
+  ;; (org-superstar-headline-bullets-list '("✙" "♱" "♰" "☥" "✞" "✟" "✝" "†" "✠" "✚" "✜" "✛" "✢" "✣" "✤" "✥"))
+  ;; (org-superstar-headline-bullets-list '("◉" "◈" "●" "○" "●" "○" "●" "○"))
+  ;; (set-face-attribute 'org-superstar-header-bullet nil :height 2.5 :foreground "#ff0000")
+
+  ;; Go through the list, then repeat the last entry indefinitely.
+  (org-superstar-cycle-headline-bullets nil)
+
+  ;; ;; superstar has a more agressive way of removing leading stars
+  ;; (org-hide-leading-stars nil)
+  ;; (org-superstar-remove-leading-stars t)
+
+  )
+#+END_SRC
+
+
+This time we want all of the above but a little more personalized. First off, let’s make bullets a little more chunky. Mind that the height we provide for bullet faces is not the actual height of a bullet, but its height relative to its surroundings. Additionally, let’s hide the leading stars for terminal sessions, as the default leader does not look all that good in my chosen terminal font. I make use of the fact that org-superstar-leading-fallback can be set to the space character. This has the nice advantage over org-hide-leading-stars that it does not just “paint over” the asterisks, but makes them completely indistinguishable from white space, neat!
+
+#+BEGIN_SRC emacs-lisp :tangle no
+(with-eval-after-load 'org-superstar
+  (set-face-attribute 'org-superstar-item nil :height 1.2)
+  (set-face-attribute 'org-superstar-header-bullet nil :height 1.2)
+  (set-face-attribute 'org-superstar-leading nil :height 1.3))
+;; Set different bullets, with one getting a terminal fallback.
+(setq org-superstar-headline-bullets-list
+      '("◉" ("🞛" ?◈) "○" "▷"))
+;; Stop cycling bullets to emphasize hierarchy of headlines.
+(setq org-superstar-cycle-headline-bullets nil)
+;; Hide away leading stars on terminal.
+(setq org-superstar-leading-fallback ?\s)
+#+END_SRC
+
+
+Inline tasks behave as you would expect them to, for the most part. They have two bullets instead of one, but are otherwise treated the same as regular headlines by Org Superstar, meaning org-superstar-headline-bullets-list controls the bullet used as if it were a regular headline. If org-inlinetask-show-first-star is non-nil, you can customize the additional marker. Just like with the rest of Superstar’s decorations, you can more or less fully control how it looks, with independent settings for graphical and terminal displays and a dedicated face, should you find the default of using org-warn a little… unsubtle. We again use the LaTeX setup as a base and add a few tweaks.
+
+#+BEGIN_SRC emacs-lisp :tangle no
+(require 'org-inlinetask)
+(setq org-inlinetask-show-first-star t)
+;; Less gray please.
+(set-face-attribute 'org-inlinetask nil
+                    :foreground nil
+		      :inherit 'bold)
+(with-eval-after-load 'org-superstar
+  (set-face-attribute 'org-superstar-first nil
+                      :foreground "#9000e1"))
+;; Set different bullets, with one getting a terminal fallback.
+(setq org-superstar-headline-bullets-list
+      '("◉" ("🞛" ?◈) "○" "▷"))
+;; Set up a different marker for graphic display.
+(setq org-superstar-first-inlinetask-bullet ?🞸)
+;; Stop cycling bullets to emphasize hierarchy of headlines.
+(setq org-superstar-cycle-headline-bullets nil)
+;; A simple period works fine, too.
+(setq org-superstar-leading-fallback ?.)
 #+END_SRC
 
 **** Package: toc-org
@@ -2030,6 +2208,49 @@ Org Bullets
 #+BEGIN_SRC emacs-lisp :tangle yes
 (use-package toc-org
   :hook (org-mode . toc-org-mode))
+#+END_SRC
+
+**** REVIEW Org block templates
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(add-to-list 'org-structure-template-alist
+        '("s" "#+begin_src ?\n\n#+end_src" "<src lang=\"?\">\n\n</src>"))
+
+(add-to-list 'org-structure-template-alist
+        '("m" "#+begin_src emacs-lisp :tangle init.el\n\n#+end_src" "<src lang=\"emacs-lisp\">\n\n</src>"))
+
+(add-to-list 'org-structure-template-alist
+        '("r" "#+begin_src R :results output :session *R* :exports both\n\n#+end_src" "<src lang=\"R\">\n\n</src>"))
+
+(add-to-list 'org-structure-template-alist
+        '("R" "#+begin_src R :results output graphics :file (org-babel-temp-file \"figure\" \".png\") :exports both :width 600 :height 400 :session *R* \n\n#+end_src" "<src lang=\"R\">\n\n</src>"))
+
+(add-to-list 'org-structure-template-alist
+        '("RR" "#+begin_src R :results output graphics :file  (org-babel-temp-file (concat (file-name-directory (or load-file-name buffer-file-name)) \"figure-\") \".png\") :exports both :width 600 :height 400 :session *R* \n\n#+end_src" "<src lang=\"R\">\n\n</src>"))
+
+(add-to-list 'org-structure-template-alist
+        '("p" "#+begin_src python :results output :exports both\n\n#+end_src" "<src lang=\"python\">\n\n</src>"))
+
+(add-to-list 'org-structure-template-alist
+        '("P" "#+begin_src python :results output :session *python* :exports both\n\n#+end_src" "<src lang=\"python\">\n\n</src>"))
+
+(add-to-list 'org-structure-template-alist
+        '("PP" "#+begin_src python :results file :var matplot_lib_filename=(org-babel-temp-file \"figure\" \".png\") :exports both \nimport matplotlib.pyplot as plt\n\nimport numpy\nx=numpy.linspace(-15,15)\nplt.figure(figsize=(10,5))\nplt.plot(x,numpy.cos(x)/x)\nplt.tight_layout()\n\nplt.savefig(matplot_lib_filename)\nreturn(matplot_lib_filename)\n#+end_src" "<src lang=\"python\">\n\n</src>"))
+
+(add-to-list 'org-structure-template-alist
+        '("b" "#+begin_src shell :results output :exports both\n\n#+end_src" "<src lang=\"sh\">\n\n</src>"))
+
+(add-to-list 'org-structure-template-alist
+        '("B" "#+begin_src shell :session *shell* :results output :exports both \n\n#+end_src" "<src lang=\"sh\">\n\n</src>"))
+
+(add-to-list 'org-structure-template-alist
+        '("g" "#+begin_src dot :results output graphics :file \"/tmp/graph.pdf\" :exports both
+   digraph G {
+      node [color=black,fillcolor=white,shape=rectangle,style=filled,fontname=\"Helvetica\"];
+      A[label=\"A\"]
+      B[label=\"B\"]
+      A->B
+   }\n#+end_src" "<src lang=\"dot\">\n\n</src>"))
 #+END_SRC
 
 *** Spellcheck
@@ -2145,12 +2366,29 @@ swiper is a tool for performing searches, powered by Ivy, all while
     (interactive)
     (if (region-active-p) (swiper-isearch-thing-at-point)
       (swiper-isearch nil)))
+
+  (defun my/swiper-isearch-again ()
+    "Start swiper-isearch with the last thing searched for."
+    (interactive)
+    (swiper-isearch (car swiper-history)))
+
+  (defun my/swiper-isearch-again-backward ()
+    "Start swiper-isearch with the last thing searched for.
+    Search backward."
+    (interactive)
+    (swiper-isearch-backward (car swiper-history)))
+
   :bind
-  (:map wakib-keys-overriding-map
-        ("C-f" . swiper-isearch-with-selection))   ;; replace 'isearch' with swiper
-  (:map swiper-map
-        ("C-r" . swiper-mc))   ;; put a cursor on every swiper search result
-)
+  (("<f3>" . my/swiper-isearch-again)
+   ("<S-f3>" . my/swiper-isearch-again-backward)
+   :map wakib-keys-overriding-map
+   ("C-f" . swiper-isearch-with-selection)   ;; replace 'isearch' with swiper
+   :map swiper-isearch-map
+   ("<f3>" . next-line)
+   ("<S-f3>" . previous-line)
+   ;; cant use C-m for swiper-mc. when doing that, every time enter is pressed after search, swiper-mc is activated
+   ("C-r" . swiper-mc))   ;; 'r' for 'replace'. puts a cursor on every swiper search result
+  )
 #+END_SRC
 
 **** Package: flx
@@ -2503,15 +2741,17 @@ The other packages first have to create their hydras and only after that should 
   :pretty-hydra
   ((:color teal :quit-key "q" :title "Hydra Main Menu")
    ("Project"
-    (("p" projectile-hydra/body "projectile hydra"))
+    (("p" projectile-hydra/body "'projectile' hydra"))
     "Toggles"
-    (("t" hydra-toggles/body "toggles hydra"))
+    (("t" hydra-toggles/body "'toggles' hydra"))
     "Open"
-    (("o" hydra-open/body "open hydra"))
+    (("o" hydra-open/body "'open' hydra"))
+    "Find"
+    (("f" hydra-find/body "'find' hydra"))
     "Git"
-    (("g" hydra-git/body "git hydra"))
+    (("g" hydra-git/body "'git' hydra"))
     "Packages"
-    (("P" hydra-packages/body "packages hydra"))
+    (("P" hydra-packages/body "'packages' hydra"))
     ))
   :bind
   ("<menu>" . hydra-hydra/body))
@@ -2576,6 +2816,17 @@ show a different main hydra, depending on major moda
   (:color teal :quit-key "q")
   ("Open"
    (("d" my/open-dashboard "dashboard")
+    ("c" my/open-init-file "open config")
+    )))
+#+END_SRC
+
+**** Hydra: find
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(pretty-hydra-define hydra-find
+  (:color teal :quit-key "q")
+  ("Find"
+    (("r" rg-search-current-dir "rg (string in current dir)")
     )))
 #+END_SRC
 
@@ -2624,6 +2875,70 @@ Behavior by color:
 | amaranth | :foreign-keys warn         |
 | teal     | :foreign-keys warn :exit t |
 | pink     | :foreign-keys run          |
+
+*** Better PDF viewer
+**** Package: pdf-tools
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package pdf-tools
+   :config
+   (pdf-tools-install)
+   (setq-default pdf-view-display-size 'fit-page)
+   (define-key pdf-view-mode-map (kbd "C-f") 'isearch-forward)
+   :custom
+   (pdf-annot-activate-created-annotations t "automatically annotate highlights"))
+#+END_SRC
+
+**** define a minor mode to fix M-<next> behaviour
+
+This needs to be added to the end of any org file that is being used to create a LaTeX pdf.
+
+#+BEGIN_EXAMPLE
+# Local Variables:
+# eval: (my/scroll-other-window-pdf-tools-mode 1)
+# End:
+#+END_EXAMPLE
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(defun my/scroll-other-window-down ()
+  (interactive)
+  (let* ((wind (other-window-for-scrolling))
+         (mode (with-selected-window wind major-mode)))
+    (if (eq mode 'pdf-view-mode)
+        (with-selected-window wind
+      (pdf-view-next-line-or-next-page 2))
+      (scroll-other-window 2))))
+
+(defun my/scroll-other-window ()
+  (interactive)
+  (let* ((wind (other-window-for-scrolling))
+         (mode (with-selected-window wind major-mode)))
+    (if (eq mode 'pdf-view-mode)
+    (with-selected-window wind
+      (progn
+        (pdf-view-previous-line-or-previous-page 2)
+        (other-window 1)))
+    (scroll-other-window-down 2))))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+;; my/scroll-other-window-pdf-tools-mode.el
+;; Temporary minor mode
+;; Main use is to enable it only in specific buffers to achieve the goal of buffer-specific keymaps
+
+(defvar my/scroll-other-window-pdf-tools-mode-map (make-sparse-keymap)
+  "Keymap while my/scroll-other-window-pdf-tools-mode is active.")
+
+;;;###autoload
+(define-minor-mode my/scroll-other-window-pdf-tools-mode
+  "A temporary minor mode to be activated only specific to a buffer."
+  nil
+  :lighter " Temp"
+  my/scroll-other-window-pdf-tools-mode-map)
+
+(define-key my/scroll-other-window-pdf-tools-mode-map (kbd "M-<next>") 'my/scroll-other-window-down)
+(define-key my/scroll-other-window-pdf-tools-mode-map (kbd "M-<prior>") 'my/scroll-other-window)
+#+END_SRC
 
 *** Other smaller additions
 **** Package: undo-tree
@@ -2908,6 +3223,13 @@ This variable is declared as safe in the previous source block so you aren't ask
 
 *** TODO Lisp
 *** TODO Latex
+**** Package: org-ref
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package org-ref
+  :after org)
+#+END_SRC
+
 ** Personal Settings
 
 Load personal settings file if it exists.
@@ -2930,7 +3252,6 @@ things to do after making changes and right before startup
 (setq-default major-mode 'org-mode)
 
 
-
 ;; use this next snippet to add blank space at the top of the window
 ;; note: the background should be set to the same as the buffer
 ;; (setq header-line-format " ")
@@ -2938,10 +3259,47 @@ things to do after making changes and right before startup
 ;; another option is to use the tab-line. Just give the function responsible for tab names an error and the tab will be empty.
 
 
-
-
-
 ;;; config.el ends here
+#+END_SRC
+
+
+
+
+
+
+#+BEGIN_SRC emacs-lisp :tangle no
+(use-package emacs
+  :custom
+  ;; https://www.masteringemacs.org/article/improving-performance-emacs-display-engine
+  ;; https://www.reddit.com/r/emacs/comments/8sw3r0/finally_scrolling_over_large_images_with_pixel/
+  ;; https://www.reddit.com/r/emacs/comments/9rwb4h/why_does_fast_scrolling_freeze_the_screen/
+  ;; https://emacs.stackexchange.com/questions/10354/smooth-mouse-scroll-for-inline-images
+  ;; https://emacs.stackexchange.com/questions/28736/emacs-pointcursor-movement-lag
+  (redisplay-dont-pause            t) ;; Fully redraw the display before it processes queued input events.
+  (next-screen-context-lines       2) ;; Number of lines of continuity to retain when scrolling by full screens
+  (scroll-conservatively       10000) ;; only 'jump' when moving this far off the screen
+  (scroll-step                     1) ;; Keyboard scroll one line at a time
+  (mouse-wheel-progressive-speed nil) ;; Don't accelerate scrolling
+  (mouse-wheel-follow-mouse        t) ;; Scroll window under mouse
+  (fast-but-imprecise-scrolling    t) ;; No (less) lag while scrolling lots.
+  (auto-window-vscroll           nil) ;; Cursor move faster
+  )
+
+;; Inertial Scrolling - Better than progressive-speed
+(use-package inertial-scroll
+  :straight t
+  :custom
+  (inertias-friction 110)
+  :bind
+  (("<mouse-4>"     . inertias-down-wheel) ;; Replace mwheel-scroll
+   ("<mouse-5>"     . inertias-up-wheel  ) ;; Replace mwheel-scroll
+   ("<wheel-up>"    . inertias-down-wheel)
+   ("<wheel-down>"  . inertias-up-wheel  )))
+
+;; Pixel-scroll alternative
+(use-package good-scroll
+  :straight (good-scroll :type git :host github :repo "io12/good-scroll.el")
+  :hook (after-init . good-scroll-mode))
 #+END_SRC
 
 
