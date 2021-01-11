@@ -1,7 +1,7 @@
 #+title: Emacs Configuration
 #+startup: inlineimages
 
-* Table of contents                                                     :TOC_3:
+* Table of contents                                                   :TOC_3:
 - [[#introduction][Introduction]]
   - [[#what-is-this-and-who-is-it-for][What is this and who is it for?]]
   - [[#dependencies][Dependencies]]
@@ -185,21 +185,36 @@ Todo:
 - [X] change bufler group for dashboard and magit-status
 - [X] swiper always uses multiple cursor after pressing RET. Not using C-m as the keybind fixes it.
 - [X] replace org-bullets with org-superstar
+- [X] look at other modelines (spaceline and telephone-line)
+- [X] being able to change the directory of a search (C-S-f)
+- [X] make a hydra for my/org-latex-compile-and-open-pdf, org-sort, and org-goto
+- [X] make pdf-tools work with scroll-other-window (M-<page_up/down>)
+- [X] make untitled buffers appear in the 'All files' bufler group, and also in the respective project subgroup, if it exists
+- [X] add indentation hydra
+- [X] org-mode unordered lists should also have bullets (org-superstar seems to solve this)
+- [X] make org-mode unordered lists use bullets as symbols, and remove the bullets from the orgmode headings
+- [X] alt-shift-up/down conflict in org mode with multiple cursors (mc bind disabled for now)
+- [X] add function to move line with current cursor to top of screen
+- [X] do something about keybinds that put the cursor in the center/top of the screen
+- [X] add C-S-s (save all)
+- [X] add functions converting indentation to tabs/spaces
+- [X] finish functions in indentation hydra (convert and set indentation width)
+- [X] add function to navigate cursor to matching parenthesis, when on top of one
+- [X] add function to delete everything between current parenthesis and its pair
+- [X] counsel-find-file should show folders before files
+- [X] make ivy ignore order of tokens
 - [ ] ctrl+shift+o to open directory in sidebar
 - [ ] use flycheck for elisp (for config file)
 - [ ] error indicator in fringe for flyspell and flycheck
 - [ ] git gutter on left and flycheck gutter on right side
 - [ ] add keybindings tables in config.org
-- [ ] alt-shift-up/down conflict in org mode with multiple cursors (mc bind disabled for now)
 - [ ] commenting inside source block jumps to top of block. happens with just 'emacs -Q' and comment-dwim
-- [ ] maybe incorporate previous/next concept from wakib-emacs? (it uses ';')
+- [ ] maybe incorporate previous/next concept from wakib-emacs? (it uses the ';' key)
 - [ ] when opening a treemacs workspace in dashboard, it should ask for a file
 - [ ] vr/replace doesnt auto open org headings
 - [ ] use 'C-.' to fix any type of error
 - [ ] apostrophes should not be selected when selecting words
 - [ ] replace "cua-selection-mode" with "set-rectangular-region-anchor" from "rectangular-region-mode" (figure out what's the best option)
-- [ ] org-mode unordered lists should also have bullets (org-superstar seems to solve this)
-- [ ] counsel-find-file should show folders before files
 - [ ] improve swiper regex groups colours for matches
 - [ ] opening a new file in terminal or explorer should add a new buffer to existing emacs frame (maybe use emacsclient)
 - [ ] allow C-page up/down to cycle when at first/last tab
@@ -208,24 +223,18 @@ Todo:
 - [ ] use smerge hydra for better merging conflict resolution (https://github.com/alphapapa/unpackaged.el#hydra)
 - [ ] make it possible to see git gutter, company errors and visual line arrows all at the same time, without conflicts
 - [ ] when flyspell is active, show indicator, along with selected dictionary language
+- [ ] add hydra to change dictionary language
 - [ ] C-tab = tab-recent doesnt work (also for C-S-tab)
-- [ ] look at other modelines (spaceline and telephone-line)
 - [ ] add mouse-over boxes to modeline custom segments
-- [ ] being able to change the directory of a search (C-S-f)
-- [ ] add functions converting indentation to tabs/spaces
+- [ ] give every doom modeline segment a mouse-over menu
 - [ ] improve appearance of tab-line arrows (they appear when the bar is too full)
 - [ ] make C-f and C-h use similar colors
-- [ ] add C-S-s (save all)
 - [ ] for every package, add a quote from their git repo explaining what the package does
-- [ ] give every doom modeline segment a mouse-over menu
-- [ ] add hydra to change dictionary language
-- [ ] make a hydra for my/org-latex-compile-and-open-pdf, org-sort, and org-goto
-- [ ] make pdf-tools work with scroll-other-window (M-<page_up/down>)
-- [ ] do something about keybinds that put the cursor in the center/top of the screen
 - [ ] add documentation for the following: (in org mode) M-left/right -> promote/demote single heading; M-S-left/right -> promote/demote heading subtree
 - [ ] show-paren-mode has issues in org-mode when encountering these symbol: "<" and ">"
 - [ ] apparently, the lines with "(modify-syntax-entry ?< ".")" are not being evaluated
-- [ ] make untitled buffers appear in the 'All files' bufler group, and also in the respective project subgroup, if it exists
+- [ ] add option to load previous session on startup (button on dashboard) (use desktop+.el ?) (how does doom-emacs do it?)
+- [ ] allow jumping to a function definition by ctrl-click or f2 or something else
 
 
 # NOTE: use org-sort and select 'X' to sort this list by what items are checked
@@ -238,10 +247,9 @@ and also:
 - [ ] when this config is developed enough, see what it needs to work on Windows
 
 * Early Init file
+** File Header
 
 Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before package and UI initialization happens.
-
-** File Header
 
 #+BEGIN_SRC emacs-lisp :tangle early-init.el
 ;;; early-init.el --- Emacs Early Init File          -*- lexical-binding: t -*-
@@ -519,6 +527,7 @@ The unit for the 'height' attribute is 1/10pt, which means a height of 100 is 10
    '(org-block-end-line ((t (:background "#18172b" :foreground "#5e5e5e" :extend t))))
    '(org-ellipsis ((t (:foreground "gainsboro"))))
    '(org-level-3 ((t (:foreground "#A840F4"))))
+   '(org-level-4 ((t (:foreground "#0cf456"))))
    '(org-document-title ((t (:background "#14141D" :foreground "#add8e6" :weight bold :height 1.8))))
    '(org-checkbox ((t (:background "#14141D" :foreground "#dddddd"))))
    '(org-document-info ((t (:foreground "#add8e6" :weight bold))))
@@ -633,6 +642,45 @@ point reaches the beginning or end of the buffer, stop there."
     (back-to-indentation)
     (when (= orig-point (point))
       (move-beginning-of-line 1))))
+
+
+
+;; this section is for assigning functions to "M-S-arrow keys"
+
+;;   (defun my/meta-shift-left-org-heading-detect ()
+;;     "Executes a different function if the cursor is in a org heading.
+;; Otherwise, just execute the normal behaviour"
+;;     (interactive)
+;;     (if (and (equal major-mode 'org-mode) (org-at-heading-p))
+;;         (org-promote-subtree)
+;;       (call-interactively 'backward-sexp)))
+
+;;   (defun my/meta-shift-right-org-heading-detect ()
+;;     "Executes a different function if the cursor is in a org heading.
+;; Otherwise, just execute the normal behaviour"
+;;     (interactive)
+;;     (if (and (equal major-mode 'org-mode) (org-at-heading-p))
+;;         (org-demote-subtree)
+;;       (call-interactively 'forward-sexp)))
+
+;; (bind-key "M-S-<left>" 'my/meta-shift-left-org-heading-detect wakib-keys-overriding-map)
+;; (bind-key "M-S-<right>" 'my/meta-shift-right-org-heading-detect wakib-keys-overriding-map)
+
+
+
+
+;; for some reason, this workaround is needed. "M-," doesn't work with shift select by default
+(defun my/forward-sexp-with-shift-select ()
+  (interactive)
+  (setq this-command-keys-shift-translated t)
+  (call-interactively 'forward-sexp))
+
+(defun my/backward-sexp-with-shift-select ()
+  (interactive)
+  (setq this-command-keys-shift-translated t)
+  (call-interactively 'backward-sexp))
+
+
 #+END_SRC
 
 **** Source block: move, indent and delete text
@@ -783,6 +831,17 @@ This command does not push text to `kill-ring'."
     ;; check if the exit code is 0, which means there are no errors
     (when (= 0 compilation-exit-code)
       (find-file-other-window (expand-file-name (concat filename ".pdf"))))))
+
+(defun my/untabify-whole-buffer ()
+  (interactive)
+  (mark-whole-buffer)
+  (untabify (region-beginning) (region-end)))
+
+(defun my/tabify-whole-buffer ()
+  (interactive)
+  (mark-whole-buffer)
+  (tabify (region-beginning) (region-end)))
+
 #+END_SRC
 
 *** Function Aliases
@@ -873,6 +932,18 @@ The ones that use functions from some package are defined in that package's sect
 Some of these are slight alterations to wakib, such as modifying the functions of the keybinds.
 Others add convenient things like zoom, reloading, fullscreen, etc.
 
+
+*Navigating parenthesis*
+
+A balanced expression can be a parenthetical group, a number, a word or a symbol. The precise definition of a balanced expression may depend on the current mode. Here is how to move from a balanced expression to another:
+
+C-M-n     forward-list   Move forward over a parenthetical group
+C-M-p     backward-list  Move backward over a parenthetical group
+C-M-f     forward-sexp   Move forward over a balanced expression
+C-M-b     backward-sexp  Move backward over a balanced expression
+C-M-k     kill-sexp      Kill balanced expression forward
+
+
 #+BEGIN_SRC emacs-lisp :tangle yes
 ;; reload emacs config file
 (bind-key "<f5>" 'my/reload-init-file wakib-keys-overriding-map)
@@ -891,8 +962,6 @@ Others add convenient things like zoom, reloading, fullscreen, etc.
 
 (bind-key "<escape>" 'keyboard-escape-quit wakib-keys-overriding-map)
 
-(bind-key "C-l" 'my/select-current-line wakib-keys-overriding-map)
-
 (bind-key "C-<left>" 'backward-word wakib-keys-overriding-map)
 (bind-key "C-<right>" 'forward-word wakib-keys-overriding-map)
 
@@ -910,6 +979,26 @@ Others add convenient things like zoom, reloading, fullscreen, etc.
 
 ;; switch to a recent tab
 (bind-key "<C-tab>" 'tab-recent wakib-keys-overriding-map)
+
+
+(bind-key "C-l" 'swiper-recenter-top-bottom wakib-keys-overriding-map)
+;; (bind-key "C-l" 'my/select-current-line wakib-keys-overriding-map)
+
+;; default value is (middle top bottom)
+(setq recenter-positions '(top bottom))
+
+
+(bind-key "M-s" 'set-mark-command wakib-keys-overriding-map)
+
+(bind-key "M-," 'backward-sexp wakib-keys-overriding-map)
+(bind-key "M-." 'forward-sexp wakib-keys-overriding-map)
+
+
+(bind-key "C-s" 'save-buffer wakib-keys-overriding-map)
+(bind-key "C-S-s" 'save-some-buffers wakib-keys-overriding-map)
+
+(bind-key "M-;" 'backward-sexp-with-shift-select wakib-keys-overriding-map)
+(bind-key "M-:" 'forward-sexp-with-shift-select wakib-keys-overriding-map)
 
 ;;     on Linux, the menu/apps key syntax is <menu>
 ;;     on Windows, the menu/apps key syntax is <apps>
@@ -1007,13 +1096,13 @@ Some nice-to have things and general settings.
 (custom-set-faces
  '(whitespace-tab ((t (:foreground "#636363"))))    	; set tab character color
  '(whitespace-trailing ((t (:underline (:style wave :color "yellow2")))))
-)
+ )
 
 ;; set tab character.
 ;; 8614 is the unicode number of a double right arrow
 ;; 124 is the unicode number of a pipe
 (setq whitespace-display-mappings
-  '((tab-mark 9 [124 9] [92 9])))
+      '((tab-mark 9 [124 9] [92 9])))
 
 (setq backward-delete-char-untabify-method 'untabify)
 
@@ -1023,11 +1112,20 @@ Some nice-to have things and general settings.
   (interactive)
   (setq indent-tabs-mode nil))
 
-(defun my/switch-indentation-use-tabs  ()
+(defun my/switch-indentation-use-tabs ()
   "Use tabs for indentation"
   (interactive)
   ;; (local-set-key (kbd "TAB") 'tab-to-tab-stop)
   (setq indent-tabs-mode t))
+
+(defun my/switch-indentation-width ()
+  "Change indentation tab width"
+  (interactive)
+  ;; (local-set-key (kbd "TAB") 'tab-to-tab-stop)
+  (setq-default tab-width
+        (string-to-number
+         (completing-read "Chose tab width: " '("2" "4" "8")))))
+
 #+END_SRC
 
 *** Tabs (tab-line)
@@ -2065,7 +2163,7 @@ The code below executes org-babel-tangle asynchronously when config.org is saved
         org-agenda-skip-scheduled-if-done t
         org-agenda-skip-archived-trees    nil
         org-cycle-separator-lines         2             ;; set how may real newlines are necessary to display a newline when folded.
-        org-todo-keywords                 '((sequence "TODO" "ONGOING" "REVIEW" "|" "DONE" "CANCEL"))  ;; default todo keywords
+        org-todo-keywords                 '((sequence "TODO" "☛ ACTIVE" "PAUSED" "REVIEW" "|" "✔ DONE" "✘ CANCELLED"))  ;; default todo keywords
         org-directory                     "~/Documents/Notes/org/"   ;; set agenda location
         org-agenda-files                  '("~/Documents/Notes/org/")
         org-log-done                      (quote time)  ;; insert a note in a task when it is marked as done, which includes a timestamp
@@ -2092,7 +2190,6 @@ The code below executes org-babel-tangle asynchronously when config.org is saved
 
   :bind
   (:map org-mode-map
-        ("C-d g" . counsel-org-goto)
         ("C-d C-<up>" . org-previous-visible-heading)
         ("C-d C-<down>" . org-next-visible-heading))
 
@@ -2116,7 +2213,6 @@ The code below executes org-babel-tangle asynchronously when config.org is saved
                        ;; (push '("#+begin_src" . "↦" ) prettify-symbols-alist)
                        ;; (push '("#+end_src" . "⇤" ) prettify-symbols-alist)
                        (prettify-symbols-mode)))))
-
 #+END_SRC
 
 **** Package: org-superstar
@@ -2147,12 +2243,12 @@ Org Bullets (not used anymore)
   ;; :font "DejaVu Sans Mono"
 
   :custom
-  (org-superstar-headline-bullets-list '("◈" "✤" "●" "○" "✚" "✛" "✝" "†"))
-  ;; (org-superstar-headline-bullets-list '("✙" "♱" "♰" "☥" "✞" "✟" "✝" "†" "✠" "✚" "✜" "✛" "✢" "✣" "✤" "✥"))
-  ;; (org-superstar-headline-bullets-list '("◉" "◈" "●" "○" "●" "○" "●" "○"))
-  ;; (set-face-attribute 'org-superstar-header-bullet nil :height 2.5 :foreground "#ff0000")
+  (org-superstar-headline-bullets-list '("◈" "❖" "✽" "✲" "✜" "✛" "✝" "†"))
+  (org-superstar-item-bullet-alist '((?* . ?►)
+                                     (?+ . ?○)
+                                     (?- . ?●)))
 
-  ;; Go through the list, then repeat the last entry indefinitely.
+  ;; Go through the bullet list, then repeat the last entry indefinitely.
   (org-superstar-cycle-headline-bullets nil)
 
   ;; ;; superstar has a more agressive way of removing leading stars
@@ -2162,6 +2258,17 @@ Org Bullets (not used anymore)
   )
 #+END_SRC
 
+Here are some symbols that can be used for Org headings:
+
+"✙" "♱" "♰" "☥" "✞" "✟" "✝" "†" "✠" "✚" "✜" "✛" "✢" "✣" "✤" "✥"
+"◉" "◈"
+"●" "○" "■" "□" "▶" "▷" "►" "▻"
+"◆" "◇" "◈" "◉" "◊" "○" "◌" "◎" "●"
+"❖" "➕"
+"✩" "✪" "✫" "✬" "✭" "✮" "✯" "✰" "✱" "✲" "✳" "✴" "✵" "✶" "✷" "✸" "✹" "✺" "✻" "✼" "✽" "✾" "✿" "❀" "❁" "❂" "❃" "❄" "❅" "❆" "❇" "❈" "❉" "❊" "❋"
+"✙" "✚" "✛" "✜" "✝" "✞" "✟" "✠" "✡" "✢" "✣" "✤" "✥" "✦" "✧"
+
+And here are some code samples from  the repo, showing some possibilities:
 
 This time we want all of the above but a little more personalized. First off, let’s make bullets a little more chunky. Mind that the height we provide for bullet faces is not the actual height of a bullet, but its height relative to its surroundings. Additionally, let’s hide the leading stars for terminal sessions, as the default leader does not look all that good in my chosen terminal font. I make use of the fact that org-superstar-leading-fallback can be set to the space character. This has the nice advantage over org-hide-leading-stars that it does not just “paint over” the asterisks, but makes them completely indistinguishable from white space, neat!
 
@@ -2330,7 +2437,7 @@ swiper is a tool for performing searches, powered by Ivy, all while
   (ivy-count-format "%d/%d ")
   (ivy-wrap t)
   (ivy-re-builders-alist
-   '((t . ivy--regex-plus)))  ; also try: ivy--regex-fuzzy
+   '((t . ivy--regex-ignore-order)))  ; also try: ivy--regex-fuzzy
   (ivy-initial-inputs-alist nil)
   ;; (ivy-sort-functions-alist
   ;;     '((t)
@@ -2413,7 +2520,7 @@ Ivy sorts large lists using flx's scoring mechanism, if it's installed.
   :after (prescient ivy)
   :custom
   (ivy-prescient-sort-commands
-   ;; things that shouldnt be sorted go n this list
+   ;; things that shouldnt be sorted go in this list
    '(:not swiper swiper-isearch ivy-switch-buffer counsel-switch-buffer flyspell-correct-ivy counsel-find-file find-file bufler-workspace-switch-buffer bufler-switch-buffer))
   (ivy-prescient-excluded-commands '(counsel-find-file find-file))
   (ivy-prescient-retain-classic-highlighting t)
@@ -2693,7 +2800,7 @@ Otherwise, just execute the normal behaviour"
     "Executes a different function if the cursor is in a org heading.
 Otherwise, just execute the normal behaviour"
     (interactive)
-    (if (org-at-heading-p)
+    (if (and (equal major-mode 'org-mode) (org-at-heading-p))
         (org-move-subtree-up)
       (call-interactively 'drag-stuff-up)))
 
@@ -2701,7 +2808,7 @@ Otherwise, just execute the normal behaviour"
     "Executes a different function if the cursor is in a org heading.
 Otherwise, just execute the normal behaviour"
     (interactive)
-    (if (org-at-heading-p)
+    (if (and (equal major-mode 'org-mode) (org-at-heading-p))
         (org-move-subtree-down)
       (call-interactively 'drag-stuff-down)))
 
@@ -2744,14 +2851,18 @@ The other packages first have to create their hydras and only after that should 
     (("p" projectile-hydra/body "'projectile' hydra"))
     "Toggles"
     (("t" hydra-toggles/body "'toggles' hydra"))
-    "Open"
-    (("o" hydra-open/body "'open' hydra"))
+    "Quick access"
+    (("a" hydra-open/body "'quick access' hydra"))
     "Find"
     (("f" hydra-find/body "'find' hydra"))
     "Git"
     (("g" hydra-git/body "'git' hydra"))
     "Packages"
     (("P" hydra-packages/body "'packages' hydra"))
+    "Indentation"
+    (("i" hydra-indentation/body "'indentation' hydra"))
+    "Org-mode"
+    (("o" hydra-org/body "'org' hydra"))
     ))
   :bind
   ("<menu>" . hydra-hydra/body))
@@ -2797,9 +2908,6 @@ show a different main hydra, depending on major moda
     ("s" flyspell-mode "spellcheck" :toggle t)
     ("c" company-mode "company" :toggle t)
     ("P" electric-pair-mode "automatic parens pairing" :toggle t))
-   "Indentation"
-   (("T" my/switch-indentation-use-tabs "indent with tabs")
-    ("S" my/switch-indentation-use-spaces "indent with spaces"))
    "UI"
    (("e" treemacs "file explorer sidebar" :toggle t)
     ("t" tab-line-mode "tab-line" :toggle t)
@@ -2816,8 +2924,8 @@ show a different main hydra, depending on major moda
   (:color teal :quit-key "q")
   ("Open"
    (("d" my/open-dashboard "dashboard")
-    ("c" my/open-init-file "open config")
-    )))
+    ("c" my/open-init-file "open config"))
+   ))
 #+END_SRC
 
 **** Hydra: find
@@ -2849,6 +2957,38 @@ show a different main hydra, depending on major moda
    (("u" straight-use-package "use package (install temporarily)")
     ("r" straight-rebuild-all "rebuild all packages")
     )))
+#+END_SRC
+
+**** Hydra: indentation
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(pretty-hydra-define hydra-indentation
+  (:color teal :quit-key "q")
+  ("Switch"
+   (("t" my/switch-indentation-use-tabs "indent with tabs")
+    ("s" my/switch-indentation-use-spaces "indent with spaces"))
+   "Convert"
+   (("cT" my/tabify-whole-buffer "convert indentation (in whole buffer) to tabs")
+    ("cS" my/untabify-whole-buffer "convert indentation (in whole buffer) to spaces")
+    ("ct" tabify "convert indentation (in active region) to tabs")
+    ("cs" untabify "convert indentation (in active region) to spaces"))
+   "Resize"
+   (("w" my/switch-indentation-width-buffer "set indentation width"))
+   ))
+#+END_SRC
+
+**** Hydra: org
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(pretty-hydra-define hydra-org
+  (:color teal :quit-key "q" :title "Org hydra")
+  ("Latex"
+   (("c" my/org-latex-compile-and-open-pdf "compile org file to latex pdf and open pdf"))
+   "Navigation"
+   (("g" counsel-org-goto "goto an org heading"))
+   "Sorting"
+   (("s" org-sort "sort item list at cursor "))
+   ))
 #+END_SRC
 
 **** Font fix
@@ -3068,7 +3208,7 @@ Show a buffer position indicator on the right fringe
 
 **** Package: annotate
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle no
 (use-package annotate
   :hook
   (org-mode . annotate-mode)
@@ -3230,6 +3370,16 @@ This variable is declared as safe in the previous source block so you aren't ask
   :after org)
 #+END_SRC
 
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(setq org-latex-listings 'minted
+      org-latex-packages-alist '(("" "minted"))
+      org-latex-pdf-process
+      '("%latex -shell-escape -interaction nonstopmode -output-directory %o %f"
+        "%latex -shell-escape -interaction nonstopmode -output-directory %o %f"
+        "%latex -shell-escape -interaction nonstopmode -output-directory %o %f"))
+#+END_SRC
+
 ** Personal Settings
 
 Load personal settings file if it exists.
@@ -3256,7 +3406,25 @@ things to do after making changes and right before startup
 ;; note: the background should be set to the same as the buffer
 ;; (setq header-line-format " ")
 
-;; another option is to use the tab-line. Just give the function responsible for tab names an error and the tab will be empty.
+;; another option is to use the tab-line. Just give the function responsible for tab names an error and the tab line will be empty.
+
+
+;; (use-package desktop+
+;;   :config
+
+;;   (setq desktop-save t) ;; always save on exit and never ask before saving
+;;   (setq desktop-restore-eager nil) ;; number of buffers to restore immediatly
+
+
+;;   (let ((autosave-desktop-current "autosave-current")
+;;         (autosave-desktop-previous "autosave-previous"))
+;;     (if (file-exists-p (expand-file-name autosave-desktop-current desktop+-base-dir))
+;;         ((delete-file autosave-desktop-previous)
+;;          (rename-file autosave-desktop-current autosave-desktop-previous)
+;;          (desktop+-create autosave-desktop-current))
+;;       (desktop+-create autosave-desktop-current)))
+;;   )
+
 
 
 ;;; config.el ends here
@@ -3266,6 +3434,8 @@ things to do after making changes and right before startup
 
 
 
+
+Stuff I need to try that might improve scrolling.
 
 #+BEGIN_SRC emacs-lisp :tangle no
 (use-package emacs
