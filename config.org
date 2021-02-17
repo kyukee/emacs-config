@@ -12,10 +12,16 @@
   - [[#file-header][File Header]]
   - [[#start-time-optimizations][Start time optimizations]]
   - [[#user-interface][User Interface]]
-- [[#main-configuration-file][Main Configuration file]]
+  - [[#file-footer][File Footer]]
+- [[#init-file][Init file]]
   - [[#file-header-1][File Header]]
+  - [[#method-1-load-pre-parsed-config-file][Method 1: load pre-parsed config file]]
+  - [[#method-2-always-parse-config-file][Method 2: always parse config file]]
+  - [[#file-footer-1][File Footer]]
+- [[#main-configuration-file][Main Configuration file]]
+  - [[#file-header-2][File Header]]
   - [[#setup][Setup]]
-    - [[#enable-debug][Enable Debug]]
+    - [[#enable-debug-while-loading-config][Enable Debug while loading config]]
     - [[#package-management][Package management]]
     - [[#organize-configuration-directory][Organize configuration directory]]
     - [[#startup-profiler][Startup Profiler]]
@@ -37,46 +43,48 @@
     - [[#fringe-and-line-numbers][Fringe and line numbers]]
     - [[#backup-autosave-and-lockfiles][Backup, Autosave and Lockfiles]]
     - [[#desktop-session][Desktop session]]
-  - [[#features][Features]]
-    - [[#icons][Icons]]
+    - [[#directory-local-variables][Directory local variables]]
+    - [[#searching][Searching]]
+  - [[#additional-features][Additional Features]]
+    - [[#icon-integration][Icon integration]]
     - [[#project-management][Project Management]]
     - [[#workspaces][Workspaces]]
     - [[#file-explorer][File Explorer]]
     - [[#dashboard][Dashboard]]
-    - [[#modal-editing][Modal editing]]
     - [[#modeline][Modeline]]
-    - [[#search-multiple-files][Search Multiple Files]]
+    - [[#search-across-multiple-files][Search Across Multiple Files]]
     - [[#interactive-visual-replace][Interactive Visual Replace]]
     - [[#org-mode][Org mode]]
+    - [[#modal-editing][Modal editing]]
     - [[#spellcheck][Spellcheck]]
-    - [[#review-code-completion][REVIEW Code Completion]]
+    - [[#code-completion][Code Completion]]
     - [[#generic-completion-framework][Generic Completion Framework]]
-    - [[#window-switcher][Window Switcher]]
     - [[#git-integration][Git Integration]]
     - [[#templates-and-snippets][Templates and Snippets]]
-    - [[#review-multiple-cursors][REVIEW Multiple Cursors]]
-    - [[#cutcopy-whole-line-or-region][Cut/Copy whole line or region]]
+    - [[#multiple-cursors][Multiple Cursors]]
     - [[#presentations][Presentations]]
-    - [[#terminal-colors][Terminal Colors]]
     - [[#move-text][Move text]]
-    - [[#scroll-on-jump][Scroll on Jump]]
     - [[#hydras][Hydras]]
-    - [[#better-pdf-viewer][Better PDF viewer]]
-    - [[#linter][Linter]]
-    - [[#other-smaller-additions][Other smaller additions]]
+    - [[#pdf-viewer][PDF viewer]]
+    - [[#code-linter][Code Linter]]
+    - [[#spacemacs-like-menu][Spacemacs-like menu]]
+    - [[#other-additions][Other additions]]
   - [[#programming-languages][Programming languages]]
-    - [[#review-markdown][REVIEW Markdown]]
-    - [[#yaml][YAML]]
     - [[#c][C#]]
-    - [[#terraform][Terraform]]
-    - [[#hcl-hashicorp-configuration-language][HCL (Hashicorp Configuration Language)]]
     - [[#dockerfile][Dockerfile]]
-    - [[#lisp][Lisp]]
+    - [[#hcl-hashicorp-configuration-language][HCL (Hashicorp Configuration Language)]]
     - [[#latex][Latex]]
-  - [[#directory-variables][Directory variables]]
+    - [[#lisp][Lisp]]
+    - [[#review-markdown][REVIEW Markdown]]
+    - [[#terraform][Terraform]]
+    - [[#yaml][YAML]]
   - [[#personal-settings][Personal Settings]]
   - [[#experimentation-area][Experimentation Area]]
-  - [[#file-footer][File Footer]]
+    - [[#navigate-words-by-only-moving-to-the-first-character-backward-and-forward][navigate words by only moving to the first character, backward and forward]]
+    - [[#stuff-i-need-to-try-that-might-improve-scrolling][Stuff I need to try that might improve scrolling.]]
+    - [[#org-agenda-custom-commands][org agenda custom commands]]
+    - [[#make-tab-line-empty][make tab-line empty]]
+  - [[#file-footer-2][File Footer]]
 
 * Introduction
 ** What is this and who is it for?
@@ -94,14 +102,14 @@ In order for everything to work correctly, you should have the following install
 - ripgrep
 - fd
 - fzf
-- aspell or hunspell
+- aspell (or hunspell)
 - git
 - marked (or some other markdown parser)
 - python
 - vmd (node.js package)
 - decktape (node.js package)
 
-For markdown, you need to customize the command to run the markdown parser if you use something else.
+Some things like markdown and spellchecking have multiple options available.
 
 ** Installation
 
@@ -270,7 +278,13 @@ Todo:
 - [ ] add hydra or M-<key> commands for org-mark-ring-push, pop-global-mark, counsel-mark-ring
 - [ ] remove tab-line from bufler, magit, and any other like them
 - [ ] see if it's possible to remove =*special*= buffers from =C-b=
-- [ ] C-RET and C-S-RET to make newlines
+- [ ] C-RET and C-S-RET to make newlines (add docs)
+- [ ] make treemacs change directory when doing bufler focus workspace
+- [ ] treemacs-follow-mode
+- [ ] change treemacs project font (remove underline)
+- [ ] C-SPC and C-u SPC no longer work because of ryo-modal (C-SPC C-SPC to mark, C-u C-SPC to jump to prev mark)
+- [ ] golden-ratio seems to be interfering with which-key
+- [ ] add =:ensure-system-package= and more dependencies to use-package declarations
 
 
 # NOTE: use org-sort and select 'X' to sort this list by what items are checked
@@ -287,15 +301,20 @@ and also:
 
 Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before package and UI initialization happens.
 
-#+BEGIN_SRC emacs-lisp :tangle early-init.el
+#+begin_src emacs-lisp :tangle early-init.el
 ;;; early-init.el --- Emacs Early Init File          -*- lexical-binding: t -*-
-;;; GNU Emacs Configuration - Early Init
 
-#+END_SRC
+;;; Commentary:
+;; GNU Emacs Configuration - Early Init
+
+;;; Code:
+
+#+end_src
 
 ** Start time optimizations
 
-#+BEGIN_SRC emacs-lisp :tangle early-init.el
+#+begin_src emacs-lisp :tangle early-init.el
+
 ;; A common optimization is to temporarily reduce the frequency of garbage collection during initialization.
 (setq gc-cons-threshold most-positive-fixnum)
 
@@ -308,13 +327,15 @@ Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before p
   (lambda ()
     (setq gc-cons-threshold (* 16 8 1024 1024) ; 16MB
           file-name-handler-alist file-name-handler-alist-original)))
-#+END_SRC
+
+#+end_src
 
 ** User Interface
 
 For the GUI changes that deserve to be in early-init. It is more efficient to disable UI elements before they are even loaded than to load them with the wrong configuration than change them.
 
-#+BEGIN_SRC emacs-lisp :tangle early-init.el
+#+begin_src emacs-lisp :tangle early-init.el
+
 ;; Only show cursor in the active window.
 (setq-default cursor-in-non-selected-windows nil)
 
@@ -342,24 +363,84 @@ For the GUI changes that deserve to be in early-init. It is more efficient to di
 
 ;; Do not resize the frame at this early stage.
 (setq frame-inhibit-implied-resize t)
-#+END_SRC
+
+#+end_src
+
+** File Footer
+
+#+begin_src emacs-lisp :tangle early-init.el
+
+;;; early-init.el ends here
+#+end_src
+
+* Init file
+** File Header
+
+#+begin_src emacs-lisp :tangle init.el
+;;; init.el --- Emacs Init File          -*- lexical-binding: t -*-
+
+;;; Commentary:
+;; GNU Emacs Configuration - Initialization File
+
+;;; Code:
+
+#+end_src
+
+** Method 1: load pre-parsed config file
+
+If config.el exists then load it, otherwise tangle config.org
+
+After the first time that config.el is created, this will no longer tangle the config file.
+This is slightly faster than just using org-babel-load-file
+
+This is very effective when you have a hook to tangle the config.org file everytime you save it.
+
+#+begin_src emacs-lisp :tangle init.el
+
+(if (file-exists-p (expand-file-name "config.el" user-emacs-directory))
+    (load-file (expand-file-name "config.el" user-emacs-directory))
+  (org-babel-load-file (expand-file-name "config.org" user-emacs-directory)))
+
+#+end_src
+
+** Method 2: always parse config file
+
+This can be useful if recovering from errors in the config file is a concern
+
+#+begin_src emacs-lisp :tangle init.el
+
+(org-babel-load-file (expand-file-name "config.org" user-emacs-directory))
+
+#+end_src
+
+** File Footer
+
+#+begin_src emacs-lisp :tangle init.el
+
+;;; init.el ends here
+#+end_src
 
 * Main Configuration file
 ** File Header
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
 ;;; config.el --- Emacs Configuration File          -*- lexical-binding: t -*-
-;;; GNU Emacs Configuration
 
-#+END_SRC
+;;; Commentary:
+;; GNU Emacs Configuration - Startup file
+
+;;; Code:
+
+#+end_src
 
 ** Setup
-*** Enable Debug
+*** Enable Debug while loading config
 
 Enable debug mode before we make any changes. This makes is easier to figure out errors when they happen.
 It only stays active while the config is loading.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 ;; when an error occurs during startup, automatically open debugger
 (setq debug-on-error t)
 
@@ -367,16 +448,14 @@ It only stays active while the config is loading.
 (add-hook 'after-init-hook
   (lambda () (setq debug-on-error nil)))
 
-#+END_SRC
+#+end_src
 
 *** Package management
 **** Package: straight
 
 straight.el is used to make the init-file the sole source of truth for package operations.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
-(setq straight-use-package-by-default         t
-      straight-check-for-modifications        '(find-when-checking))
+#+begin_src emacs-lisp :tangle yes
 
 (defvar bootstrap-version)
 (let ((bootstrap-file
@@ -390,42 +469,58 @@ straight.el is used to make the init-file the sole source of truth for package o
       (goto-char (point-max))
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
-#+END_SRC
+
+(setq straight-use-package-by-default         t
+      straight-check-for-modifications        '(find-when-checking))
+
+#+end_src
 
 **** Package: use-package
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (straight-use-package 'use-package)
 
 ;; Configure `use-package' prior to loading it.
-(setq use-package-expand-minimally t
-      use-package-compute-statistics t
-      use-package-enable-imenu-support t
-      use-package-verbose t)
-#+END_SRC
+(setq use-package-expand-minimally            t
+      use-package-compute-statistics          t
+      use-package-enable-imenu-support        t
+      use-package-verbose                     t)
+
+#+end_src
+
+**** Package: use-package-ensure-system-package
+
+#+begin_src emacs-lisp :tangle yes
+
+(use-package use-package-ensure-system-package)
+
+#+end_src
 
 **** Package: pretty-hydra
 
 nicer syntax for declaring hydras with use-package
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package pretty-hydra)
-#+END_SRC
+
+#+end_src
 
 **** Basic usage
 
 To install a package temporarily (until you restart Emacs):
-    - M-x straight-use-package
+  - M-x straight-use-package
 
 To install a package permanently, place a call to straight-use-package in your init-file, like:
-    - (straight-use-package 'el-patch)
+  - (straight-use-package 'el-patch)
 
 To update all packages to their most recent version:
-    - M-x straight-pull-all
+  - M-x straight-pull-all
 
 A note about ":init" and ":config".
-    - init is executed before a package is loaded (even if deferred)
-    - config is executed after a package is loaded
+  - init is executed before a package is loaded (even if deferred)
+  - config is executed after a package is loaded
 
 *** Organize configuration directory
 **** Package: no-littering
@@ -433,32 +528,38 @@ A note about ":init" and ":config".
 Make emacs configuration directory more organized and keep it clean.
 'no-littering' should be loaded as early as possible since it changes where other packages will save their files.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package no-littering)
-#+END_SRC
+
+#+end_src
 
 *** Startup Profiler
-**** Package: esup                                              :disabled:
+**** Package: esup
 
 This isn't in the same section as the other features because it needs to loaded as early as possible to get accurate results.
 
 not using it because it doesn't really work well with early-init file
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
+
 (use-package esup
   :commands (esup)
   :config
   (setq esup-depth 0))
-#+END_SRC
+
+#+end_src
 
 **** Package: benchmark-init
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
+
 (use-package benchmark-init
   :config
   (benchmark-init/activate)
   :hook (after-init . benchmark-init/deactivate))
-#+END_SRC
+
+#+end_src
 
 **** Basic usage
 
@@ -466,141 +567,150 @@ When using the profiler, just uncoment the line that disables the package.
 Comment and uncoment that line to enable/disable the feature.
 
 To see the results, run:
-    - benchmark-init/show-durations-tabulated
-    - benchmark-init/show-durations-tree
+  - benchmark-init/show-durations-tabulated
+  - benchmark-init/show-durations-tree
 
 ** Appearance
-
-Most GUI changes are done in early-init.el
-
 *** Font
 
 Some of my font options:
-    - IBM Plex Mono
-    - Cartograph CF
+  - IBM Plex Mono
+  - Cartograph CF
 
 The unit for the 'height' attribute is 1/10pt, which means a height of 100 is 10pt.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (set-face-attribute 'default nil :font "Cartograph CF-12")
 
 (custom-set-faces
-  '(mode-line ((t (:family "Cartograph CF" :height 100))))
-  '(mode-line-inactive ((t (:family "Cartograph CF" :height 100))))
-  '(tab-line-tab ((t (:family "Cartograph CF" :height 100))))
-  '(line-number ((t (:family "Cartograph CF" :height 110))))
-  '(line-number-current-line ((t (:family "Cartograph CF" :height 110))))
-  '(treemacs-file-face ((t (:family "Cartograph CF" :height 100)))))
-#+END_SRC
+  '(mode-line                  ((t (:family "Cartograph CF" :height 100))))
+  '(mode-line-inactive         ((t (:family "Cartograph CF" :height 100))))
+  '(tab-line-tab               ((t (:family "Cartograph CF" :height 100))))
+  '(line-number                ((t (:family "Cartograph CF" :height 110))))
+  '(line-number-current-line   ((t (:family "Cartograph CF" :height 110))))
+  '(treemacs-file-face         ((t (:family "Cartograph CF" :height 100)))))
+
+#+end_src
 
 *** Theme
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package cyberpunk-theme
   :config
     (load-theme 'cyberpunk t))
-#+END_SRC
+
+#+end_src
 
 *** Theme Faces
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (setq custom--inhibit-theme-enable nil)
+
 (with-eval-after-load "cyberpunk-theme"
-  (custom-theme-set-faces
-   'cyberpunk
+  (let ((color-bg   "#14141D")
+        (color-fg   "#c8c9ad")  ;; #bdbdb3, #ecf0c1
+        (color-cyan "#21D7D7")
+        (color-lime "#12F292"))
+    (custom-theme-set-faces
+     'cyberpunk
 
-   ;; defaults
-   '(default ((t (:background "#14141D" :foreground "#c8c9ad"))))  ;; #bdbdb3, #ecf0c1
-   '(fringe ((t (:background "#14141D" :foreground "#dcdccc"))))
-   '(region ((t (:extend t :background "#5e153c"))))
-   '(error ((t (:foreground "#D92027" :weight bold))))
-   '(whitespace-tab ((t (:background nil))))
-   '(whitespace-trailing ((t (:background nil))))
-   '(font-lock-keyword-face ((t (:foreground "#21D7D7"))))
+     ;; defaults
+     `(default                       ((t (:background ,color-bg :foreground ,color-fg))))
+     `(fringe                        ((t (:background ,color-bg :foreground "#dcdccc"))))
+     '(region                        ((t (:background "#5e153c" :extend t))))
+     '(error                         ((t (:foreground "#D92027" :weight bold))))
+     '(whitespace-tab                ((t (:background nil))))
+     '(whitespace-trailing           ((t (:background nil))))
+     `(font-lock-keyword-face        ((t (:foreground ,color-cyan))))
+     '(font-lock-variable-name-face  ((t (:foreground "#f461c6"))))  ; #f54dce
 
-   ;; line numbers
-   '(line-number ((t (:foreground "gray30"))))
-   '(line-number-current-line ((t (:background "#14141D" :foreground "#dedede"))))
+     ;; line numbers
+     '(line-number                   ((t (:foreground "gray30"))))
+     `(line-number-current-line      ((t (:background ,color-bg :foreground "#dedede"))))
 
-   ;; tab-line
-   '(tab-line ((t (:background "#14141D" :foreground "white" :height 1.0))))
-   '(tab-line-tab ((t (:inherit tab-line :background "#14141D" :foreground "#dedede"))))                ; selected but window not in focus
-   '(tab-line-tab-current ((t (:inherit tab-line-tab :overline "#12F292"))))                            ; selected
-   '(tab-line-tab-inactive ((t (:inherit tab-line-tab :foreground "gray50"))))                          ; not selected
-   '(tab-line-highlight ((t (:inherit tab-line-tab :background "orange" :foreground "#222222"))))       ; on mouse-over
+     ;; tab-line
+     `(tab-line                      ((t (:background ,color-bg :foreground "white" :height 1.0))))
+     `(tab-line-tab                  ((t (:inherit tab-line :background ,color-bg :foreground "#dedede"))))       ; selected but window not in focus
+     `(tab-line-tab-current          ((t (:inherit tab-line-tab :overline ,color-lime))))                         ; selected
+     '(tab-line-tab-inactive         ((t (:inherit tab-line-tab :foreground "gray50"))))                          ; not selected
+     '(tab-line-highlight            ((t (:inherit tab-line-tab :background "orange" :foreground "#222222"))))    ; on mouse-over
 
-   ;; modeline
-   '(doom-modeline-bar-inactive ((t (:background "#1A1A1A"))))
-   '(doom-modeline-bar ((t (:background "#251F33"))))
-   '(doom-modeline-buffer-path ((t (:inherit (mode-line-emphasis) :foreground "gray60"))))
-   '(doom-modeline-project-dir ((t (:inherit (doom-modeline-buffer-path) :foreground "#12F292"))))
-   '(doom-modeline-persp-buffer-not-in-persp ((t (:inherit (font-lock-comment-face italic)))))
-   '(doom-modeline-persp-name ((t (:inherit (font-lock-doc-face italic bold)))))
-   '(mode-line ((t (:background "#251F33" :foreground "gray60" :box (:line-width -1 :color "#0d1a1e")))))
-   '(mode-line-inactive ((t (:background "#1A1A1A" :foreground "#4D4D4D" :box (:line-width -1 :color "#0d1a1e")))))
-   '(mode-line-highlight ((t (:box (:line-width 2 :color "gray70")))))
-   '(mode-line-buffer-id ((t (:foreground "gray70"))))  ;; #21D7D7
-   '(mode-line-emphasis ((t (:foreground "#12F292" :weight bold))))
-   '(doom-modeline-info ((t (:foreground "gray60" ))))
+     ;; modeline
+     '(doom-modeline-persp-buffer-not-in-persp ((t (:inherit (font-lock-comment-face italic)))))
+     '(doom-modeline-persp-name      ((t (:inherit (font-lock-doc-face italic bold)))))
+     '(doom-modeline-bar             ((t (:background "#251F33"))))
+     '(doom-modeline-bar-inactive    ((t (:background "#1A1A1A"))))
+     '(doom-modeline-buffer-path     ((t (:inherit (mode-line-emphasis) :foreground "gray60"))))
+     `(doom-modeline-project-dir     ((t (:inherit (doom-modeline-buffer-path) :foreground ,color-lime))))
+     '(mode-line                     ((t (:background "#251F33" :foreground "gray60" :box (:line-width -1 :color "#0d1a1e")))))
+     '(mode-line-inactive            ((t (:background "#1A1A1A" :foreground "#4D4D4D" :box (:line-width -1 :color "#0d1a1e")))))
+     '(mode-line-highlight           ((t (:box (:line-width 2 :color "gray70")))))
+     '(mode-line-buffer-id           ((t (:foreground "gray70"))))  ;; #21D7D7
+     `(mode-line-emphasis            ((t (:foreground ,color-lime :weight bold))))
+     '(doom-modeline-info            ((t (:foreground "gray60" ))))
 
-   ;; ivy
-   '(minibuffer-prompt ((t (:background "#02242b" :foreground "medium spring green"))))
-   '(highlight ((t (:background "#333333"))))
-   '(ivy-current-match ((t (:box nil :underline "#dc8cc3" :weight extra-bold))))
-   '(ivy-minibuffer-match-face-1 ((t (:background "#444444"))))
-   '(ivy-minibuffer-match-face-2 ((t (:background "#666666" :weight bold))))
-   '(ivy-minibuffer-match-face-3 ((t (:background "#5654ca" :weight bold))))
-   '(ivy-minibuffer-match-face-4 ((t (:background "#8b4887" :weight bold))))
-   '(ivy-posframe ((t (:background "#1B1821"))))   ; 13141A
-   '(ivy-posframe-border ((t (:background "#A13878"))))
+     ;; ivy
+     '(minibuffer-prompt             ((t (:background "#02242b" :foreground "medium spring green"))))
+     '(highlight                     ((t (:background "#333333"))))
+     '(ivy-current-match             ((t (:box nil :underline "#dc8cc3" :weight extra-bold))))
+     '(ivy-minibuffer-match-face-1   ((t (:background "#444444"))))
+     '(ivy-minibuffer-match-face-2   ((t (:background "#666666" :weight bold))))
+     '(ivy-minibuffer-match-face-3   ((t (:background "#5654ca" :weight bold))))
+     '(ivy-minibuffer-match-face-4   ((t (:background "#8b4887" :weight bold))))
+     '(ivy-posframe-border           ((t (:background "#A13878"))))
+     '(ivy-posframe                  ((t (:background "#1B1821"))))   ; 13141A
 
-   ;; flyspell
-   '(flyspell-incorrect ((t (:underline (:style wave :color "red2")))))
-   '(flyspell-duplicate ((nil)))
+     ;; flyspell
+     '(flyspell-incorrect            ((t (:underline (:style wave :color "red2")))))
+     '(flyspell-duplicate            ((nil)))
 
-   ;; org mode
-   '(org-todo ((t (:foreground "#ffa500" :box (:line-width 1 :style none) :weight bold))))
-   '(org-done ((t (:foreground "#00ff00" :box (:line-width 1 :style none) :weight bold))))
-   '(org-checkbox-statistics-todo ((t (:foreground "#ffa500"))))
-   '(org-checkbox-statistics-done ((t (:foreground "#00ff00"))))
-   '(org-block ((t (:background "#14141D"))))
-   '(org-block-begin-line ((t (:background "#18172b" :foreground "#5e5e5e" :extend t))))  ; #151424
-   '(org-block-end-line ((t (:background "#18172b" :foreground "#5e5e5e" :extend t))))
-   '(org-ellipsis ((t (:foreground "gainsboro"))))
-   '(org-level-3 ((t (:foreground "#A840F4"))))
-   '(org-level-4 ((t (:foreground "#0cf456"))))
-   '(org-document-title ((t (:background "#14141D" :foreground "#add8e6" :weight bold :height 1.8))))
-   '(org-checkbox ((t (:background "#14141D" :foreground "#dddddd"))))
-   '(org-document-info ((t (:foreground "#add8e6" :weight bold))))
-   '(org-document-info-keyword ((t (:foreground "#8B8989"))))
+     ;; org mode
+     '(org-todo                      ((t (:foreground "#ffa500" :box (:line-width 1 :style none) :weight bold))))
+     '(org-done                      ((t (:foreground "#00ff00" :box (:line-width 1 :style none) :weight bold))))
+     '(org-checkbox-statistics-todo  ((t (:foreground "#ffa500"))))
+     '(org-checkbox-statistics-done  ((t (:foreground "#00ff00"))))
+     '(org-block                     ((t (:background "#151522"))))
+     '(org-block-begin-line          ((t (:background "#17162a" :foreground "#5a5a5a" :extend t))))  ; #151424
+     '(org-block-end-line            ((t (:background "#17162a" :foreground "#5a5a5a" :extend t))))
+     '(org-ellipsis                  ((t (:foreground "gainsboro"))))
+     '(org-level-3                   ((t (:foreground "#A840F4"))))
+     '(org-level-4                   ((t (:foreground "#0cf456"))))
+     `(org-document-title            ((t (:background ,color-bg :foreground "#add8e6" :weight bold :height 1.8))))
+     `(org-checkbox                  ((t (:background ,color-bg :foreground "#dddddd"))))
+     '(org-document-info             ((t (:foreground "#add8e6" :weight bold))))
+     '(org-document-info-keyword     ((t (:foreground "#8B8989"))))
 
-   ;; other packages
-   '(dashboard-banner-logo-title ((t (:foreground "#A840F4" :height 1.0))))
+     ;; other packages
+     '(dashboard-banner-logo-title   ((t (:foreground "#A840F4" :height 1.0))))
 
-   '(diff-hl-insert ((t (:background "green4" :foreground "green4"))))
-   '(diff-hl-change ((t (:background "yellow4" :foreground "yellow4"))))
-   '(diff-hl-delete ((t (:background "red4" :foreground "red4"))))
+     '(diff-hl-insert                ((t (:background "green4" :foreground "green4"))))
+     '(diff-hl-change                ((t (:background "yellow4" :foreground "yellow4"))))
+     '(diff-hl-delete                ((t (:background "red4" :foreground "red4"))))
 
-   ;; '(anzu-replace-highlight ((t (:foreground "red"))))
-   ;; '(anzu-replace-to ((t (:foreground "green"))))
+     ;; '(anzu-replace-highlight        ((t (:foreground "red"))))
+     ;; '(anzu-replace-to               ((t (:foreground "green"))))
 
-   ;; change face of bullets for all headers
-   ;; '(org-superstar-header-bullet ((t (:height 1.4 :foreground "#21D7D7"))))
+     ;; change face of bullets for all headers
+     ;; '(org-superstar-header-bullet   ((t (:height 1.4 :foreground ,color-cyan))))
 
-   '(vr/match-0 ((t (:background "#5654ca" :foreground "#ffffff"))))
-   '(vr/match-1 ((t (:background "#8b4887" :foreground "#ffffff"))))
+     '(vr/match-0                    ((t (:background "#5654ca" :foreground "#ffffff"))))
+     '(vr/match-1                    ((t (:background "#8b4887" :foreground "#ffffff"))))
 
-   '(lazy-highlight ((t (:background "yellow4" :foreground "#ffffff"))))
-   '(isearch ((t (:background "#ff1493" :foreground "#000000"))))
-   '(match ((t (:background "#8b4887" :foreground "#ffffff"))))
-   '(isearch-fail ((t (:background "#5654ca" :foreground "#ffffff"))))
+     '(lazy-highlight                ((t (:background "yellow4" :foreground "#ffffff"))))
+     '(isearch                       ((t (:background "#ff1493" :foreground "#000000"))))
+     '(match                         ((t (:background "#8b4887" :foreground "#ffffff"))))
+     '(isearch-fail                  ((t (:background "#5654ca" :foreground "#ffffff"))))
 
-   '(bufler-group ((t (:foreground "#21D7D7"))))
-   '(header-line ((t (:box (:line-width -1 :color "#4e4e00" :style nil) :foreground "#ffff00" :background "#2b2b2b"))))
+     `(bufler-group                  ((t (:foreground ,color-cyan))))
+     '(header-line                   ((t (:box (:line-width -1 :color "#4e4e00" :style nil) :foreground "#ffff00" :background "#2b2b2b"))))
 
-   '(company-tooltip ((t (:background "#1B1821"))))  ;; same as ivy-posframe
-))
-#+END_SRC
+     '(company-tooltip               ((t (:background "#1B1821"))))  ;; same as ivy-posframe
+     )))
+
+#+end_src
 
 ** Functions
 *** Custom Functions
@@ -610,51 +720,49 @@ These functions aren't associated with any package since they only use default e
 
 **** Functions: emacs reload, quit, etc
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (defun my/reload-init-file ()
-  "Reload emacs cofiguration"
+  "Reload Emacs cofiguration."
   (interactive)
   (message "Reloading init.el...")
   (load-file user-init-file)
   (message "Reloading init.el... done."))
 
-
 (defun my/open-init-file ()
-  "Open emacs cofiguration"
+  "Open Emacs cofiguration."
   (interactive)
   (message "Opening init.el...")
   (find-file "~/.emacs.d/config.org")
   (message "Opened init.el... done."))
 
-
 (defun my/kill-emacs ()
-  "save some buffers, then exit unconditionally"
+  "Save open buffers, then exit unconditionally."
   (interactive)
   (save-some-buffers nil t)
   (kill-emacs))
 
-
 (defun my/toggle-fullscreen ()
-  "Toggle fullscreen"
+  "Toggle fullscreen."
   (interactive)
   (toggle-frame-fullscreen))
-#+END_SRC
+
+#+end_src
 
 **** Functions: select and navigate text
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (defun my/select-current-line ()
-  "Select the current line"
+  "Select the current line."
   (interactive)
   (beginning-of-line) ; move to end of line
   (set-mark (line-end-position)))
 
-
 (defun my/genius-beginning-of-line ()
   "Move point to the first non-whitespace character on this line.
- If point was already at that position, move point to beginning of line.
- If line is empty, indent the line relative to the preceding line.
- "
+If point was already at that position, move point to beginning of line.
+If line is empty, indent the line relative to the preceding line."
   (interactive "^")
   (let ((oldpos (point)))
     (back-to-indentation)
@@ -665,7 +773,6 @@ These functions aren't associated with any package since they only use default e
                        (line-end-position))
                   (save-excursion
                     (indent-according-to-mode)))))))
-
 
 (defun my/smarter-move-beginning-of-line (arg)
   "Move point back to indentation of beginning of line.
@@ -690,54 +797,30 @@ point reaches the beginning or end of the buffer, stop there."
     (when (= orig-point (point))
       (move-beginning-of-line 1))))
 
-
-
-;; this section is for assigning functions to "M-S-arrow keys"
-
-;;   (defun my/meta-shift-left-org-heading-detect ()
-;;     "Executes a different function if the cursor is in a org heading.
-;; Otherwise, just execute the normal behaviour"
-;;     (interactive)
-;;     (if (and (equal major-mode 'org-mode) (org-at-heading-p))
-;;         (org-promote-subtree)
-;;       (call-interactively 'backward-sexp)))
-
-;;   (defun my/meta-shift-right-org-heading-detect ()
-;;     "Executes a different function if the cursor is in a org heading.
-;; Otherwise, just execute the normal behaviour"
-;;     (interactive)
-;;     (if (and (equal major-mode 'org-mode) (org-at-heading-p))
-;;         (org-demote-subtree)
-;;       (call-interactively 'forward-sexp)))
-
-;; (bind-key "M-S-<left>" 'my/meta-shift-left-org-heading-detect wakib-keys-overriding-map)
-;; (bind-key "M-S-<right>" 'my/meta-shift-right-org-heading-detect wakib-keys-overriding-map)
-
-
-
-
 ;; for some reason, this workaround is needed. "M-," doesn't work with shift select by default
 (defun my/forward-sexp-with-shift-select ()
+  "Standard `forward-sexp', but with support for shift select."
   (interactive)
   (setq this-command-keys-shift-translated t)
   (call-interactively 'forward-sexp))
 
 (defun my/backward-sexp-with-shift-select ()
+  "Standard `backward-sexp', but with support for shift select."
   (interactive)
   (setq this-command-keys-shift-translated t)
   (call-interactively 'backward-sexp))
 
-
-#+END_SRC
+#+end_src
 
 **** Functions: move, indent and delete text
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (defun my/delete-word-no-clipboard (arg)
-  "If the next character is whitespace, delete whitespace until the next character.
+  "If the next character is whitespace, delete all until the first character.
 Otherwise, delete characters forward until encountering the end of a word.
-With argument, do this that many times. Argument can be negative to go backwards.
-If the argument is negative, look at previous character instead of next one.
+With ARG, do this that many times.  ARG can be negative to go backwards.
+If ARG is negative, look at previous character instead of next one.
 This command does not push text to `kill-ring'."
   (interactive "p")
   (if (or (and (looking-at "[ \t\n]") (> arg 0)) (and (looking-back "[ \t\n]") (< arg 0)))
@@ -759,17 +842,18 @@ This command does not push text to `kill-ring'."
        (point)))
     ))
 
-
 (defun my/backward-delete-word-no-clipboard (arg)
-  "If the next character is whitespace, delete whitespace until the next character.
+  "If the next character is whitespace, delete all until the first character.
 Otherwise, delete characters forward until encountering the end of a word.
-With argument, do this that many times.
+With ARG, repeat that many times.
 This command does not push text to `kill-ring'."
   (interactive "p")
   (my/delete-word-no-clipboard (- arg)))
 
-
 (defun my/indent-region-custom(numSpaces)
+  "Indent current line or active region, if one is selected, by NUMSPACES.
+For every line with a selected character, indent from the beggining of the line.
+This means that the first and last line don't need to be completly selected."
   (progn
     ;; default to start and end of current line
     (setq regionStart (line-beginning-position))
@@ -787,12 +871,13 @@ This command does not push text to `kill-ring'."
       (setq deactivate-mark nil) ; restore the selected region
       )))
 
-
 (defun my/untab-region (N)
+  "Unindent all lines in region by N spaces."
   (interactive "p")
   (my/indent-region-custom (- N)))
 
 (defun my/tab-region (N)
+  "Indent all lines in region by N spaces."
   (interactive "p")
   (if (active-minibuffer-window)
       (minibuffer-complete)     ; tab is pressed in minibuffer window -> do completion
@@ -803,35 +888,39 @@ This command does not push text to `kill-ring'."
 ;;(bind-key "<backtab>" 'untab-region)
 ;;(bind-key "<tab>" 'tab-region)
 
-#+END_SRC
+#+end_src
 
 **** Functions: other
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (defun my/set-buffer-large-fringe ()
-  "The fringe is smaller than default because of the git gutter functionality.
-   Some buffers like magit and bufler use the fringe for indicators and need more space.
-   Other buffers that allow folding and unfolding with tab should also use this."
+  "The fringe is set smaller than default because of the git gutter indicators.
+Some buffers like magit and bufler use the fringe for indicators and need
+more space.  Other buffers that allow folding and unfolding with tab should
+also use this."
   (setq left-fringe-width 16
         right-fringe-width 8))
 
-
 (defun my/set-buffer-dashboard-fringe ()
+  "Used to set fringes specifically for the dashboard."
   (setq left-fringe-width 12
         right-fringe-width 12))
 
-
-;; used as such: (my/pad-string "some string" 10)
+;; used as such: (my/pad-string "some string" 15)
+;; result: "    some string"
 (defun my/pad-string (string size)
+  "Pad STRING by adding spaces to the start until SIZE is reached.
+If STRING length is smaller than SIZE, do nothing."
   (let* ((padding (- size (length string)))
          (lpad (+ (length string) padding))
          (lformat (format "%%%ds" lpad))
          (rformat (format "%%%ds" (- size))))
     (format rformat (format lformat string))))
 
-
 ;; taken from doom-modeline indentation segment
 (defun my/get-buffer-indentation-size ()
+  "Get the indentation width for the current buffer."
   (let ((lookup-var
          (seq-find (lambda (var)
                      (and var (boundp var) (symbol-value var)))
@@ -840,39 +929,10 @@ This command does not push text to `kill-ring'."
         (symbol-value lookup-var)
       tab-width)))
 
-
-(defun my/copy-file-path (&optional @dir-path-only-p)
-  "Copy the current buffer's file path or dired path to `kill-ring'.
-    Result is full path.
-    If `universal-argument' is called first, copy only the dir path.
-    If in dired, copy the file/dir cursor is on, or marked files.
-    If a buffer is not file and not dired, copy value of `default-directory' (which is usually the “current” dir when that buffer was created)
-    URL `http://ergoemacs.org/emacs/emacs_copy_file_path.html'
-    Version 2017-09-01"
-  (interactive "P")
-  (let (($fpath
-         (if (string-equal major-mode 'dired-mode)
-             (progn
-               (let (($result (mapconcat 'identity (dired-get-marked-files) "\n")))
-                 (if (equal (length $result) 0)
-                     (progn default-directory )
-                   (progn $result))))
-           (if (buffer-file-name)
-               (buffer-file-name)
-             (expand-file-name default-directory)))))
-    (kill-new
-     (if @dir-path-only-p
-         (progn
-           (message "Directory path copied: 「%s」" (file-name-directory $fpath))
-           (file-name-directory $fpath))
-       (progn
-         (message "File path copied: 「%s」" $fpath)
-         $fpath )))))
-
-
 (defun my/org-latex-compile-and-open-pdf ()
-  "Compile an org document into a Latex pdf and open it
-   if the compilation is successful"
+  "Compile an org document into a Latex pdf and open it.
+The compilation runs in the background.  If the compilation is successful
+the pdf is opened, otherwise the compilation error is shown"
   (interactive)
   (let ((filename (file-name-sans-extension buffer-file-name))
         (compilation-exit-code (shell-command "make")))  ;; compile is async, shell-command is synchronous
@@ -880,20 +940,21 @@ This command does not push text to `kill-ring'."
     (when (= 0 compilation-exit-code)
       (find-file-other-window (expand-file-name (concat filename ".pdf"))))))
 
-
 (defun my/untabify-whole-buffer ()
+  "Convert all indentation in document into spaces."
   (interactive)
   (mark-whole-buffer)
   (untabify (region-beginning) (region-end)))
 
 (defun my/tabify-whole-buffer ()
+  "Convert all indentation in document into tabs."
   (interactive)
   (mark-whole-buffer)
   (tabify (region-beginning) (region-end)))
 
-
 ;; change how word navigation functions for some symbols
 (defun my/modify-word-definitions ()
+  "Modify how some symbols are treated to improve word navigation."
   ;; This can be used to treat undescore as a word character
   ;; (modify-syntax-entry ?_ "w")
 
@@ -905,19 +966,17 @@ This command does not push text to `kill-ring'."
   ;; This makes backward-word and forward-word ignore the ' character
   (modify-syntax-entry ?' "."))
 
-
 ;; the "er/expand-region" function could also maybe work
 (defun my/extend-region-to-whole-lines ()
-  "In the first line of the region, extend to beginning of line, and
-    in the last line of the region, extend to end of the line (including final newline)"
+  "Extend an active region so that the first and last lines are fully selected.
+In the first line of the selected region, extend to beginning of line, and in
+the last line of the region, extend to end of line (including final newline)."
   (interactive)
   (let ((curr  (point))
         (beg   (save-excursion (goto-char (region-beginning))
-                               (line-beginning-position)
-                               ))
+                               (line-beginning-position)))
         (end   (save-excursion (goto-char (region-end))
-                               (line-end-position)
-                               )))
+                               (line-end-position))))
     (if (= end curr)
         (exchange-point-and-mark))
     (goto-char beg)
@@ -944,7 +1003,6 @@ This command does not push text to `kill-ring'."
           (message "File '%s' successfully renamed to '%s'"
                    name (file-name-nondirectory new-name)))))))
 
-
 (defun my/show-buffer-file-name ()
   "Show the full path to the current file in the minibuffer."
   (interactive)
@@ -956,7 +1014,7 @@ This command does not push text to `kill-ring'."
       (error "Buffer not visiting a file"))))
 
 (defun my/show-buffer-name ()
-  "Show the full path to the current file in the minibuffer."
+  "Show the filename of the current file in the minibuffer."
   (interactive)
   (let ((file-name (buffer-name)))
     (if file-name
@@ -965,22 +1023,21 @@ This command does not push text to `kill-ring'."
           (kill-new file-name))
       (error "Buffer not visiting a file"))))
 
-
 ;; Start emacs without a session and allow manually loading the previous session, if desired.
 ;; Use /desktop-save-in-desktop-dir/ to save the first session, if there aren't any saved sessions yet.
 (defun my/desktop-enable ()
-    "Load the desktop and enable autosaving"
+    "Load the last saved desktop and enable autosaving."
     (interactive)
     (let ((desktop-load-locked-desktop "ask"))
       (desktop-read)
       (desktop-save-mode 1))
     (message "Previous session loaded"))
 
-
 (defun my/export-reveal-presentation-to-pdf ()
-  "Take the name of the currently open buffer and search for a file with
-   the same name and an html extension. Then convert the Reveal html file
-   to a pdf, with the decktape utility"
+  "Create a pdf from an org file using a reveal.js package.
+Take the name of the currently open buffer and search for a file with
+the same name and an html extension. Then convert the Reveal html file
+to a pdf, with the decktape utility."
   (interactive)
   (let* ((file-name (file-name-sans-extension (buffer-name)))
         (html-file-name (concat file-name ".html"))
@@ -988,24 +1045,26 @@ This command does not push text to `kill-ring'."
     (if (not (file-exists-p html-file-name))
         (error (concat "Reveal HTML file " html-file-name " not found"))
       (async-shell-command
-       (concat "decktape reveal " html-file-name " " pdf-file-name))
+       (concat "decktape reveal --size='2048x1536' " html-file-name " " pdf-file-name))
       (message (concat pdf-file-name " successfully created")))))
 
-
 (defun my/open-scratch-buffer ()
+  "Switch to scratch buffer, creating it if it doesn't exist."
   (interactive)
   (switch-to-buffer "*scratch*"))
 
-#+END_SRC
+#+end_src
 
 *** Function Aliases
 **** Functions: menu-bar
 
 Give the toggle menu function a nicer name so its easier to find if necessary.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (defalias 'toggle-menu-bar 'toggle-menu-bar-mode-from-frame)
-#+END_SRC
+
+#+end_src
 
 **** Functions: bookmarks
 
@@ -1016,16 +1075,20 @@ These are the function used for bookmarks:
 - bookmark-remove
 - bookmark-rename
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (defalias 'bookmark-add-or-open 'counsel-bookmark)
 (defalias 'bookmark-remove 'bookmark-delete)
-#+END_SRC
+
+#+end_src
 
 **** Functions: revert-buffer
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (defalias 'reload-buffer 'revert-buffer)
-#+END_SRC
+
+#+end_src
 
 ** Keybindings
 *** Change default keybindings layout
@@ -1068,7 +1131,8 @@ Here's my history with trying to use "standard" keybinds packages in emacs:
 
 **** Package: wakib-keys
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package wakib-keys
   :init
   (wakib-keys 1)
@@ -1076,7 +1140,7 @@ Here's my history with trying to use "standard" keybinds packages in emacs:
   (after-change-major-mode . wakib-update-major-mode-map)
   (menu-bar-update . wakib-update-minor-mode-maps))
 
-#+END_SRC
+#+end_src
 
 *** Global Keybindings
 
@@ -1098,7 +1162,8 @@ C-M-b     backward-sexp  Move backward over a balanced expression
 C-M-k     kill-sexp      Kill balanced expression forward
 
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 ;; reload emacs config file
 (bind-key "<C-f5>" 'my/reload-init-file wakib-keys-overriding-map)
 
@@ -1114,8 +1179,8 @@ C-M-k     kill-sexp      Kill balanced expression forward
 ;; add a fullscreen toggle
 (bind-key "<f11>" 'my/toggle-fullscreen wakib-keys-overriding-map)
 
-(bind-key "C-+" 'text-scale-increase wakib-keys-overriding-map)
-(bind-key "C--" 'text-scale-decrease wakib-keys-overriding-map)
+(bind-key "C-'" 'text-scale-decrease wakib-keys-overriding-map)
+(bind-key "C-«" 'text-scale-increase wakib-keys-overriding-map)
 
 (bind-key "<escape>" 'keyboard-escape-quit wakib-keys-overriding-map)
 
@@ -1129,9 +1194,6 @@ C-M-k     kill-sexp      Kill balanced expression forward
 (bind-key "C-<delete>" 'my/delete-word-no-clipboard wakib-keys-overriding-map)
 (bind-key "C-<backspace>" 'my/backward-delete-word-no-clipboard wakib-keys-overriding-map)
 
-;; cant use bind-key for C-c keybinds
-(global-set-key (kbd "C-c h") help-map)
-
 (bind-key "<home>" 'my/smarter-move-beginning-of-line wakib-keys-overriding-map)
 
 ;; switch to a recent tab
@@ -1141,57 +1203,147 @@ C-M-k     kill-sexp      Kill balanced expression forward
 (bind-key "C-l" 'swiper-recenter-top-bottom wakib-keys-overriding-map)
 ;; (bind-key "C-l" 'my/select-current-line wakib-keys-overriding-map)
 
-;; default value is (middle top bottom)
-(setq recenter-positions '(top bottom))
-
 
 (bind-key "M-s" 'set-mark-command wakib-keys-overriding-map)
-
-(bind-key "M-," 'backward-sexp wakib-keys-overriding-map)
-(bind-key "M-." 'forward-sexp wakib-keys-overriding-map)
 
 
 (bind-key "C-s" 'save-buffer wakib-keys-overriding-map)
 
-(bind-key "M-;" 'my/backward-sexp-with-shift-select wakib-keys-overriding-map)
-(bind-key "M-:" 'my/forward-sexp-with-shift-select wakib-keys-overriding-map)
+
+;; (bind-key "M-," 'backward-sexp wakib-keys-overriding-map)
+;; (bind-key "M-." 'forward-sexp wakib-keys-overriding-map)
+;; (bind-key "M-;" 'my/backward-sexp-with-shift-select wakib-keys-overriding-map)
+;; (bind-key "M-:" 'my/forward-sexp-with-shift-select wakib-keys-overriding-map)
+
+
+(bind-key "C-M-<left>" 'backward-sexp wakib-keys-overriding-map)
+(bind-key "C-M-S-<left>" 'my/backward-sexp-with-shift-select wakib-keys-overriding-map)
+
+(bind-key "C-M-<right>" 'forward-sexp wakib-keys-overriding-map)
+(bind-key "C-M-S-<right>" 'my/forward-sexp-with-shift-select wakib-keys-overriding-map)
+
+
+(bind-key "C-M-<up>" 'backward-up-list wakib-keys-overriding-map)
+(bind-key "C-M-<down>" 'down-list wakib-keys-overriding-map)
 
 
 (bind-key "C-t" 'counsel-imenu wakib-keys-overriding-map)
+
+
+(bind-key "C-<up>" 'backward-paragraph wakib-keys-overriding-map)
+(bind-key "C-<down>" 'forward-paragraph wakib-keys-overriding-map)
+
 
 ;;     on Linux, the menu/apps key syntax is <menu>
 ;;     on Windows, the menu/apps key syntax is <apps>
 ;;     make the syntax equal
 (define-key key-translation-map (kbd "<apps>") (kbd "<menu>"))
-#+END_SRC
+
+#+end_src
+
+**** *navigation*
+
+h,j,k,l
+
+left-char
+right-char
+previous-line
+next-line
+
+^,$,C-b,C-f
+
+beginning-of-line
+end-of-line
+scroll-up-command
+scroll-down-command
+
+b,w,{,}
+
+backward-word
+forward-word
+backward-paragraph
+forward-paragraph
+
+%,]),]}
+
+backward-sexp
+forward-sexp
+backward-up-list
+down-list
+
+":m .+1", ":m .-1", <, >
+
+drag-stuff-left
+drag-stuff-right
+drag-stuff-up
+drag-stuff-down
+
+**** test
+
+j,i,k,l
+
+left-char
+right-char
+previous-line
+next-line
+
+u,o
+
+scroll-up-command
+scroll-down-command
+
+U,O
+
+beginning-of-line
+end-of-line
+
+J,I,K,L
+
+backward-word
+forward-word
+backward-paragraph
+forward-paragraph
+
+p,+,P,* (alternative for: [,],{,})
+
+backward-sexp
+forward-sexp
+backward-up-list
+down-list
+
+M-(j,i,k,l)
+
+drag-stuff-left
+drag-stuff-right
+drag-stuff-up
+drag-stuff-down
 
 ** Defaults
 
-Stuff that already comes with emacs. No package installation required.
+Configure stuff that already comes with emacs. No packages are installed in this section.
 
 *** Preferences
 
 Some nice-to have things and general settings.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
-(setq custom-file                 (expand-file-name "etc/custom.el" user-emacs-directory)  ;; Put Customize blocks in a separate file
-      inhibit-startup-screen      t                   ;; disable default startup screen
-      uniquify-buffer-name-style  'forward            ;; for files with the same name, include part of directory name at the beginning of the buffer name
-      shift-select-mode           t                   ;; allow marks to be set when shift arrow-ing
-      focus-follows-mouse         t                   ;; allow using mouse to switch between windows
-      browse-url-browser-function 'browse-url-generic ;; links and html files should be opened in a browser, instead of emacs
-      browse-url-generic-program  "xdg-open"
-      ring-bell-function          'ignore             ;; disable bell
-      blink-cursor-interval       1                   ;; change cursor blink speed. default is 0.5
-      require-final-newline       t)                  ;; On save, automatically add final newline
+#+begin_src emacs-lisp :tangle yes
+
+(setq custom-file                    (expand-file-name "etc/custom.el" user-emacs-directory)  ;; Put Customize blocks in a separate file
+      inhibit-startup-screen         t                      ;; disable default startup screen
+      uniquify-buffer-name-style     'forward               ;; for files with the same name, include part of directory name at the beginning of the buffer name
+      shift-select-mode              t                      ;; allow marks to be set when shift arrow-ing
+      focus-follows-mouse            t                      ;; allow using mouse to switch between windows
+      browse-url-browser-function    'browse-url-generic    ;; links and html files should be opened in a browser, instead of emacs
+      browse-url-generic-program     "xdg-open"
+      ring-bell-function             'ignore                ;; disable bell
+      blink-cursor-interval          1                      ;; change cursor blink speed. default is 0.5
+      require-final-newline          t)                     ;; On save, automatically add final newline
 
 ;; open new buffers in an already existing frame
 ;; (setq ns-pop-up-frames nil)
 
-
 ;; this hook applies to every mode, so its the same as applying it globally
 (add-hook 'after-change-major-mode-hook #'my/modify-word-definitions)
-
 
 ;; Only require to type 'y' or 'n' instead of 'yes' or 'no' when prompted
 (fset 'yes-or-no-p 'y-or-n-p)
@@ -1205,8 +1357,6 @@ Some nice-to have things and general settings.
 (when (file-exists-p custom-file)
   (load custom-file))
 
-
-
 ;; On save, automatically remove trailling whitespace
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
@@ -1216,11 +1366,8 @@ Some nice-to have things and general settings.
 ;; auto refresh dired when file changes
 (add-hook 'dired-mode-hook 'auto-revert-mode)
 
-
-
 ;; automatically reload files from disk when changed externally
 (global-auto-revert-mode 1)
-
 
 ;; dont ask for confirmation for refreshing PDF buffers
 (setq revert-without-query '(".pdf"))
@@ -1234,7 +1381,6 @@ Some nice-to have things and general settings.
 ;; automatically add a pair to braces and quotes
 (electric-pair-mode 1)
 
-
 (setq-default cursor-type 'bar)
 (set-cursor-color "#ffffff")
 
@@ -1243,16 +1389,18 @@ Some nice-to have things and general settings.
 ;; (setq split-width-threshold 100
 ;;       split-height-threshold 40)
 
-
-
 ;; new buffers are opened in org-mode by default
 (setq-default major-mode 'org-mode)
 
-#+END_SRC
+;; default value is (middle top bottom)
+(setq recenter-positions '(top bottom))
+
+#+end_src
 
 *** Indentation
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 ;; set default tab width globally
 (setq-default tab-width 4)
 
@@ -1260,11 +1408,11 @@ Some nice-to have things and general settings.
 (setq-default indent-tabs-mode nil)
 
 ;; make tabs appear visible as a “|” (pipe) character
-(global-whitespace-mode)								; make all whitespace visible
+(global-whitespace-mode)                                ; make all whitespace visible
 (setq whitespace-style '(face tabs tab-mark trailing))  ; only show tabs and trailing whitespace
 (custom-set-faces
- '(whitespace-tab ((t (:foreground "#636363"))))    	; set tab character color
- '(whitespace-trailing ((t (:underline (:style wave :color "yellow2")))))
+ '(whitespace-tab         ((t (:foreground "#636363"))))   ; set tab character color
+ '(whitespace-trailing    ((t (:underline (:style wave :color "yellow2")))))
  )
 
 ;; set tab character.
@@ -1277,29 +1425,30 @@ Some nice-to have things and general settings.
 
 ;; functions to call from the M-x menu
 (defun my/switch-indentation-use-spaces ()
-  "Use spaces for indentation"
+  "Use spaces for indentation."
   (interactive)
   (setq indent-tabs-mode nil))
 
 (defun my/switch-indentation-use-tabs ()
-  "Use tabs for indentation"
+  "Use tabs for indentation."
   (interactive)
   ;; (local-set-key (kbd "TAB") 'tab-to-tab-stop)
   (setq indent-tabs-mode t))
 
 (defun my/switch-indentation-width ()
-  "Change indentation tab width"
+  "Change indentation tab width."
   (interactive)
   ;; (local-set-key (kbd "TAB") 'tab-to-tab-stop)
   (setq-default tab-width
         (string-to-number
          (completing-read "Chose tab width: " '("2" "4" "8")))))
 
-#+END_SRC
+#+end_src
 
 *** Tabs
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 ;; disable "close" (x) button for each tab
 (setq tab-line-close-button-show nil)
 
@@ -1308,33 +1457,30 @@ Some nice-to have things and general settings.
 
 ;; redefine function for tab names
 (defun my/tab-line-tab-name-buffer (buffer &optional _buffers)
+  "Define format of tab names."
   (format "  %s  " (buffer-name buffer)))
 (setq tab-line-tab-name-function #'my/tab-line-tab-name-buffer)
 
-
-;; use this next snippet to add blank space at the top of the window
-;; note: the background should be set to the same as the buffer
-;; (setq header-line-format " ")
-
-;; another option is to use the tab-line. Just give the function responsible for tab names an error and the tab line will be empty.
-
-#+END_SRC
+#+end_src
 
 *** Scrolling
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 ;; try to improve scrolling in emacs. still not ideal though
-(setq scroll-conservatively           99       ;; this value shoul not be higher than 100, or else swiper has issues (text behind modeline)
-      mouse-wheel-scroll-amount       '(1 ((shift) . 1) ((control) . nil))
-      scroll-margin                   3
-      scroll-preserve-screen-position 't)
+(setq scroll-conservatively              99       ;; this value shoul not be higher than 100, or else swiper has issues (text behind modeline)
+      mouse-wheel-scroll-amount          '(1 ((shift) . 1) ((control) . nil))
+      scroll-margin                      3
+      scroll-preserve-screen-position    't)
 
 ;;(pixel-scroll-mode)   ; this makes it a bit laggy
-#+END_SRC
+
+#+end_src
 
 *** Fringe and line numbers
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 ;; only show an indicator on the right fringe and not the left fringe
 (setq-default visual-line-fringe-indicators '(nil right-curly-arrow))
 
@@ -1348,60 +1494,101 @@ Some nice-to have things and general settings.
 
 ;; set size in pixels of left and right fringes (default is 8)
 (fringe-mode '(4 . 8))
-#+END_SRC
+
+#+end_src
 
 *** Backup, Autosave and Lockfiles
 
-#+BEGIN_SRC emacs-lisp :tangle yes
-;; change auto-save location
-(setq auto-save-file-name-transforms
-      `((".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
+#+begin_src emacs-lisp :tangle yes
 
-;; put auto-save files in designated folder
-(setq auto-save-default t)
+(setq auto-save-file-name-transforms    `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))    ;; change auto-save location
+      auto-save-default                 t           ;; put auto-save files in designated folder
+      backup-inhibited                  t           ;; disable file backup
+      create-lockfiles                  nil)        ;; stop emacs from creating temoporary symbolic link file named “#something”
 
-
-;; disable file backup
-(setq backup-inhibited t)
-
-
-;; stop emacs from creating temoporary symbolic link file named “#something”
-(setq create-lockfiles nil)
-
-#+END_SRC
+#+end_src
 
 *** Desktop session
 
-#+BEGIN_SRC emacs-lisp :tangle yes
-(setq desktop-save             t             ;; always save on exit and never ask before saving
-      desktop-restore-eager    nil           ;; number of buffers to restore immediatly
-      desktop-dirname          (no-littering-expand-var-file-name "desktop/")
-      desktop-base-file-name   "emacs.desktop"
-      desktop-save-mode        0)
+#+begin_src emacs-lisp :tangle yes
 
-#+END_SRC
+(setq desktop-save               t             ;; always save on exit and never ask before saving
+      desktop-restore-eager      nil           ;; number of buffers to restore immediatly
+      desktop-dirname            (no-littering-expand-var-file-name "desktop/")
+      desktop-base-file-name     "emacs.desktop"
+      desktop-save-mode          0)
 
-** Features
+#+end_src
+
+*** Directory local variables
+
+It is possible to create directory-local settings without using a .dir-locals.el file or modifying the original file.
+I prefer this approach because it is centralized and has less clutter.
+
+This can be used to assign values to certain variables only to certain directories.
+It is also possible set functions to evaluate at startup, for those directories.
+
+For more information about syntax, check the [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Directory-Variables.html][documentation]].
+
+#+begin_src emacs-lisp :tangle yes
+
+;; Here, we make the config file show 2 heading levels at startup, to make navigation easier.
+(dir-locals-set-class-variables 'dirlocal_emacs_config
+    '((org-mode . ((eval org-content 3)))))
+
+(dir-locals-set-class-variables 'dirlocal_org_files
+    '((org-mode . ((eval org-content 2)))))
+
+(dir-locals-set-directory-class
+    "~/.emacs.d/" 'dirlocal_emacs_config)
+
+(dir-locals-set-directory-class
+    "~/Cloud/Work - Google Cloud/Org/" 'dirlocal_org_files)
+
+#+end_src
+
+*** Searching
+**** Package: isearch
+
+#+begin_src emacs-lisp :tangle yes
+
+(use-package isearch
+  :straight nil
+  :custom
+  (search-whitespace-regexp ".*?")
+  (isearch-lax-whitespace t)
+  (isearch-regexp-lax-whitespace nil)
+  :bind
+  (:map isearch-mode-map
+        ("j" . isearch-repeat-backward)
+        ("k" . isearch-repeat-forward)))
+
+#+end_src
+
+** Additional Features
 
 Add more features by installing emacs packages.
 
-*** Icons
+*** Icon integration
 **** Package: all-the-icons
 
 Allow Emacs to use icons in various UI elements.
 
 Important: The first time this package is installed, you need to run 'all-the-icons-install-fonts' to install fonts.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package all-the-icons
   :config
   (setq all-the-icons-color-icons t))
-#+END_SRC
+
+#+end_src
 
 *** Project Management
 **** Package: projectile
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package projectile
   :config
   (setq projectile-completion-system 'ivy)
@@ -1410,17 +1597,18 @@ Important: The first time this package is installed, you need to run 'all-the-ic
   :pretty-hydra
   ((:title "Project" :color teal :quit-key "q")
    ("Find file"
-    (("f"   counsel-projectile-find-file "find file")
-     ("F"   counsel-fzf "find file (without gitignore)")
-     ("r"   projectile-recentf "recent file"))
+    (("f" counsel-projectile-find-file "find file")
+     ("F" counsel-fzf "find file (without gitignore)")
+     ("r" projectile-recentf "recent file"))
     "Switch Buffer"
-    (("b"   projectile-switch-to-buffer "switch to buffer (in project)"))
+    (("b" projectile-switch-to-buffer "switch to buffer (in project)"))
     "Manage Projects"
-    (("p"   counsel-projectile-switch-project "switch to project")
-     ("a"   projectile-add-known-project "add a new project")
-     ("d"   projectile-remove-known-project "remove known project"))
+    (("p" counsel-projectile-switch-project "switch to project")
+     ("a" projectile-add-known-project "add a new project")
+     ("d" projectile-remove-known-project "remove known project"))
     )))
-#+END_SRC
+
+#+end_src
 
 **** Basic usage
 
@@ -1462,28 +1650,30 @@ Another idea I've had is the following:
 
 Currently using: bufler with optional bufler-tabs-mode
 
-**** Package: persp-mode                                        :disabled:
+**** Package: persp-mode
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
+
 (use-package persp-mode
   :config
-  (setq persp-auto-resume-time -1
-        persp-auto-save-opt 0
-        persp-auto-save-num-of-backups 0
-        persp-set-last-persp-for-new-frames nil
-        persp-reset-windows-on-nil-window-conf t
-        persp-autokill-buffer-on-remove t
-        persp-add-buffer-on-after-change-major-mode t
-        persp-kill-foreign-buffer-behaviour 'kill)
+  (setq persp-auto-resume-time                         -1
+        persp-auto-save-opt                            0
+        persp-auto-save-num-of-backups                 0
+        persp-set-last-persp-for-new-frames            nil
+        persp-reset-windows-on-nil-window-conf         t
+        persp-autokill-buffer-on-remove                t
+        persp-add-buffer-on-after-change-major-mode    t
+        persp-kill-foreign-buffer-behaviour            'kill)
   (persp-mode 1))
 
 
 (persp-load-state-from-file (expand-file-name "var/persp-mode/persp-auto-save" user-emacs-directory))
 
-#+END_SRC
+#+end_src
 
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
+
 (use-package perspective
   :config
   (persp-mode))
@@ -1496,15 +1686,16 @@ Currently using: bufler with optional bufler-tabs-mode
 (bind-key "C-b" 'projectile-switch-to-buffer wakib-keys-overriding-map)
 
 (add-to-list 'persp-filter-save-buffers-functions
-             (lambda (b) (string-prefix-p "todo" (buffer-name b)))
-             )
-#+END_SRC
+             (lambda (b) (string-prefix-p "todo" (buffer-name b))))
+
+#+end_src
 
 **** Package: bufler
 
 When dealing with the =org-directory= variable, it is important to pay attention to the order in which the org package is loaded.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package bufler
   :init
   ;; always switch workspace when switching buffers with bufler
@@ -1518,6 +1709,7 @@ When dealing with the =org-directory= variable, it is important to pay attention
   :config
   (bufler-tabs-mode 1)
   (tab-bar-mode 0)
+  (setq bufler-reverse t)
 
   ;; try to filter/ignore special buffers
 
@@ -1537,11 +1729,13 @@ When dealing with the =org-directory= variable, it is important to pay attention
   ;; (setq bufler-filter-fns (list #'bufler-hidden-buffer-p #'my/bufler-filter-special-buffers))
 
   (defun my/bufler-workspace-set-from-buffer-name (buffer-name)
+    "Focus workspace of buffer BUFFER-NAME."
     (let ((selected-buffer (get-buffer buffer-name)))
       (bufler-workspace-frame-set
        (butlast (bufler-group-tree-leaf-path (bufler-buffers) selected-buffer)))))
 
   (defun my/bufler-switch-buffer-C-u ()
+    "Use `bufler-switch-buffer', but as if C-u was pressed before it."
     (interactive)
     (let ((current-prefix-arg 4)) ;; emulate C-u
       (call-interactively 'bufler-switch-buffer)))
@@ -1597,11 +1791,12 @@ When dealing with the =org-directory= variable, it is important to pay attention
                      (filename-match "Files" (rx bol (zero-or-more anything)))
                      ;; (mode-match "Dashboard" (rx bos "dashboard"))
                      (mode-match "Scratch" (rx bos "lisp-interaction"))
-                     (name-match "Untitled" (rx bos "untitled"))
-                     )
+                     (name-match "Untitled" (rx bos "untitled")))
            (group
             ;; Subgroup collecting buffers in a projectile project.
-            (auto-projectile)))
+            (auto-projectile))
+           ;; (auto-directory)
+           )
           ))
 
   :bind (:map wakib-keys-overriding-map
@@ -1616,7 +1811,7 @@ When dealing with the =org-directory= variable, it is important to pay attention
          (dashboard-mode . (lambda() (my/bufler-workspace-set-from-buffer-name "*scratch*")))
          ))
 
-#+END_SRC
+#+end_src
 
 **** Basic usage
 
@@ -1643,40 +1838,40 @@ Inside bufler workspace list
 
 Packages I looked at:
 
-  treemacs workspaces:
-    - a workspace can only have projects or folders (but it's possible to use bookmarks for files)
-    - Can not list all buffers in current workspace
-    - can use projectile and bookmarks to cover some functionality
+- treemacs workspaces:
+  + a workspace can only have projects or folders (but it's possible to use bookmarks for files)
+  + Can not list all buffers in current workspace
+  + can use projectile and bookmarks to cover some functionality
 
-  eyebrowse:
-    - does not save files, only layouts
-    - works like i3 workspaces
-    - the way it works is that you assign a workspace to a certain purpose and only open certain projects in there
+- eyebrowse:
+  + does not save files, only layouts
+  + works like i3 workspaces
+  + the way it works is that you assign a workspace to a certain purpose and only open certain projects in there
 
-  bufler (bufler-workspace-mode):
-    - bufler-list is good for managing buffers. works like magit
-    - the tab-bar integration is nice
-    - does not save files
-    - I tried to use desktop-save-mode for saving stuff, but wasnt very happy with it
-    - bufler-workspace-mode allows to automatically switch workspaces when switching buffers
-    - can use bookmarks to cover some functionality
+- bufler (bufler-workspace-mode):
+  + bufler-list is good for managing buffers. works like magit
+  + the tab-bar integration is nice
+  + does not save files
+  + I tried to use desktop-save-mode for saving stuff, but wasnt very happy with it
+  + bufler-workspace-mode allows to automatically switch workspaces when switching buffers
+  + can use bookmarks to cover some functionality
 
-  projectile + bookmarks:
-    - needs a special file in a project directory to give it a custom name
-    - it's not ideal for normal non-repo folders
+- projectile + bookmarks:
+  + needs a special file in a project directory to give it a custom name
+  + it's not ideal for normal non-repo folders
 
-  perspective and persp-mode (shared):
-    - doesn't really have a concept of projects, only buffers
-    - saves and loads all perspectives at once. on file load, all buffers from all saved perspectives are opened
-    - persp-mode is more popular and supported, while perspective is simpler and nicer to configure
+- perspective and persp-mode (shared):
+  + doesn't really have a concept of projects, only buffers
+  + saves and loads all perspectives at once. on file load, all buffers from all saved perspectives are opened
+  + persp-mode is more popular and supported, while perspective is simpler and nicer to configure
 
-  perspective:
-    - the list of buffers in current perspective works better than persp-mode
+- perspective:
+  + the list of buffers in current perspective works better than persp-mode
 
-  persp-mode:
-    - it's a pain to setup and the documentation is pretty lacking (these are related)
-    - cant make it load save file at startup without resuming session
-    - the list of buffers in current perspective shows a bunch or useless buffers
+- persp-mode:
+  + it's a pain to setup and the documentation is pretty lacking (these are related)
+  + cant make it load save file at startup without resuming session
+  + the list of buffers in current perspective shows a bunch or useless buffers
 
 *** File Explorer
 **** Information
@@ -1684,30 +1879,79 @@ Packages I looked at:
 Since I am using Treemacs workspaces I will explain my view on projects and workspaces.
 Here is my ideal usage of workspaces/projects:
 
-- each project has a name that can be easily configured
-- a list of projects appears in the dashboard (with their custom names)
-- you can search all files in a project
-- the project name appears in the modeline
-- all of the previous items should also work with a standard folder (even if it's not a repository)
+  - each project has a name that can be easily configured
+  - a list of projects appears in the dashboard (with their custom names)
+  - you can search all files in a project
+  - the project name appears in the modeline
+  - all of the previous items should also work with a standard folder (even if it's not a repository)
 
 That last item is very important. It's the reason why I projectile by itself isn't enough.
 
 This is a desired but not required feature:
-- no files are saved on project directory, or as few as possible. everthing should be saved in the '.emacs.d' folder
+  - no files are saved on project directory, or as few as possible. everthing should be saved in the '.emacs.d' folder
 
 Taking this into account, projectile is a good start but it doesnt give me everything I want, so I'm also using Treemacs workspaces.
 
 **** Package: treemacs
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package treemacs
+  :config
+  (treemacs-follow-mode t)
+  (treemacs-filewatch-mode t)
+
+
+
+  ;; (defun treemacs--follow-after-eyebrowse-switch ()
+  ;;   (when treemacs-follow-mode
+  ;;     (--when-let (treemacs-get-local-window)
+  ;;       (with-selected-window it
+  ;;         (treemacs--follow-after-buffer-list-update)
+  ;;         (hl-line-highlight)))))
+
+  ;; (add-hook 'bufler-workspace-set-hook #'treemacs--follow-after-eyebrowse-switch)
+
+
+
+  ;; (add-hook 'bufler-list-mode-hook 'treemacs-display-current-project-exclusively)
+
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; (add-hook 'treemacs-select-hook 'treemacs-add-and-display-current-project)     ;;
+  ;; (add-hook 'treemacs-select-hook 'treemacs-display-current-project-exclusively) ;;
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+  ;; (defun my/change-cursor (&rest args)
+  ;;   "Change cursor according to evil states in CUI."
+  ;;   (unless (display-graphic-p)
+  ;;     (call-interactively 'treemacs-display-current-project-exclusively)
+  ;;     ))
+
+  ;; (add-hook 'window-selection-change-functions 'my/change-cursor)
+  ;; (add-hook 'window-buffer-change-functions 'my/change-cursor)
+  ;; (add-hook 'window-state-change-hook 'my/change-cursor)
+  ;; (add-hook 'buffer-list-update-hook 'my/change-cursor)
+
+
+
+
+  ;; (defun change-cursor (&rest args)
+  ;;   "Change cursor according to evil states in CUI."
+  ;;   (unless (display-graphic-p)
+  ;;     (send-string-to-terminal ;;           bar        block
+  ;;      (if evil-insert-state-minor-mode "\033[6 q" "\033[2 q"))))
+
+  ;; (dolist (hook '(window-selection-change-functions evil-insert-state-entry-hook evil-normal-state-entry-hook))
+  ;;   (add-hook hook 'change-cursor))
+
+
   :hook (treemacs-mode . (lambda() (display-line-numbers-mode -1)))  ;; dont show line numbers in the sidebar
   :bind (:map treemacs-mode-map
-              ("<mouse-1>" . treemacs-single-click-expand-action)))  ;; single mouse click to open files and folders
-
-
-;; you actually have to always run this manually
-;;(setq treemacs-display-current-project-exclusively t)
+              ("<mouse-1>" . treemacs-single-click-expand-action))  ;; single mouse click to open files and folders
+  )
 
 
 ;; (defun my-treemacs-switch-workspace (ws)
@@ -1727,29 +1971,41 @@ Taking this into account, projectile is a good start but it doesnt give me every
 ;;    "w"
 ;;    `(lambda (&rest ignore) (my-treemacs-switch-workspace ,el))
 ;;    el)
-#+END_SRC
 
-**** Package: treemacs integrations
+#+end_src
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+**** Package: treemacs-projectile
+
+#+begin_src emacs-lisp :tangle yes
+
 (use-package treemacs-projectile
-:after treemacs projectile)
+  :after treemacs projectile)
+
+#+end_src
+
+**** Package: treemacs-magit
+
+#+begin_src emacs-lisp :tangle yes
 
 (use-package treemacs-magit
-:after treemacs magit)
-#+END_SRC
+  :after treemacs magit)
+
+#+end_src
 
 *** Dashboard
 **** Package: hide-mode-line
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 ;; hide the modeline in the dashboard buffer
 (use-package hide-mode-line)
-#+END_SRC
+
+#+end_src
 
 **** Package: page-break-lines
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package page-break-lines
   :config
   ;; some fonts make the line break too long or too short.
@@ -1758,11 +2014,13 @@ Taking this into account, projectile is a good start but it doesnt give me every
    '(page-break-lines ((t (:family "Noto Sans Mono")))))
 
   (global-page-break-lines-mode 1))
-#+END_SRC
+
+#+end_src
 
 **** Package: dashboard
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package dashboard
   :defer nil
   :after hide-mode-line page-break-lines
@@ -1787,90 +2045,49 @@ Taking this into account, projectile is a good start but it doesnt give me every
   ;;  (add-to-list 'dashboard-heading-icons '(treemacs-workspaces . "book"))
   ;;  (dashboard-modify-heading-icons '((treemacs-workspaces . "book")))
 
-  (setq dashboard-items            '((projects  . 5)
-                                     (bookmarks . 5)
-                                     (recents   . 5)
-                                     (agenda    . 5))
-        dashboard-center-content    t
-        dashboard-set-heading-icons t
-        dashboard-set-init-info     t
-        dashboard-set-footer        nil
-        dashboard-set-navigator     t
-        dashboard-startup-banner    (expand-file-name "config-resources/Emacs-logo.svg" user-emacs-directory)
-        dashboard-banner-logo-title (format "GNU Emacs version %d.%d" emacs-major-version emacs-minor-version)
-        dashboard-init-info         (format "%d packages loaded with straight. finished in %s"
-                                            (length (hash-table-keys straight--success-cache)) (emacs-init-time))
-        dashboard-navigator-buttons `(((,
-                                        (all-the-icons-octicon "dashboard" :height 1.1 :v-adjust 0.0)
-                                        "Config file"
-                                        "Open private configuration file"
-                                        (lambda (&rest _) (find-file "~/.emacs.d/config.org")))
-                                       (,(all-the-icons-octicon "gear" :height 1.1 :v-adjust 0.0)
-                                        "Restore session"
-                                        "Restore last saved session"
-                                        (lambda (&rest _) (my/desktop-enable))))
-                                      ))
+  (setq dashboard-items                '((projects  . 5)
+                                         (bookmarks . 5)
+                                         (recents   . 5)
+                                         (agenda    . 5))
+        dashboard-center-content       t
+        dashboard-set-heading-icons    t
+        dashboard-set-init-info        t
+        dashboard-set-footer           nil
+        dashboard-set-navigator        t
+        dashboard-startup-banner       (expand-file-name "config-resources/Emacs-logo.svg" user-emacs-directory)
+        dashboard-banner-logo-title    (format "GNU Emacs version %d.%d" emacs-major-version emacs-minor-version)
+        dashboard-init-info            (format "%d packages loaded with straight. finished in %s"
+                                               (length (hash-table-keys straight--success-cache)) (emacs-init-time))
+        dashboard-navigator-buttons    `(((,(all-the-icons-octicon "dashboard" :height 1.1 :v-adjust 0.0)
+                                           "Config file"
+                                           "Open private configuration file"
+                                           (lambda (&rest _) (find-file "~/.emacs.d/config.org")))
+                                          (,(all-the-icons-octicon "gear" :height 1.1 :v-adjust 0.0)
+                                           "Restore session"
+                                           "Restore last saved session"
+                                           (lambda (&rest _) (my/desktop-enable)))
+                                          )))
 
   :hook ((dashboard-mode . (lambda () (tab-line-mode -1)))
          (dashboard-mode . hide-mode-line-mode)
          (dashboard-mode . my/set-buffer-dashboard-fringe)))
-#+END_SRC
 
-*** Modal editing
-
-try out a modal configuration
-
-#+BEGIN_SRC emacs-lisp :tangle no
-(use-package ryo-modal
-  :commands ryo-modal-mode
-  :bind ("C-SPC" . ryo-modal-mode)
-  :config
-  (ryo-modal-keys
-   ("," ryo-modal-repeat)
-   ("q" ryo-modal-mode)
-   ("k" next-line)
-   ("i" previous-line)
-   ("j" backward-char)
-   ("l" forward-char)
-   ("ç" scroll-down-command)
-   ("º" scroll-up-command)
-   ("p" my/smarter-move-beginning-of-line)
-   ("+" end-of-visual-line))
-
-  ;; s x c v f g h
-
-  (setq ryo-modal-cursor-color "white")
-
-  (ryo-modal-keys
-   ;; First argument to ryo-modal-keys may be a list of keywords.
-   ;; These keywords will be applied to all keybindings.
-   (:norepeat t)
-   ("0" "M-0")
-   ("1" "M-1")
-   ("2" "M-2")
-   ("3" "M-3")
-   ("4" "M-4")
-   ("5" "M-5")
-   ("6" "M-6")
-   ("7" "M-7")
-   ("8" "M-8")
-   ("9" "M-9"))
-  :hook (ryo-modal-mode-hook . good-scroll-mode))
-#+END_SRC
+#+end_src
 
 *** Modeline
 **** Package: doom-modeline
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package doom-modeline
   :init
-  (setq doom-modeline-height                   24
-        doom-modeline-major-mode-icon          nil
-        doom-modeline-major-mode-color-icon    nil
-        doom-modeline-indent-info              t
-        doom-modeline-buffer-state-icon        t
-        doom-modeline-buffer-modification-icon t
-        doom-modeline-buffer-file-name-style   'truncate-upto-project)
+  (setq doom-modeline-height                      24
+        doom-modeline-major-mode-icon             nil
+        doom-modeline-major-mode-color-icon       nil
+        doom-modeline-indent-info                 t
+        doom-modeline-buffer-state-icon           t
+        doom-modeline-buffer-modification-icon    t
+        doom-modeline-buffer-file-name-style      'truncate-upto-project)
 
   :config
   ;; ------ Segment - Bufler ------
@@ -1879,7 +2096,9 @@ try out a modal configuration
     (if (and (boundp 'bufler-workspace-tabs-mode) bufler-workspace-tabs-mode)
         (let ((active (doom-modeline--active)))
           (when-let (text
-                     (propertize (format " %s" (replace-regexp-in-string "Projectile:" "" (my/bufler-workspace-mode-lighter)))
+                     (propertize (format " %s"
+                                         (replace-regexp-in-string ".*» " ""
+                                                                   (replace-regexp-in-string "Projectile:" "" (my/bufler-workspace-mode-lighter))))
                                  'face '(:foreground "gray60")))
             (if active
                 text
@@ -2063,19 +2282,23 @@ lines are selected, or the NxM dimensions of a block selection."
 
   :hook ((after-init . doom-modeline-mode)
          (doom-modeline-mode . setup-initial-doom-modeline)))
-#+END_SRC
+
+#+end_src
 
 The default doom modeline, for reference:
 
-#+BEGIN_EXAMPLE
+#+begin_example
+
 (doom-modeline-def-modeline 'main
   '(bar workspace-name window-number modals matches buffer-info remote-host buffer-position word-count parrot selection-info)
   '(objed-state misc-info persp-name battery grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info buffer-encoding major-mode process vcs checker))
-#+END_EXAMPLE
 
-**** Package: spaceline                                         :disabled:
+#+end_example
 
-#+BEGIN_SRC emacs-lisp :tangle no
+**** Package: spaceline
+
+#+begin_src emacs-lisp :tangle no
+
 (use-package spaceline)
 
 ;(spaceline-toggle-minor-modes-off)
@@ -2089,7 +2312,6 @@ The default doom modeline, for reference:
 ;(spaceline-toggle-line-column-on)
 ;(spaceline-toggle-buffer-position-on)
 ;(spaceline-toggle-hud-off)
-
 
 (spaceline-compile
   ; left side
@@ -2125,14 +2347,14 @@ The default doom modeline, for reference:
     (buffer-position :priority 99)
     (hud :priority 99)))
 
-
-
 ;;(spaceline-emacs-theme)
-#+END_SRC
 
-**** Package: telephone-line                                    :disabled:
+#+end_src
 
-#+BEGIN_SRC emacs-lisp :tangle no
+**** Package: telephone-line
+
+#+begin_src emacs-lisp :tangle no
+
 (use-package telephone-line)
 
 (telephone-line-defsegment* telephone-line-my-buffer-modified-segment ()
@@ -2184,23 +2406,27 @@ The default doom modeline, for reference:
         (evil   . (telephone-line-airline-position-segment))))
 
 (telephone-line-mode)
-#+END_SRC
 
-**** Package: mood-line                                         :disabled:
+#+end_src
 
-#+BEGIN_SRC emacs-lisp :tangle no
+**** Package: mood-line
+
+#+begin_src emacs-lisp :tangle no
+
 (use-package mood-line)
 (setq mood-line-show-encoding-information t)
 (setq mood-line-show-eol-style t)
 (mood-line-mode)
-#+END_SRC
+
+#+end_src
 
 **** bufler segment example
 
 This part is the bufler segment, without the doom-modeline specific stuff.
 This can be used to define a segment for any modeline.
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
+
 (doom-modeline-def-segment my/bufler-workspace
   "Display current bufler workspace name"
   (if (and (boundp 'bufler-workspace-tabs-mode) bufler-workspace-tabs-mode)
@@ -2209,9 +2435,10 @@ This can be used to define a segment for any modeline.
     ""))
 
 ;; note: should use something like (all-the-icons-alltheicon "git") instead
-#+END_SRC
 
-*** Search Multiple Files
+#+end_src
+
+*** Search Across Multiple Files
 **** Information
 
 My choice for what package to use is =rg=.
@@ -2223,7 +2450,8 @@ Other options are:
 
 **** Package: rg
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package rg
   :bind
   (:map wakib-keys-overriding-map
@@ -2236,7 +2464,8 @@ Other options are:
     :files "everything"
     :dir "current"
     :flags ("--hidden")))
-#+END_SRC
+
+#+end_src
 
 *** Interactive Visual Replace
 **** Package: pcre2el
@@ -2244,27 +2473,32 @@ Other options are:
 provides a regex backend to be used by visual-regexp-steroids
 this is to avoid having python installed as a dependency
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package pcre2el)
-#+END_SRC
+
+#+end_src
 
 **** Package: visual-regexp (part 1)
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 ;; you can use actual regex with this package, instead of emacs specific regex
 ;; this seems better than Anzu for my uses
 (use-package visual-regexp-steroids
   :init
   ;; visual-regexp-steroids allows using python engine
   ;; (setq vr/engine 'pcre2el)
-#+END_SRC
+
+#+end_src
 
 **** visual-regexp patch: search whole buffer
 
 This is a change to allow searching the whole buffer.
 Copied from a fork of the visual-regexp repository: https://github.com/grahnen/visual-regexp.el/commit/248f5716f8de092c1915d91821681aed7b31f808
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (defvar vr--full-buffer 'nil)
 (setq vr--full-buffer t)
 
@@ -2280,14 +2514,16 @@ Copied from a fork of the visual-regexp repository: https://github.com/grahnen/v
           (if (region-active-p)
               (region-end)
             (point-max)))))
-#+END_SRC
+
+#+end_src
 
 **** visual-regexp patch: use region as input
 
 This next part changes the package's base code to allow using active region as the input regex pattern.
 The parts that were changed have comments that identify them.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 :config
 ;; these are my own variables
 (defvar my/visual-regexp-region-flag nil)
@@ -2295,6 +2531,8 @@ The parts that were changed have comments that identify them.
 
 ;; use active region as replace regexp defeult input
 (defun my/visual-replace-from-active-region (beginning end)
+  "Normal `visual-replace', but use active region as input.
+It assumes the region is active."
   (interactive "r")
   (setq my/visual-regexp-region-flag t)
   (setq my/visual-regexp-region-val (buffer-substring-no-properties (region-beginning) (region-end)))
@@ -2304,6 +2542,7 @@ The parts that were changed have comments that identify them.
 
 ;; wrapper function that checks if there is an active region or not
 (defun my/visual-replace-with-active-region-support ()
+  "Normal `visual-replace', but check if there's an active region first."
   (interactive)
   (when (eq major-mode 'org-mode)
     (outline-show-all))
@@ -2360,11 +2599,13 @@ The parts that were changed have comments that identify them.
           (add-to-history vr/query-replace-from-history-variable (car split) nil t)
           (add-to-history vr/query-replace-to-history-variable (cdr split) nil t)
           (add-to-history vr/query-replace-defaults-variable split nil t))))))
-#+END_SRC
+
+#+end_src
 
 **** Package: visual-regexp (part 2)
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
   :bind
   ;; (:map wakib-keys-overriding-map
   ;;       ("C-h" . my/visual-replace-with-active-region-support)))
@@ -2374,7 +2615,7 @@ The parts that were changed have comments that identify them.
 ;; using C-7 inside swiper seems better. it does the same thing
 ;; (bind-key "C-S-h" 'vr/mc-mark wakib-keys-overriding-map)
 
-#+END_SRC
+#+end_src
 
 
 This is how the author of the package suggests implementing thing-at-point in a github issue:
@@ -2397,7 +2638,8 @@ attempt to replicate anzu and swiper behaviour.
 they open a heading when there's an entry in there and fold it back when moving to the next heading.
 they final view is the same as before the command executed.
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
+
 (defun vr--perform-query-replace ()
   ;; This function is a heavily modified version of (perform-replace) from replace.el.
   ;; The original plan was to use the original perform-replace, but various issues stood in the way.
@@ -2556,14 +2798,16 @@ they final view is the same as before the command executed.
       (message "Replaced %d occurrence%s"
                replace-count
                (if (= replace-count 1) "" "s")))))
-#+END_SRC
+
+#+end_src
 
 *** Org mode
 **** Package: async
 
 The code below executes org-babel-tangle asynchronously when config.org is saved.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package async
   :config
   (defvar *config-file* (expand-file-name "config.org" user-emacs-directory)
@@ -2605,47 +2849,48 @@ The code below executes org-babel-tangle asynchronously when config.org is saved
                                                     ',init-tangle-start-time)))
               (message "ERROR: %s as tangle failed." ,org-file)))))))
   )
-#+END_SRC
+
+#+end_src
 
 **** Package: org
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package org
   :straight org-plus-contrib
   :demand t
   :config
-  (setq org-startup-indented              t             ;; indent text to heading level
-        org-startup-folded                'content      ;; set initial view to 'content' (show all headlines)
-        org-indent-indentation-per-level  2
-        org-descriptive-links             t             ;; highlight links
-        org-agenda-dim-blocked-tasks      t             ;; dim blocked tasks
-        org-agenda-skip-deadline-if-done  t             ;; avoid showing unecessary tasks
-        org-agenda-skip-scheduled-if-done t
-        org-agenda-skip-archived-trees    t
-        org-cycle-separator-lines         2             ;; set how may real newlines are necessary to display a newline when folded.
-        org-todo-keywords                 '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")   ;; default todo keywords ✔ ✘
-                                            (sequence "SOMEDAY(s)" "WAITING(w)" "PAUSED(p)" "REVIEW(r)" "|" "CANCELLED(c)"))
-        org-directory                     "~/Cloud/Work - Google Cloud/Org/"    ;; where to look for org files
-        org-agenda-files                  (quote ("~/Cloud/Work - Google Cloud/Org/agenda/private"
-                                                  "~/Cloud/Work - Google Cloud/Org"
-                                                  "~/Cloud/Work - Google Cloud/Org/agenda/work"
-                                                  "~/Cloud/Work - Google Cloud/Org/agenda/work/IST/year 5/"))
-        org-log-done                      (quote time)  ;; insert a note in a task when it is marked as done, which includes a timestamp
-        org-support-shift-select          t             ;; allows using the shif key for selecting text
-        org-fontify-done-headline         t             ;; grey out completed tasks
-        org-src-preserve-indentation      t             ;; do not put two spaces on the left
-        org-src-tab-acts-natively         t             ;; make tab behave as it would normally for that language
-        org-ellipsis                      " ⤵"          ;; Changing the org-mode ellipsis
-        ;; setq org-ellipsis              " ▼"
-        org-image-actual-width            nil           ;; if there is something like #+ATTR_ORG: width="200", resize to 200, otherwise don't resize
-        ;; org-agenda-span                   30            ;; amount of days in the agenda
-        org-agenda-start-on-weekday       nil           ;; start the agenda in the current day
+  (setq org-startup-indented                 t             ;; indent text to heading level
+        org-startup-folded                   'content      ;; set initial view to 'content' (show all headlines)
+        org-indent-indentation-per-level     2
+        org-descriptive-links                t             ;; highlight links
+        org-agenda-dim-blocked-tasks         t             ;; dim blocked tasks
+        org-agenda-skip-deadline-if-done     t             ;; avoid showing unecessary tasks
+        org-agenda-skip-scheduled-if-done    t
+        org-agenda-skip-archived-trees       t
+        org-cycle-separator-lines            2             ;; set how may real newlines are necessary to display a newline when folded.
+        org-todo-keywords                    '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")   ;; default todo keywords ✔ ✘
+                                               (sequence "SOMEDAY(s)" "WAITING(w)" "PAUSED(p)" "REVIEW(r)" "|" "CANCELLED(c)"))
+        org-directory                        "~/Cloud/Work - Google Cloud/Org/"    ;; where to look for org files
+        org-agenda-files                     (quote ("~/Cloud/Work - Google Cloud/Org/agenda/private"
+                                                     "~/Cloud/Work - Google Cloud/Org"
+                                                     "~/Cloud/Work - Google Cloud/Org/agenda/work"
+                                                     "~/Cloud/Work - Google Cloud/Org/agenda/work/IST/year 5/"))
+        org-log-done                         (quote time)  ;; insert a note in a task when it is marked as done, which includes a timestamp
+        org-support-shift-select             t             ;; allows using the shif key for selecting text
+        org-fontify-done-headline            t             ;; grey out completed tasks
+        org-src-preserve-indentation         t             ;; do not put two spaces on the left
+        org-src-tab-acts-natively            t             ;; make tab behave as it would normally for that language
+        org-ellipsis                         " ⤵"          ;; Changing the org-mode ellipsis
+        ;; setq org-ellipsis                 " ▼"
+        org-image-actual-width               nil           ;; if there is something like #+ATTR_ORG: width="200", resize to 200, otherwise don't resize
+        ;; org-agenda-span                      30            ;; amount of days in the agenda
+        org-agenda-start-on-weekday          nil           ;; start the agenda in the current day
         org-agenda-skip-deadline-prewarning-if-scheduled t
-        org-agenda-prefix-format          '((agenda . " %i %-21:c%?-21t% s")    ;; make the first column in agenda wider (default is 12 characters)
-                                            (todo . " %i %-21:c")
-                                            (tags . " %i %-21:c")
-                                            (search . " %i %-21:c"))
-        )
+        org-agenda-prefix-format             '((agenda . " %i %-21:c%?-21t% s")    ;; make the first column in agenda wider (default is 12 characters)
+                                               (todo . " %i %-21:c")
+                                               (tags . " %i %-21:c")
+                                               (search . " %i %-21:c")))
 
   ;; customize face for 'DONE' headings
   (custom-set-faces '(org-headline-done
@@ -2686,19 +2931,23 @@ The code below executes org-babel-tangle asynchronously when config.org is saved
                        ;; (push '("#+begin_src" . "↦" ) prettify-symbols-alist)
                        ;; (push '("#+end_src" . "⇤" ) prettify-symbols-alist)
                        (prettify-symbols-mode)))))
-#+END_SRC
+
+#+end_src
 
 **** Package: org-superstar
 
 Org Bullets (not used anymore)
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
+
 (use-package org-bullets
     :hook (org-mode . org-bullets-mode))
-#+END_SRC
+
+#+end_src
 
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package org-superstar
   :after org
   :hook (org-mode . org-superstar-mode)
@@ -2729,7 +2978,8 @@ Org Bullets (not used anymore)
   ;; (org-superstar-remove-leading-stars t)
 
   )
-#+END_SRC
+
+#+end_src
 
 Here are some symbols that can be used for Org headings:
 
@@ -2745,7 +2995,8 @@ And here are some code samples from  the repo, showing some possibilities:
 
 This time we want all of the above but a little more personalized. First off, let’s make bullets a little more chunky. Mind that the height we provide for bullet faces is not the actual height of a bullet, but its height relative to its surroundings. Additionally, let’s hide the leading stars for terminal sessions, as the default leader does not look all that good in my chosen terminal font. I make use of the fact that org-superstar-leading-fallback can be set to the space character. This has the nice advantage over org-hide-leading-stars that it does not just “paint over” the asterisks, but makes them completely indistinguishable from white space, neat!
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
+
 (with-eval-after-load 'org-superstar
   (set-face-attribute 'org-superstar-item nil :height 1.2)
   (set-face-attribute 'org-superstar-header-bullet nil :height 1.2)
@@ -2757,12 +3008,14 @@ This time we want all of the above but a little more personalized. First off, le
 (setq org-superstar-cycle-headline-bullets nil)
 ;; Hide away leading stars on terminal.
 (setq org-superstar-leading-fallback ?\s)
-#+END_SRC
+
+#+end_src
 
 
 Inline tasks behave as you would expect them to, for the most part. They have two bullets instead of one, but are otherwise treated the same as regular headlines by Org Superstar, meaning org-superstar-headline-bullets-list controls the bullet used as if it were a regular headline. If org-inlinetask-show-first-star is non-nil, you can customize the additional marker. Just like with the rest of Superstar’s decorations, you can more or less fully control how it looks, with independent settings for graphical and terminal displays and a dedicated face, should you find the default of using org-warn a little… unsubtle. We again use the LaTeX setup as a base and add a few tweaks.
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
+
 (require 'org-inlinetask)
 (setq org-inlinetask-show-first-star t)
 ;; Less gray please.
@@ -2781,25 +3034,30 @@ Inline tasks behave as you would expect them to, for the most part. They have tw
 (setq org-superstar-cycle-headline-bullets nil)
 ;; A simple period works fine, too.
 (setq org-superstar-leading-fallback ?.)
-#+END_SRC
+
+#+end_src
 
 **** Package: toc-org
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package toc-org
   :hook (org-mode . toc-org-mode))
-#+END_SRC
+
+#+end_src
 
 **** Package: org-ql
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
+
 (use-package org-ql)
 
-#+END_SRC
+#+end_src
 
 **** Package: org-super-agenda
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (require 'org-habit)
 (use-package org-super-agenda
   :config
@@ -2832,11 +3090,12 @@ Inline tasks behave as you would expect them to, for the most part. They have tw
 
   (org-super-agenda-mode))
 
-#+END_SRC
+#+end_src
 
 **** REVIEW Org block templates
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
+
 (add-to-list 'org-structure-template-alist
         '("s" "#+begin_src ?\n\n#+end_src" "<src lang=\"?\">\n\n</src>"))
 
@@ -2866,30 +3125,105 @@ Inline tasks behave as you would expect them to, for the most part. They have tw
       B[label=\"B\"]
       A->B
    }\n#+end_src" "<src lang=\"dot\">\n\n</src>"))
-#+END_SRC
+
+#+end_src
+
+*** TODO Modal editing
+
+try out a modal configuration
+
+C-up gives error: "wrong number of arguments: (0 . 1), 2"
+related to org-backward-paragraph
+it works if I manually execute the use-package after emacs is loaded. probably a dependency issue.
+
+after some experimentation, is seems there's a conflict with some org package.
+Solution: load this package after the org section.
+
+#+begin_src emacs-lisp :tangle yes
+
+(use-package ryo-modal
+  :init
+  (unbind-key "C-SPC")
+  :config
+  (setq ryo-modal-cursor-color "white")
+
+  (bind-key "M-j" 'drag-stuff-left wakib-keys-overriding-map)
+  (bind-key "M-l" 'drag-stuff-right wakib-keys-overriding-map)
+  (bind-key "M-i" 'drag-stuff-up wakib-keys-overriding-map)
+  (bind-key "M-k" 'drag-stuff-down wakib-keys-overriding-map)
+
+  (bind-key "M-p" 'my/smarter-move-beginning-of-line wakib-keys-overriding-map)
+  (bind-key "M-+" 'end-of-visual-line wakib-keys-overriding-map)
+  (bind-key "M-ç" 'scroll-down-command wakib-keys-overriding-map)
+  (bind-key "M-º" 'scroll-up-command wakib-keys-overriding-map)
+
+  (ryo-modal-keys
+   ("," ryo-modal-repeat)
+   ("q" ryo-modal-mode)
+   ("i" previous-line)
+   ("k" next-line)
+   ("j" backward-char)
+   ("l" forward-char)
+   ;; ("u" )
+   ;; ("o" )
+   ("I" backward-paragraph)
+   ("K" forward-paragraph)
+   ("J" backward-word)
+   ("L" forward-word)
+   ;; ("U" )
+   ;; ("O" )
+   ("[" backward-sexp)
+   ("]" forward-sexp)
+   ("{" backward-up-list)
+   ("}" down-list)
+   )
+
+  (ryo-modal-keys
+   ;; First argument to ryo-modal-keys may be a list of keywords.
+   ;; These keywords will be applied to all keybindings.
+   (:norepeat t)
+   ("0" "M-0")
+   ("1" "M-1")
+   ("2" "M-2")
+   ("3" "M-3")
+   ("4" "M-4")
+   ("5" "M-5")
+   ("6" "M-6")
+   ("7" "M-7")
+   ("8" "M-8")
+   ("9" "M-9"))
+
+  :bind ("C-SPC" . ryo-modal-mode)
+  ;; :hook ((after-init . ryo-modal-mode))
+  )
+
+#+end_src
 
 *** Spellcheck
 **** Package: flyspell
 
 Between aspell and hunspell, aspell seems to have much better performance.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 ;; defer is used to only load package when mode is activated
 (use-package flyspell
   :defer t
   :config
   ;; set backend and default language
-  (setq ispell-program-name "aspell"
-        ispell-dictionary "en_US")
+  (setq ispell-program-name    "aspell"
+        ispell-dictionary      "en_US")
   :bind
   (:map wakib-keys-overriding-map
         ("C-." . flyspell-correct-at-point))
   :hook (org-mode . flyspell-mode)) ;; automatically enable spellchecker for org files (doesn't affect source blocks)
-#+END_SRC
+
+#+end_src
 
 **** Package: flyspell-correct-ivy
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package flyspell-correct-ivy
   :config
   (setq flyspell-correct-interface #'flyspell-correct-ivy)
@@ -2897,25 +3231,27 @@ Between aspell and hunspell, aspell seems to have much better performance.
   (:map flyspell-mouse-map
    ("<mouse-2>" . nil)
    ("<mouse-3>" . flyspell-correct-word)))
-#+END_SRC
+
+#+end_src
 
 **** Basic usage
 
 Use hydra menu to enable/disable.
 
-*** REVIEW Code Completion
+*** Code Completion
 **** Package: company
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package company
   :config
   (global-company-mode 1)
 
-  (setq company-global-modes          '(not org-mode)
-        company-minimum-prefix-length 3
-        company-auto-complete         t
-        company-show-numbers          t
-        company-idle-delay            0.6)
+  (setq company-global-modes             '(not org-mode)
+        company-minimum-prefix-length    3
+        company-auto-complete            t
+        company-show-numbers             t
+        company-idle-delay               0.6)
 
   (defun company-abort-and-insert-space ()
     (interactive)
@@ -2925,12 +3261,14 @@ Use hydra menu to enable/disable.
   :bind
   (:map company-active-map
         ("<escape>" . company-abort)
-        ("SPC"      . company-abort-and-insert-space)))
-#+END_SRC
+        ("SPC" . company-abort-and-insert-space)))
+
+#+end_src
 
 **** Package: company-quickhelp
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package company-quickhelp
   :unless (display-graphic-p)
   :after company
@@ -2938,16 +3276,19 @@ Use hydra menu to enable/disable.
   (setq company-quickhelp-delay nil)  ;; popup doesnt appear automatically
   :config
   (company-quickhelp-mode))
-#+END_SRC
+
+#+end_src
 
 **** Package: company-box
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package company-box
   :after company
   :hook
   (company-mode . (lambda () (when (display-graphic-p) (company-box-mode)))))
-#+END_SRC
+
+#+end_src
 
 *** Generic Completion Framework
 **** Information
@@ -2974,7 +3315,8 @@ swiper is a tool for performing searches, powered by Ivy, all while
 
 **** Package: ivy
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package ivy
   :defer 0.1
   :diminish
@@ -2993,11 +3335,12 @@ swiper is a tool for performing searches, powered by Ivy, all while
   (:map ivy-minibuffer-map
         ("TAB" . ivy-alt-done)))
 
-#+END_SRC
+#+end_src
 
 **** Package: counsel
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package counsel
   :after ivy
   :config (counsel-mode)
@@ -3005,11 +3348,13 @@ swiper is a tool for performing searches, powered by Ivy, all while
   (:map wakib-keys-overriding-map
         ("C-p" . counsel-fzf)
         ("C-o" . counsel-find-file)))
-#+END_SRC
+
+#+end_src
 
 **** Package: swiper
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package swiper
   :after ivy
   :config
@@ -3044,19 +3389,23 @@ swiper is a tool for performing searches, powered by Ivy, all while
    ("C-h" . swiper-mc)  ;; swiper-mc puts a cursor on every swiper search result
    )
   )
-#+END_SRC
+
+#+end_src
 
 **** Package: flx
 
 Ivy sorts large lists using flx's scoring mechanism, if it's installed.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package flx)
-#+END_SRC
+
+#+end_src
 
 **** Package: ivy-prescient
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package prescient
   :custom
   (prescient-history-length 50)
@@ -3076,11 +3425,13 @@ Ivy sorts large lists using flx's scoring mechanism, if it's installed.
   (ivy-prescient-enable-sorting t)
   :config
   (ivy-prescient-mode 1))
-#+END_SRC
+
+#+end_src
 
 **** Package: ivy-rich
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package ivy-rich
   :custom
   (ivy-rich-path-style 'abbreviate)
@@ -3093,11 +3444,13 @@ Ivy sorts large lists using flx's scoring mechanism, if it's installed.
   :custom
   (all-the-icons-ivy-rich-icon-size 1.0)
   :config (all-the-icons-ivy-rich-mode 1))
-#+END_SRC
+
+#+end_src
 
 **** Package: ivy-posframe
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package ivy-posframe
   :custom
   (ivy-posframe-parameters
@@ -3105,100 +3458,54 @@ Ivy sorts large lists using flx's scoring mechanism, if it's installed.
      (right-fringe          . 2)
      (internal-border-width . 2)))
   (ivy-posframe-height-alist
-   '((swiper               . 15)
-     (swiper-isearch       . 1)
-     (flyspell-correct-ivy . 10)
+   '((swiper                . 15)
+     (swiper-isearch        . 1)
+     (flyspell-correct-ivy  . 10)
      (t . 20)))
   (ivy-posframe-display-functions-alist
-   '((complete-symbol      . ivy-posframe-display-at-point)
-     (swiper               . ivy-display-function-fallback)
-     (swiper-isearch       . ivy-display-function-fallback)
-     (flyspell-correct-ivy . ivy-posframe-display-at-point)
-     (t                    . ivy-posframe-display-at-frame-center)))
+   '((complete-symbol       . ivy-posframe-display-at-point)
+     (swiper                . ivy-display-function-fallback)
+     (swiper-isearch        . ivy-display-function-fallback)
+     (flyspell-correct-ivy  . ivy-posframe-display-at-point)
+     (t                     . ivy-posframe-display-at-frame-center)))
   :config (ivy-posframe-mode 1))
-#+END_SRC
+
+#+end_src
 
 **** Package: counsel-projectile
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package counsel-projectile)
-#+END_SRC
 
-**** Package: isearch (improvements)
-
-#+BEGIN_SRC emacs-lisp :tangle yes
-(use-package isearch
-  :straight nil
-  :custom
-  (search-whitespace-regexp ".*?")
-  (isearch-lax-whitespace t)
-  (isearch-regexp-lax-whitespace nil)
-  :bind
-  (:map isearch-mode-map
-        ("j" . isearch-repeat-backward)
-        ("k" . isearch-repeat-forward)))
-#+END_SRC
-
-**** Package: counsel-fzf configuration
-
-note:
-do not hide project files in .gitignore
-use ~/.config/fd/ignore to ignore files
-
-#+BEGIN_SRC emacs-lisp :tangle yes
-(when (zerop (length (getenv "FZF_DEFAULT_COMMAND")))
-    (setenv "FZF_DEFAULT_COMMAND"
-            (and (executable-find "fd")
-                 (concat "fd"
-                         " "
-                         "--type"
-                         " "
-                         "'file'"
-                         " "
-                         "--hidden"
-                         " "
-                         "--no-ignore-vcs"
-                         " "
-                         "--ignore-case"
-                         " "
-                         "--exclude"
-                         " "
-                         "'.git/*'"))))
-#+END_SRC
+#+end_src
 
 **** Basic usage
 
 When using swiper, press C-7 to add a cursor to all highlighted items
 
-*** Window Switcher
-**** Package: switch-window
-
-#+BEGIN_SRC emacs-lisp :tangle yes
-(use-package switch-window
-  :bind
-  (:map wakib-keys-overriding-map
-        ("M-H" . switch-window)))    ;; for some reason writing it as M-S-h doesn't work
-#+END_SRC
-
 *** Git Integration
 **** Package: magit
 
-#+BEGIN_QUOTE
+#+begin_quote
 Magit is a complete text-based user interface to Git. It fills the glaring gap between the Git command-line interface and various GUIs, letting you perform trivial as well as elaborate version control tasks with just a couple of mnemonic key presses.
-#+END_QUOTE
+#+end_quote
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package magit
   :hook (magit-mode . my/set-buffer-large-fringe))
-#+END_SRC
+
+#+end_src
 
 **** Package: diff-hl
 
-#+BEGIN_QUOTE
+#+begin_quote
 Emacs package for highlighting uncommitted changes
-#+END_QUOTE
+#+end_quote
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package diff-hl
   :config
   (global-diff-hl-mode)
@@ -3206,11 +3513,13 @@ Emacs package for highlighting uncommitted changes
   :hook ((magit-pre-refresh . diff-hl-magit-pre-refresh)
          (magit-post-refresh . diff-hl-magit-post-refresh)
          (org-mode . (lambda () (diff-hl-mode -1)))))         ;; disable git gutter for org mode
-#+END_SRC
+
+#+end_src
 
 **** Package: git-gutter
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
+
 (use-package git-gutter
   :config
   (setq git-gutter:update-interval 1)
@@ -3224,12 +3533,13 @@ Emacs package for highlighting uncommitted changes
   :hook
   (org-mode . disable-gutter))
 
-#+END_SRC
+#+end_src
 
 *** TODO Templates and Snippets
 **** Package: yasnippet
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
+
 (use-package yasnippet-snippets
   :defer t)
 
@@ -3242,14 +3552,16 @@ Emacs package for highlighting uncommitted changes
 
 (use-package ivy-yasnippet
   :bind ("M-y" . ivy-yasnippet))
-#+END_SRC
 
-*** REVIEW Multiple Cursors
+#+end_src
+
+*** Multiple Cursors
 **** Package: multiple-cursors
 
 Use multiple cursors on swiper candidates with the corresponding swiper keybinding.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package multiple-cursors
   :init
   (custom-set-variables `(mc/always-run-for-all ,t))
@@ -3260,60 +3572,40 @@ Use multiple cursors on swiper candidates with the corresponding swiper keybindi
   (add-to-list 'mc/cmds-to-run-once 'swiper-mc)
   :bind
   (:map wakib-keys-overriding-map
-   ("M-S" . set-rectangular-region-anchor)
-   :map mc/keymap
-     ("M-S-<down>" . mc/mark-next-like-this)
-     ("M-S-<up>" . mc/mark-previous-like-this)
-     ("<C-down-mouse-1>" . mc/add-cursor-on-click)))
-#+END_SRC
+        ("M-S" . set-rectangular-region-anchor)
+        :map mc/keymap
+        ("M-S-<down>" . mc/mark-next-like-this)
+        ("M-S-<up>" . mc/mark-previous-like-this)
+        ("<C-down-mouse-1>" . mc/add-cursor-on-click)))
 
-*** Cut/Copy whole line or region
-**** Package: whole-line-or-region
-
-when C-x or C-c are pressed with no active selection, cut/copy the line instead
-default behaviour is to do the operation between the cursor and the mark, which is hidden
-
-#+BEGIN_SRC emacs-lisp :tangle yes
-(use-package whole-line-or-region
-  :config
-
-  (defun my/whole-line-or-region-delete-region (prefix)
-    (interactive "*p")
-    (if (use-region-p)
-        (my/extend-region-to-whole-lines))
-    (whole-line-or-region-delete-region prefix))
-
-  :bind (:map wakib-keys-overriding-map
-              ("C-c" . whole-line-or-region-kill-ring-save)
-              ("C-x" . whole-line-or-region-kill-region)
-              ("C-k" . my/whole-line-or-region-delete-region)))
-
-;; Comment code lines, command reacts based on the major mode.
-;; (bind-key "C-«" 'whole-line-or-region-comment-dwim wakib-keys-overriding-map)
-#+END_SRC
+#+end_src
 
 *** Presentations
 **** Package: ox-reveal
 
 Write in Org mode and export to HTML with reveal.js
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package ox-reveal
   :custom
-  ;; (setq org-reveal-root        "~/.reveal/reveal.js")
-  (org-reveal-root        "https://cdn.jsdelivr.net/npm/reveal.js")
-  (org-reveal-title-slide "<h1>%t</h1><h3>%s</h3>")  ;; set content of initial slide: %t - Title, %s - subtitle
+  ;; (setq org-reveal-root      "~/.reveal/reveal.js")
+  (org-reveal-root           "https://cdn.jsdelivr.net/npm/reveal.js")
+  (org-reveal-title-slide    "<h1>%t</h1><h3>%s</h3>")  ;; set content of initial slide: %t - Title, %s - subtitle
   )
-#+END_SRC
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+end_src
+
+#+begin_src emacs-lisp :tangle yes
+
 ;; necessary to highlight source code
 (use-package htmlize)
-#+END_SRC
+
+#+end_src
 
 **** Usage notes
 
-
+- Using *reveal*
 
 To export to pdf, open the HTML file in a browser and add the query string =print-pdf= to the end of the URL.
 
@@ -3327,37 +3619,21 @@ Then use the browser to export the page as a PDF.
 Follow the directions at https://revealjs.com/pdf-export/
 
 
-Another simpler option is to use the *decktape* utility.
+- Using *decktape*
+
+Another simpler option is to use the decktape cli utility.
 
 Assuming you have it installed, run:
 decktape reveal <my-file.html> <output>
-
-*** Terminal Colors
-**** Package: ansi-color
-
-Deals with terminal escape codes in compilation-mode.
-This should make compilation buffers handle ANSI escape sequences instead of displaying them as raw strings.
-This mostly helps by adding support for terminal colors.
-
-#+BEGIN_SRC emacs-lisp :tangle yes
-(use-package ansi-color
-  :config
-  (setq compilation-scroll-output t) ;; the compilation buffer always scrolls to follow output as it comes in
-
-  (defun my/ansi-colorize-buffer ()
-    (let ((buffer-read-only nil))
-      (ansi-color-apply-on-region (point-min) (point-max))))
-
-  :hook (compilation-filter . my/ansi-colorize-buffer))
-#+END_SRC
 
 *** Move text
 **** Package: drag-stuff
 
 Moving text both horizontally and vertically.
-I use the M + arrow keys for this. Since this interferes with org-mode, we use the default org-mode keybinds when the cursor is in a org-heading.
+I use the M + arrow keys for this. Since this interferes with org-mode, we use the default org-mode keybinds when the cursor is in an org-heading.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 ;; alt+up/down to move line or region
 (use-package drag-stuff
   :config
@@ -3402,62 +3678,19 @@ Otherwise, just execute the normal behaviour"
         ("M-<right>" . my/meta-right-org-heading-detect)
         ("M-<up>" . my/meta-up-org-heading-detect)
         ("M-<down>" . my/meta-down-org-heading-detect)))
-#+END_SRC
 
-*** Scroll on Jump
-**** Package: scroll-on-jump                                    :disabled:
-
-#+BEGIN_SRC emacs-lisp :tangle no
-(use-package scroll-on-jump
-  :config
-  (setq scroll-on-jump-duration 0.6)
-  :straight
-  (scroll-on-jump
-    :type git
-    :host gitlab
-    :repo "ideasman42/emacs-scroll-on-jump")
-  :bind
-  ("<prior>" . (scroll-on-jump-interactive 'scroll-down-command))
-  ("<next>" . (scroll-on-jump-interactive 'scroll-up-command)))
-#+END_SRC
+#+end_src
 
 *** Hydras
 **** Package: hydra
 
-This should be one of the last packages to be loaded.
-The other packages first have to create their hydras and only after that should we create a menu using those hydras.
+#+begin_src emacs-lisp :tangle yes
 
-#+BEGIN_SRC emacs-lisp :tangle yes
-(use-package hydra
-  :pretty-hydra
-  ((:color teal :quit-key "q" :title "Hydras Main Menu")
-   ("Search"
-    (("s" hydra-search/body "Search"))
-    "Open"
-    (("o" hydra-open/body "Open")
-     ("f" hydra-file/body "File")
-     ("b" hydra-buffer/body "Buffer")
-     ("B" hydra-bookmarks/body "Bookmarks"))
-    "Project"
-    (("p" projectile-hydra/body "Project")
-     ("g" hydra-git/body "Git"))
-    "Edit"
-    (("i" hydra-insert/body "Insert"))
-    "Settings"
-    (("t" hydra-toggles/body "Toggles")
-     ("P" hydra-packages/body "Packages")
-     ("I" hydra-indentation/body "Indentation")
-     ("S" hydra-spellcheck/body "Spellcheck"))
-    "Quit"
-    (("e" hydra-quit/body "Emacs/Session"))
-    "Major Mode"
-    (("m" major-mode-hydra "Mode"))
-    ))
-  :bind
-  ("<menu>" . hydra-hydra/body)
-  ("M-SPC" . hydra-hydra/body))
-#+END_SRC
+(use-package hydra)
 
+#+end_src
+
+**** Hydra Usage
 
 # menu entries that are also menus have a different color
 # M- up/down moves by paragraphs instead of lines (org-move-down)
@@ -3480,10 +3713,6 @@ b - buffer menu
 
 c - code menu
 
-f - file menu
-
-g - git menu
-
 h - help menu
 
 i - insert menu
@@ -3491,25 +3720,12 @@ i - insert menu
   F - current file path
   s - snippet
 
-m - local leader (menu)
-
 n - notes menu
-
-o - open menu
-
-p - project menu
-
-q - quit/session menu
-
-s - search
-
-t - toggle menu
-
-w - window menu
 
 **** Package: hydra-posframe
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package hydra-posframe
   :hook (after-init . hydra-posframe-mode)
   :custom
@@ -3525,39 +3741,48 @@ w - window menu
    :host github
    :repo "Ladicle/hydra-posframe"
    :fork (:host github :repo "jerrypnz/hydra-posframe")))
-#+END_SRC
+
+#+end_src
 
 **** Package: major-mode-hydra
 
 show a different main hydra, depending on major mode
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package major-mode-hydra
   :init
   (major-mode-hydra-define org-mode
-                           (:color teal :quit-key "q" :title "Org hydra" :separator "-")
-                           ("Export"
-                            (("e" org-export-dispatch "export dispatch")
-                             ("L" my/org-latex-compile-and-open-pdf "compile org file and export to latex pdf")
-                             ("R" org-reveal-export-to-html "export to reveal.js HTML presentation"))
-                            "Navigation"
-                            (("g" counsel-org-goto "goto an org heading"))
-                            "Sorting"
-                            (("s" org-sort "sort item list at cursor "))
-                            "Insert"
-                            (("i" org-insert-structure-template "insert block template"))
-                            )))
-#+END_SRC
+    (:color teal :quit-key "q" :title "Org hydra" :separator "-")
+    ("Export"
+     (("e" org-export-dispatch "export dispatch")
+      ("l" org-latex-export-to-latex "export to latex file")
+      ("L" my/org-latex-compile-and-open-pdf "compile org file and export to latex pdf")
+      ("r" org-reveal-export-to-html "export to reveal.js HTML file")
+      ("R" my/export-reveal-presentation-to-pdf "convert reveal.js HTML file to pdf"))
+     "Navigation"
+     (("g" counsel-org-goto "goto an org heading"))
+     "Sorting"
+     (("s" org-sort "sort item list at cursor "))
+     "Insert"
+     (("ib" org-insert-structure-template "insert block template")
+      ("it" org-time-stamp "insert timestamp")
+      ("is" org-schedule "insert \"scheduled\" string")
+      ("id" org-deadline "insert \"deadline\" string"))
+     )))
+
+#+end_src
 
 **** Hydra: toggles
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (pretty-hydra-define hydra-toggles
   (:color amaranth :quit-key "q" :title "Toggles Hydra")
   ("Basic"
    (("n" display-line-numbers-mode "line numbers" :toggle t)
     ("N" global-display-line-numbers-mode "line numbers (global)" :toggle t)
-    ;;("r" rainbow-mode "rainbow" :toggle t)
+    ("r" rainbow-mode "rainbow" :toggle t)
     ("b" page-break-lines-mode "page break lines" :toggle t)
     ("g" diff-hl-mode "git gutter" :toggle t))
    "Highlight"
@@ -3565,7 +3790,8 @@ show a different main hydra, depending on major mode
     ("l" global-hl-line-mode "current line (global)" :toggle t)
     ;;("t" hl-todo-mode "todo" :toggle t)
     ;;("x" highlight-sexp-mode "sexp" :toggle t)
-    ("p" show-paren-mode "matching parens" :toggle t))
+    ("p" show-paren-mode "matching parens" :toggle t)
+    ("h" global-highlight-changes-mode "highlight changes (global)" :toggle t))
    "Coding"
    (("f" flycheck-mode "flycheck" :toggle t)
     ("s" flyspell-mode "spellcheck" :toggle t)
@@ -3578,11 +3804,13 @@ show a different main hydra, depending on major mode
    "Emacs"
    (("D" toggle-debug-on-error "debug on error" :toggle (default-value 'debug-on-error))
     ("X" toggle-debug-on-quit "debug on quit" :toggle (default-value 'debug-on-quit)))))
-#+END_SRC
+
+#+end_src
 
 **** Hydra: open
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (pretty-hydra-define hydra-open
   (:color teal :quit-key "q"  :title "Open/Utilities Hydra")
   ("Dashboard"
@@ -3592,49 +3820,57 @@ show a different main hydra, depending on major mode
    "Scratch"
    (("s" my/open-scratch-buffer "open scratch buffer"))
    ))
-#+END_SRC
+
+#+end_src
 
 **** Hydra: search
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (pretty-hydra-define hydra-search
   (:color teal :quit-key "q" :title "Search Hydra")
-  ("Search string in buffer (regex)"
+  ("String in buffer (regex)"
    (("b" swiper "search in current buffer")
     ("d" rg-search-current-dir "search in current directory")
     ("D" rg "search and choose directory"))
-   "Search string in filename (glob)"
+   "String in filenames (glob)"
    (("f" fd-dired "locate files"))
    "Project"
-   (("S"  counsel-projectile-rg "search text in project (rg)")
-    ("R"  projectile-replace "replace literal text (in project)"))
+   (("p"  counsel-projectile-rg "search text")
+    ("r"  projectile-replace "replace text (literal)"))
    ))
-#+END_SRC
+
+#+end_src
 
 **** Hydra: version control
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (pretty-hydra-define hydra-git
   (:color teal :quit-key "q" :title "Git Hydra")
   ("Magit"
    (("g" magit-status "show git status")
     )))
-#+END_SRC
+
+#+end_src
 
 **** Hydra: package manager
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (pretty-hydra-define hydra-packages
   (:color teal :quit-key "q" :title "Packages Hydra")
   ("Package Manager"
    (("i" straight-use-package "install package (for this session only)")
     ("u" straight-rebuild-all "update all packages")
     )))
-#+END_SRC
+
+#+end_src
 
 **** Hydra: indentation
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (pretty-hydra-define hydra-indentation
   (:color teal :quit-key "q" :title "Indentation Hydra")
   ("Switch"
@@ -3648,21 +3884,25 @@ show a different main hydra, depending on major mode
    "Resize"
    (("w" my/switch-indentation-width-buffer "set indentation width"))
    ))
-#+END_SRC
+
+#+end_src
 
 **** Hydra: spellcheck
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (pretty-hydra-define hydra-spellcheck
   (:color teal :quit-key "q" :title "Spellcheck Hydra")
   ("Dictionary"
    (("d" ispell-change-dictionary "change dictionary language"))
    ))
-#+END_SRC
+
+#+end_src
 
 **** Hydra: bookmarks
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (pretty-hydra-define hydra-bookmarks
   (:color teal :quit-key "q" :title "Bookmarks Hydra")
   ("Bookmarks"
@@ -3671,11 +3911,13 @@ show a different main hydra, depending on major mode
     ("r" bookmark-rename "rename bookmark")
     ("d" bookmark-remove "delete bookmark"))
    ))
-#+END_SRC
+
+#+end_src
 
 **** Hydra: file
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (pretty-hydra-define hydra-file
   (:color teal :quit-key "q" :title "Files Hydra")
   ("Open"
@@ -3696,43 +3938,44 @@ show a different main hydra, depending on major mode
     ("Y" my/show-buffer-file-name "Yank filename with full path"))
    ))
 
-#+END_SRC
+#+end_src
 
 **** Hydra: insert
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (pretty-hydra-define hydra-insert
   (:color teal :quit-key "q" :title "Insert Hydra")
-  ("Timestamp"
-   (("tt" org-time-stamp "insert date/time")
-    ("ts" org-schedule "insert \"scheduled\" string")
-    ("td" org-deadline "insert \"deadline\" string"))
-   "Unicode"
+  ("Unicode"
    (("u" counsel-unicode-char "insert unicode character"))
-   "Unicode"
+   "Clipboard"
    (("y" counsel-yank-pop "select from clipboard history"))
    ))
-#+END_SRC
+
+#+end_src
 
 **** Hydra: quit/session
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (pretty-hydra-define hydra-quit
   (:color teal :quit-key "q" :title "Quit/Session Hydra")
   ("Emacs"
-   (("q" my/kill-emacs "Quit Emacs")
-    ("r" restart-emacs "Restart and restore emacs"))
+   (("Q" my/kill-emacs "Quit Emacs")
+    ("r" restart-emacs "Restart emacs"))
    "Session"
    (("l" my/desktop-enable "Restore last session")
     ("L" desktop-read "Restore session from file")
     ("s" desktop-save-in-desktop-dir "Quick save current session")
     ("S" desktop-save "Save session to file"))
    ))
-#+END_SRC
+
+#+end_src
 
 **** Hydra: buffer
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (pretty-hydra-define hydra-buffer
   (:color teal :quit-key "q" :title "Buffer Hydra")
   ("Save"
@@ -3740,17 +3983,20 @@ show a different main hydra, depending on major mode
    "Switch"
    (("b" bufler "Show all buffers and workspaces"))
    ))
-#+END_SRC
+
+#+end_src
 
 **** Font fix
 
 Depending on the font, the line below the hydra title can be too long or too short.
 Here, we are replacing the font, only targeting the unicode symbol used to draw the line.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (set-fontset-font "fontset-default"
                   '(#x2500 . #x250F) (font-spec :name "SourceCodePro"))
-#+END_SRC
+
+#+end_src
 
 **** Usage notes
 
@@ -3767,10 +4013,11 @@ Behavior by color:
 | teal     | :foreign-keys warn :exit t |
 | pink     | :foreign-keys run          |
 
-*** Better PDF viewer
+*** PDF viewer
 **** Package: pdf-tools
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package pdf-tools
    :config
    (pdf-tools-install)
@@ -3778,20 +4025,23 @@ Behavior by color:
    (define-key pdf-view-mode-map (kbd "C-f") 'isearch-forward)
    :custom
    (pdf-annot-activate-created-annotations t "automatically annotate highlights"))
-#+END_SRC
 
-**** define a minor mode to fix M-<next> behaviour
+#+end_src
+
+**** define a minor mode to fix M-<pg up/down> behaviour
 
 This needs to be added to the end of any org file that is being used to create a LaTeX pdf.
 
-#+BEGIN_EXAMPLE
+#+begin_example
 # Local Variables:
 # eval: (my/scroll-other-window-pdf-tools-mode 1)
 # End:
-#+END_EXAMPLE
+#+end_example
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (defun my/scroll-other-window-down ()
+  "Scroll other window down, with support for pdf-view-mode."
   (interactive)
   (let* ((wind (other-window-for-scrolling))
          (mode (with-selected-window wind major-mode)))
@@ -3801,6 +4051,7 @@ This needs to be added to the end of any org file that is being used to create a
       (scroll-other-window 2))))
 
 (defun my/scroll-other-window ()
+  "Scroll other window up, with support for pdf-view-mode."
   (interactive)
   (let* ((wind (other-window-for-scrolling))
          (mode (with-selected-window wind major-mode)))
@@ -3810,9 +4061,10 @@ This needs to be added to the end of any org file that is being used to create a
         (pdf-view-previous-line-or-previous-page 2)
         (other-window 1)))
     (scroll-other-window-down 2))))
-#+END_SRC
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+end_src
+
+#+begin_src emacs-lisp :tangle yes
 ;; my/scroll-other-window-pdf-tools-mode.el
 ;; Temporary minor mode
 ;; Main use is to enable it only in specific buffers to achieve the goal of buffer-specific keymaps
@@ -3829,9 +4081,9 @@ This needs to be added to the end of any org file that is being used to create a
 
 (define-key my/scroll-other-window-pdf-tools-mode-map (kbd "M-<next>") 'my/scroll-other-window-down)
 (define-key my/scroll-other-window-pdf-tools-mode-map (kbd "M-<prior>") 'my/scroll-other-window)
-#+END_SRC
+#+end_src
 
-*** Linter
+*** Code Linter
 **** Package: flycheck
 
 Code syntax checking.
@@ -3840,25 +4092,63 @@ Not sure, but this might have to load after flyspell package
 
 # see "flycheck-select-checker" function
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package flycheck
   :hook
   ((prog-mode . flycheck-mode)))
-#+END_SRC
+
+#+end_src
 
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package flycheck-aspell
   :config
   (add-to-list 'flycheck-checkers 'tex-aspell-dynamic))
-#+END_SRC
 
-*** Other smaller additions
+#+end_src
+
+*** Spacemacs-like menu
+**** Package: general
+
+This should be one of the last packages to be loaded.
+The other packages first have to create their hydras and only after that should we create a menu using those hydras.
+
+Note: dont forget to update which-key with the descriptions when creating new hydras.
+
+#+begin_src emacs-lisp :tangle yes
+
+(use-package general
+  :config
+  (unbind-key "<menu>")
+  (general-define-key
+   :prefix "<menu>"
+   "s" 'hydra-search/body
+   "o" 'hydra-open/body
+   "f" 'hydra-file/body
+   "b" 'hydra-buffer/body
+   "B" 'hydra-bookmarks/body
+   "p" 'projectile-hydra/body
+   "g" 'hydra-git/body
+   "i" 'hydra-insert/body
+   "t" 'hydra-toggles/body
+   "P" 'hydra-packages/body
+   "I" 'hydra-indentation/body
+   "S" 'hydra-spellcheck/body
+   "q" 'hydra-quit/body
+   "m" 'major-mode-hydra
+   ))
+
+#+end_src
+
+*** Other additions
 **** Package: undo-tree
 
 Change undo/redo behaviour
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package undo-tree
   :config
   (global-undo-tree-mode)
@@ -3866,40 +4156,63 @@ Change undo/redo behaviour
   (:map wakib-keys-overriding-map
         ("C-z" . undo-tree-undo)
         ("C-y" . undo-tree-redo)))
-#+END_SRC
+
+#+end_src
 
 **** Package: sudo-edit
 
 Edit files with elevated permissions
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package sudo-edit)
-#+END_SRC
+
+#+end_src
 
 **** Package: bind-key
 
  Key Rebinding utility. Will be used in the keybinds section
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package bind-key)
-#+END_SRC
+
+#+end_src
 
 **** Package: which-key
 
 Display available keybindings in popup after a prefix key is pressed
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package which-key
   :config
+  (which-key-add-key-based-replacements
+    "<menu> s" "+search"
+    "<menu> o" "+open"
+    "<menu> f" "+file"
+    "<menu> b" "+buffer"
+    "<menu> B" "+bookmarks"
+    "<menu> p" "+project"
+    "<menu> g" "+git"
+    "<menu> i" "+insert"
+    "<menu> t" "+toggles"
+    "<menu> P" "+packages"
+    "<menu> I" "+indentation"
+    "<menu> S" "+spellcheck"
+    "<menu> q" "+quit/session"
+    "<menu> m" "+major-mode")
   (which-key-mode))
-#+END_SRC
+
+#+end_src
 
 **** Package: recentf
 
 Save a list of most recently edited files.
 We exclude elpa folder from recent files to prevent autoload files filling it up.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package recentf
   :config
   (recentf-mode)
@@ -3907,53 +4220,81 @@ We exclude elpa folder from recent files to prevent autoload files filling it up
         recentf-exclude '("COMMIT_EDITMSG\\'"
                           "[/\\]elpa/\\.*"
                           "[/\\]var/\\.*")))
-#+END_SRC
+
+#+end_src
 
 **** Package: restart-emacs
 
 Add an easy way to restart emacs
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package restart-emacs
   :commands (restart-emacs))
-#+END_SRC
+
+#+end_src
 
 **** Package: expand-region
 
 Expand region in logical increments.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package expand-region
   :bind ("M-A" . er/expand-region))
-#+END_SRC
+
+#+end_src
+
+**** Package: switch-window
+
+#+begin_src emacs-lisp :tangle yes
+
+(use-package switch-window
+  :bind
+  (:map wakib-keys-overriding-map
+        ("M-H" . switch-window)))    ;; for some reason writing it as M-S-h doesn't work
+
+#+end_src
 
 **** Package: avy
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+quickly go to any character on screen.
+
+#+begin_src emacs-lisp :tangle yes
+
 (use-package avy
   :bind ("M-m" . avy-goto-char))
-#+END_SRC
 
-**** Package: ibuffer-vc                                        :disabled:
+#+end_src
 
-#+BEGIN_SRC emacs-lisp :tangle no
+**** Package: ibuffer-vc
+
+#+begin_src emacs-lisp :tangle no
+
 (use-package ibuffer-vc)
-#+END_SRC
 
-**** Package: symbolword-mode                                   :disabled:
+#+end_src
 
-#+BEGIN_SRC emacs-lisp :tangle no
+**** Package: symbolword-mode
+
+#+begin_src emacs-lisp :tangle no
+
 (use-package symbolword-mode
   :init
   (symbolword-mode 1))
-#+END_SRC
+
+#+end_src
 
 **** Package: comment-dwim-2
 
-#+BEGIN_SRC emacs-lisp :tangle yes
-(use-package comment-dwim-2
-  :config
+#+begin_src emacs-lisp :tangle yes
 
+(use-package comment-dwim-2
+  :init
+  (unbind-key "C--")
+  (unbind-key "C--" wakib-keys-overriding-map)
+
+  :config
   (defun my/comment-dwim-2 (arg)
     (interactive "*P")
     (if (use-region-p)
@@ -3967,125 +4308,361 @@ Expand region in logical increments.
     (org-comment-dwim-2 arg))
 
   :bind
-  ("C-«" . my/comment-dwim-2)
+  ("C--" . my/comment-dwim-2)
   (:map org-mode-map
-        ("C-«" . my/org-comment-dwim-2)))
-#+END_SRC
+        ("C--" . my/org-comment-dwim-2)))
+
+#+end_src
+
+**** Package: whole-line-or-region
+
+cut/copy whole line or region
+
+when C-x or C-c are pressed with no active selection, cut/copy the line instead
+default behaviour is to do the operation between the cursor and the mark, which is hidden
+
+#+begin_src emacs-lisp :tangle yes
+
+(use-package whole-line-or-region
+  :config
+  (defun my/whole-line-or-region-delete-region (prefix)
+    (interactive "*p")
+    (if (use-region-p)
+        (my/extend-region-to-whole-lines))
+    (whole-line-or-region-delete-region prefix))
+
+  :bind (:map wakib-keys-overriding-map
+              ("C-c" . whole-line-or-region-kill-ring-save)
+              ("C-x" . whole-line-or-region-kill-region)
+              ("C-k" . my/whole-line-or-region-delete-region)))
+
+;; Comment code lines, command reacts based on the major mode.
+;; (bind-key "C-«" 'whole-line-or-region-comment-dwim wakib-keys-overriding-map)
+
+#+end_src
 
 **** Package: ssh-agency
 
-Use this so magit can actually use the host system's ssh keys
+Use this so magit can actually access the host system's ssh keys.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package ssh-agency)
-#+END_SRC
+
+#+end_src
+
+**** Package: ansi-color
+
+mostly helps by adding support for terminal colors.
+
+Deals with terminal escape codes in compilation-mode.
+This should make compilation buffers handle ANSI escape sequences instead of displaying them as raw strings.
+
+#+begin_src emacs-lisp :tangle yes
+
+(use-package ansi-color
+  :config
+  (setq compilation-scroll-output t) ;; the compilation buffer always scrolls to follow output as it comes in
+
+  (defun my/ansi-colorize-buffer ()
+    (let ((buffer-read-only nil))
+      (ansi-color-apply-on-region (point-min) (point-max))))
+
+  :hook (compilation-filter . my/ansi-colorize-buffer))
+
+#+end_src
 
 **** Package: yascroll
 
 Show a buffer position indicator on the right fringe
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package yascroll
   :config
   (global-yascroll-bar-mode 1))
-#+END_SRC
+
+#+end_src
 
 **** Package: annotate
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
+
 (use-package annotate
   :hook
   (org-mode . annotate-mode)
   (save-buffer . annotate-save-annotations))
-#+END_SRC
+
+#+end_src
 
 **** Package: modern-fringes
 
 Replace the default fringe icons with more modern looking ones
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package modern-fringes
   :config
   (modern-fringes-mode 1))
-#+END_SRC
+
+#+end_src
+
+**** Package: scroll-on-jump
+
+#+begin_src emacs-lisp :tangle no
+
+(use-package scroll-on-jump
+  :config
+  (setq scroll-on-jump-duration 0.6)
+  :straight
+  (scroll-on-jump
+    :type git
+    :host gitlab
+    :repo "ideasman42/emacs-scroll-on-jump")
+  :bind
+  ("<prior>" . (scroll-on-jump-interactive 'scroll-down-command))
+  ("<next>" . (scroll-on-jump-interactive 'scroll-up-command)))
+
+#+end_src
 
 **** Package: helpful
 
 Better formatting for help buffers
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package helpful
   :config
   (setq counsel-describe-function-function #'helpful-callable
         counsel-describe-variable-function #'helpful-variable))
-#+END_SRC
+
+#+end_src
 
 **** Package: exec-path-from-shell
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package exec-path-from-shell
   :config
   (exec-path-from-shell-initialize))
-#+END_SRC
+
+#+end_src
 
 **** Package: golden-ratio
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+This doesnt work well with which-key
+https://github.com/roman/golden-ratio.el/issues/82
+
+#+begin_src emacs-lisp :tangle no
+
 (use-package golden-ratio
   :config
-  (golden-ratio-mode 1))
-#+END_SRC
+  (add-to-list 'golden-ratio-exclude-buffer-names " *which-key*")
+  (golden-ratio-mode t))
+
+#+end_src
 
 **** Package: shackle
 
 rules for popup windows
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package shackle
   :init
-  (setq shackle-default-alignment 'right
-        shackle-rules '(("*Bufler*"          :regexp t :align below)
-                        ))
+  (setq shackle-default-alignment    'right
+        shackle-rules                '(("*Bufler*" :regexp t :align below)))
   :config
   (shackle-mode 1))
 
-#+END_SRC
+#+end_src
 
 **** Package: fd-dired
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package fd-dired)
 
-#+END_SRC
+#+end_src
+
+**** Package: fzf
+
+note:
+do not hide project files in .gitignore
+use ~/.config/fd/ignore to ignore files
+
+
+face used is from term-mode
+
+#+begin_src emacs-lisp :tangle yes
+
+(use-package fzf
+  :ensure-system-package (fd fzf)
+  :init
+  (setenv "FZF_DEFAULT_COMMAND" (concat "fd"
+                                        " --type 'file'"
+                                        " --hidden"
+                                        " --ignore-case"
+                                        " --exclude '.git/*'"
+                                        ;; " --no-ignore-vcs"
+                                        )))
+
+#+end_src
+
+**** Package: rainbow-mode
+
+#+begin_src emacs-lisp :tangle yes
+
+(use-package rainbow-mode)
+
+#+end_src
+
+**** Package: visual-fill-column
+
+#+begin_src emacs-lisp :tangle yes
+
+(use-package visual-fill-column
+  :defer t
+  :config
+  (defun my/org-mode-visual-fill ()
+    (setq visual-fill-column-width          180
+          visual-fill-column-center-text    nil)
+    (visual-fill-column-mode 1))
+
+  :hook (org-mode . my/org-mode-visual-fill))
+
+#+end_src
+
+**** Package: highlight-quoted-vars
+
+#+begin_src emacs-lisp :tangle no
+
+(use-package init-shell-highlighting
+  :straight (init-shell-highlighting
+             :type git
+             :host github
+             :repo "czipperz/highlight-quoted-vars.el"
+             :local-repo "highlight-quoted-vars"))
+
+#+end_src
 
 ** Programming languages
+*** C#
+**** Information
 
-Some of these entries are just to add syntax highlighting. Others add more features.
+Adds:
+  - syntax highlighting
 
+**** Package: csharp-mode
+
+#+begin_src emacs-lisp :tangle yes
+
+(use-package csharp-mode
+   :mode ("\\.cs\\'" . csharp-mode)
+   :interpreter ("csharp" . csharp-mode))
+
+#+end_src
+
+*** Dockerfile
+**** Information
+
+Adds:
+  - syntax highlighting
+  - image building
+
+**** Package: dockerfile-mode
+
+#+begin_src emacs-lisp :tangle yes
+
+(use-package dockerfile-mode
+  :mode "Dockerfile\\'")
+
+(put 'dockerfile-image-name 'safe-local-variable #'stringp)
+
+#+end_src
+
+**** Basic usage
+
+To build a docker image with emacs, use C-d C-b (normally C-c C-b), and add the following to the top of a Dockerfile:
+
+#+begin_example
+## -*- dockerfile-image-name: "your-image-name-here" -*-
+#+end_example
+
+This variable is declared as safe with the following code, so you aren't asked if it's safe every time you load a Dockerfile.
+
+#+begin_example
+(put 'dockerfile-image-name 'safe-local-variable #'stringp)
+#+end_example
+
+*** HCL (Hashicorp Configuration Language)
+**** Information
+
+Adds:
+  - syntax highlighting
+
+**** Package: hcl-mode
+
+#+begin_src emacs-lisp :tangle no
+
+(use-package hcl-mode
+  :mode "\\.tf.json\\'")
+
+#+end_src
+
+*** TODO Latex
+**** Package: org-ref
+
+#+begin_src emacs-lisp :tangle yes
+
+(use-package org-ref
+  :after org)
+
+#+end_src
+
+
+#+begin_src emacs-lisp :tangle yes
+
+(setq org-latex-listings          'minted
+      org-latex-packages-alist    '(("" "minted"))
+      org-latex-pdf-process       '("%latex -shell-escape -interaction nonstopmode -output-directory %o %f"
+                                    "%latex -shell-escape -interaction nonstopmode -output-directory %o %f"
+                                    "%latex -shell-escape -interaction nonstopmode -output-directory %o %f"))
+
+#+end_src
+
+*** TODO Lisp
 *** REVIEW Markdown
 **** Information
 
 Adds:
-    - syntax highlighting
+  - syntax highlighting
 
 **** Package: markdown-mode
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+For markdown, you need to customize the command to run the markdown parser if you use something else.
+
+#+begin_src emacs-lisp :tangle yes
+
 ;; (use-package markdown-mode
 ;;   :mode "\\.\\(m\\(ark\\)?down\\|md\\)$")
 
 (use-package markdown-mode
+  :ensure-system-package (pandoc)
   :mode (("README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode))
   :init (setq markdown-command "pandoc --css $HOME/.emacs.d/markdown-css/github.css"))
-#+END_SRC
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+end_src
+
+#+begin_src emacs-lisp :tangle yes
+
 ;; (use-package markdown-preview-mode)
 
 ;; Fast GitHub-flavored live preview
-(use-package vmd-mode)
+(use-package vmd-mode
+  :ensure-system-package (python))
 
 ;; ;; Or using hooks
 ;; (use-package grip-mode
@@ -4093,162 +4670,63 @@ Adds:
 ;;   (setq grip-preview-use-webkit t)
 ;;   :bind (:map markdown-mode-command-map
 ;;          ("g" . grip-mode)))
-#+END_SRC
 
-*** YAML
-**** Information
-
-Adds:
-    - syntax highlighting
-
-**** Package: yaml-mode
-
-#+BEGIN_SRC emacs-lisp :tangle yes
-(use-package yaml-mode
-  :mode "\\.y\\(a\\)?ml\\'")
-#+END_SRC
-
-*** C#
-**** Information
-
-Adds:
-    - syntax highlighting
-
-**** Package: csharp-mode
-
-#+BEGIN_SRC emacs-lisp :tangle yes
-(use-package csharp-mode
-   :mode ("\\.cs\\'" . csharp-mode)
-   :interpreter ("csharp" . csharp-mode))
-#+END_SRC
+#+end_src
 
 *** Terraform
 **** Information
 
 Adds:
-    - syntax highlighting
+  - syntax highlighting
 
 **** Package: terraform-mode
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (use-package terraform-mode
   :mode "\\.tf\\'")
-#+END_SRC
 
-*** HCL (Hashicorp Configuration Language)
+#+end_src
+
+*** YAML
 **** Information
 
 Adds:
-    - syntax highlighting
+  - syntax highlighting
 
-**** Package: hcl-mode
+**** Package: yaml-mode
 
-#+BEGIN_SRC emacs-lisp :tangle yes
-(use-package hcl-mode
-  :disabled
-  :mode "\\.tf.json\\'")
-#+END_SRC
+#+begin_src emacs-lisp :tangle yes
 
-*** Dockerfile
-**** Information
+(use-package yaml-mode
+  :mode "\\.y\\(a\\)?ml\\'")
 
-Adds:
-    - syntax highlighting
-    - image building
-
-**** Package: dockerfile-mode
-
-#+BEGIN_SRC emacs-lisp :tangle yes
-(use-package dockerfile-mode
-  :mode "Dockerfile\\'")
-
-(put 'dockerfile-image-name 'safe-local-variable #'stringp)
-#+END_SRC
-
-**** Basic usage
-
-To build a docker image with emacs, use C-d C-b (normally C-c C-b), and add the following to the top of a Dockerfile:
-
-#+BEGIN_EXAMPLE
-## -*- dockerfile-image-name: "your-image-name-here" -*-
-#+END_EXAMPLE
-
-This variable is declared as safe with the following code, so you aren't asked if it's safe every time you load a Dockerfile.
-
-#+BEGIN_EXAMPLE
-(put 'dockerfile-image-name 'safe-local-variable #'stringp)
-#+END_EXAMPLE
-
-*** TODO Lisp
-*** TODO Latex
-**** Package: org-ref
-
-#+BEGIN_SRC emacs-lisp :tangle yes
-(use-package org-ref
-  :after org)
-#+END_SRC
-
-
-#+BEGIN_SRC emacs-lisp :tangle yes
-(setq org-latex-listings 'minted
-      org-latex-packages-alist '(("" "minted"))
-      org-latex-pdf-process
-      '("%latex -shell-escape -interaction nonstopmode -output-directory %o %f"
-        "%latex -shell-escape -interaction nonstopmode -output-directory %o %f"
-        "%latex -shell-escape -interaction nonstopmode -output-directory %o %f"))
-#+END_SRC
-
-** Directory variables
-
-Use local variables without a file in the directory.
-
-This is used to assign certain variables to certain directories.
-It is also possible set functions to evaluate at startup, for those directories.
-
-It is possible to create directory-local settings without using a .dir-locals.el file.
-I prefer this approach because it is centralized and has less clutter.
-
-For more information about syntax, check the [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Directory-Variables.html][documentation]].
-
-#+BEGIN_SRC emacs-lisp :tangle yes
-(dir-locals-set-class-variables 'dirlocal_emacs_config
-    '((org-mode . ((eval org-content 3)))))
-
-(dir-locals-set-class-variables 'dirlocal_org_files
-    '((org-mode . ((eval org-content 2)))))
-
-(dir-locals-set-directory-class
-    "~/.emacs.d/" 'dirlocal_emacs_config)
-
-(dir-locals-set-directory-class
-    "~/Cloud/Work - Google Cloud/Org/" 'dirlocal_org_files)
-#+END_SRC
-
-*org heading levels*
-This makes changes so this file is easier to navigate in Org mode.
-Here, we make the config file and show 2 heading levels at startup, to make navigation easier.
+#+end_src
 
 ** Personal Settings
 
 Load personal settings file if it exists.
 This is where you put sensitive information like emails and credentials.
+Remember to add this file to =.gitignore=.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
+
 (let ((personal-settings (expand-file-name "personal.el" user-emacs-directory)))
  (when (file-exists-p personal-settings)
    (load-file personal-settings)))
-#+END_SRC
+
+#+end_src
 
 ** Experimentation Area
 
 This section has random code snippets and unfinished ideas.
 None of these is exported to the config file. Eventually, these ideas should be finished and implemented or deleted.
-They are in the end of the config file to avoid allow the config to be loaded even if there's an error.
+They are in the end of the config file to allow most of the config to be loaded even if there's an error.
 
+*** navigate words by only moving to the first character, backward and forward
 
-navigate words by only moving to the first character, backward and forward
+#+begin_src emacs-lisp :tangle no
 
-#+BEGIN_SRC emacs-lisp :tangle no
 (progn
   (defun boundary ()
     (and      (= (char-syntax (char-after))  ?w)
@@ -4266,12 +4744,12 @@ navigate words by only moving to the first character, backward and forward
 (bind-key "M-<left>" 'my-backward-word wakib-keys-overriding-map)
 (bind-key "M-<right>" 'my-forward-word wakib-keys-overriding-map)
 
-#+END_SRC
+#+end_src
 
+*** Stuff I need to try that might improve scrolling.
 
-Stuff I need to try that might improve scrolling.
+#+begin_src emacs-lisp :tangle no
 
-#+BEGIN_SRC emacs-lisp :tangle no
 (use-package emacs
   :custom
   ;; https://www.masteringemacs.org/article/improving-performance-emacs-display-engine
@@ -4305,24 +4783,35 @@ Stuff I need to try that might improve scrolling.
   :straight (good-scroll :type git :host github :repo "io12/good-scroll.el")
   :hook (after-init . good-scroll-mode))
 
-#+END_SRC
+#+end_src
 
+*** org agenda custom commands
 
-org agenda custom commands
+#+begin_src emacs-lisp :tangle no
 
-#+BEGIN_SRC emacs-lisp :tangle no
 (setq org-agenda-custom-commands
       '(("cm" "Custom: This month"
          ((org-ql-block '(ts-active :from today :to (format-time-string "%Y-%m-%d" (org-read-date nil t "+30d")))
                         ((org-ql-block-header "This month")))
           (agenda)))))
-#+END_SRC
+
+#+end_src
+
+*** make tab-line empty
+
+#+begin_src emacs-lisp :tangle no
+
+;; use this next snippet to add blank space at the top of the window
+;; note: the background should be set to the same as the buffer
+(setq header-line-format " ")
+
+;; another option is to use the tab-line. Just give the function responsible for tab names an error and the tab line will be empty.
+
+#+end_src
 
 ** File Footer
 
-this is the end of the file.
-
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+begin_src emacs-lisp :tangle yes
 
 ;;; config.el ends here
-#+END_SRC
+#+end_src

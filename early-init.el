@@ -1,5 +1,9 @@
 ;;; early-init.el --- Emacs Early Init File          -*- lexical-binding: t -*-
-;;; GNU Emacs Configuration - Early Init
+
+;;; Commentary:
+;; GNU Emacs Configuration - Early Init
+
+;;; Code:
 
 ;; A common optimization is to temporarily reduce the frequency of garbage collection during initialization.
 (setq gc-cons-threshold most-positive-fixnum)
@@ -41,3 +45,5 @@
 
 ;; Do not resize the frame at this early stage.
 (setq frame-inhibit-implied-resize t)
+
+;;; early-init.el ends here
