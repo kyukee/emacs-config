@@ -1,5 +1,6 @@
-#+title: Emacs Configuration
-#+startup: inlineimages
+#+TITLE: Emacs Configuration
+#+PROPERTY: header-args :tangle config.el
+#+STARTUP: inlineimages
 
 * Table of contents                                                   :TOC_3:
 - [[#introduction][Introduction]]
@@ -284,6 +285,7 @@ Todo:
 - [ ] add =:ensure-system-package= and more dependencies to use-package declarations
 - [ ] C-t "go to symbol", C-p "go to file" (add to keybindings documentation)
 - [ ] magit diffs use blue and pink for additions and deletions
+- [ ] highlight whitespace on active selection
 
 
 # NOTE: use org-sort and select 'X' to sort this list by what items are checked
@@ -426,7 +428,7 @@ The downside is that =org-babel-tangle= can take several seconds to complete.
 * Main Configuration file
 ** File Header
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 ;;; config.el --- Emacs Configuration File          -*- lexical-binding: t -*-
 
 ;;; Commentary:
@@ -628,7 +630,7 @@ The unit for the 'height' attribute is 1/10pt, which means a height of 100 is 10
      '(whitespace-tab                ((t (:background nil))))
      '(whitespace-trailing           ((t (:background nil))))
      `(font-lock-keyword-face        ((t (:foreground ,color-cyan))))
-     '(font-lock-variable-name-face  ((t (:foreground "#f461c6"))))  ; #f54dce
+     '(font-lock-variable-name-face  ((t (:foreground "#f76f8f"))))  ; #f54dce, #f461c6
 
      ;; line numbers
      '(line-number                   ((t (:foreground "gray30"))))
@@ -664,7 +666,7 @@ The unit for the 'height' attribute is 1/10pt, which means a height of 100 is 10
      '(ivy-minibuffer-match-face-3   ((t (:background "#5654ca" :weight bold))))
      '(ivy-minibuffer-match-face-4   ((t (:background "#8b4887" :weight bold))))
      '(ivy-posframe-border           ((t (:background "#A13878"))))
-     '(ivy-posframe                  ((t (:background "#1B1821"))))   ; 13141A
+     '(ivy-posframe                  ((t (:background "#1B1821"))))   ; #13141A
 
      ;; flyspell
      '(flyspell-incorrect            ((t (:underline (:style wave :color "red2")))))
@@ -736,7 +738,7 @@ These functions aren't associated with any package since they only use default e
   "Open Emacs cofiguration."
   (interactive)
   (message "Opening init.el...")
-  (find-file "~/.emacs.d/config.org")
+  (find-file (expand-file-name "config.org" user-emacs-directory))
   (message "Opened init.el... done."))
 
 (defun my/kill-emacs ()
@@ -992,8 +994,8 @@ the last line of the region, extend to end of line (including final newline)."
   "Renames current buffer and file it is visiting."
   (interactive)
   (let* ((name (buffer-name))
-        (filename (buffer-file-name))
-        (basename (file-name-nondirectory filename)))
+         (filename (buffer-file-name))
+         (basename (file-name-nondirectory filename)))
     (if (not (and filename (file-exists-p filename)))
         (error "Buffer '%s' is not visiting a file!" name)
       (let ((new-name (read-file-name "New name: " (file-name-directory filename) basename nil basename)))
@@ -1029,12 +1031,12 @@ the last line of the region, extend to end of line (including final newline)."
 ;; Start emacs without a session and allow manually loading the previous session, if desired.
 ;; Use /desktop-save-in-desktop-dir/ to save the first session, if there aren't any saved sessions yet.
 (defun my/desktop-enable ()
-    "Load the last saved desktop and enable autosaving."
-    (interactive)
-    (let ((desktop-load-locked-desktop "ask"))
-      (desktop-read)
-      (desktop-save-mode 1))
-    (message "Previous session loaded"))
+  "Load the last saved desktop and enable autosaving."
+  (interactive)
+  (let ((desktop-load-locked-desktop "ask"))
+    (desktop-read)
+    (desktop-save-mode 1))
+  (message "Previous session loaded"))
 
 (defun my/export-reveal-presentation-to-pdf ()
   "Create a pdf from an org file using a reveal.js package.
@@ -1043,8 +1045,8 @@ the same name and an html extension. Then convert the Reveal html file
 to a pdf, with the decktape utility."
   (interactive)
   (let* ((file-name (file-name-sans-extension (buffer-name)))
-        (html-file-name (concat file-name ".html"))
-        (pdf-file-name (concat file-name ".pdf")))
+         (html-file-name (concat file-name ".html"))
+         (pdf-file-name (concat file-name ".pdf")))
     (if (not (file-exists-p html-file-name))
         (error (concat "Reveal HTML file " html-file-name " not found"))
       (async-shell-command
@@ -1055,6 +1057,21 @@ to a pdf, with the decktape utility."
   "Switch to scratch buffer, creating it if it doesn't exist."
   (interactive)
   (switch-to-buffer "*scratch*"))
+
+;; this is also available in the 'crux' package
+(defun my/delete-file-and-buffer ()
+  "Kill the current buffer and deletes the file it is visiting."
+  (interactive)
+  (if (y-or-n-p (format "Really delete file? "))
+      (let ((filename (buffer-file-name)))
+        (when filename
+          (if (vc-backend filename)
+              (vc-delete-file filename)
+            (progn
+              (delete-file filename)
+              (message "Deleted file %s" filename)
+              (kill-buffer)))))
+    (message "Canceled file delete.")))
 
 #+end_src
 
@@ -1541,17 +1558,17 @@ For more information about syntax, check the [[https://www.gnu.org/software/emac
 #+begin_src emacs-lisp :tangle yes
 
 ;; Here, we make the config file show 2 heading levels at startup, to make navigation easier.
-(dir-locals-set-class-variables 'dirlocal_emacs_config
-    '((org-mode . ((eval org-content 3)))))
+(dir-locals-set-class-variables 'dir-local--emacs-config
+    '((org-mode . ((eval org-content 2)))))
 
-(dir-locals-set-class-variables 'dirlocal_org_files
+(dir-locals-set-class-variables 'dir-local--org-files
     '((org-mode . ((eval org-content 2)))))
 
 (dir-locals-set-directory-class
-    "~/.emacs.d/" 'dirlocal_emacs_config)
+    "~/.emacs.d/" 'dir-local--emacs-config)
 
 (dir-locals-set-directory-class
-    "~/Cloud/Work - Google Cloud/Org/" 'dirlocal_org_files)
+    "~/Cloud/Work - Google Cloud/Org/" 'dir-local--org-files)
 
 #+end_src
 
@@ -2069,7 +2086,7 @@ Taking this into account, projectile is a good start but it doesnt give me every
         dashboard-navigator-buttons    `(((,(all-the-icons-octicon "dashboard" :height 1.1 :v-adjust 0.0)
                                            "Config file"
                                            "Open private configuration file"
-                                           (lambda (&rest _) (find-file "~/.emacs.d/config.org")))
+                                           (lambda (&rest _) (my/open-init-file)))
                                           (,(all-the-icons-octicon "gear" :height 1.1 :v-adjust 0.0)
                                            "Restore session"
                                            "Restore last saved session"
@@ -3137,6 +3154,7 @@ Inline tasks behave as you would expect them to, for the most part. They have tw
 #+end_src
 
 *** TODO Modal editing
+**** Package: ryo-modal
 
 try out a modal configuration
 
@@ -3150,8 +3168,8 @@ Solution: load this package after the org section.
 #+begin_src emacs-lisp :tangle yes
 
 (use-package ryo-modal
-  :init
-  (unbind-key "C-SPC")
+  ;; :init
+  ;; (unbind-key "C-SPC")
   :config
   (setq ryo-modal-cursor-color "white")
 
@@ -3201,7 +3219,7 @@ Solution: load this package after the org section.
    ("8" "M-8")
    ("9" "M-9"))
 
-  :bind ("C-SPC" . ryo-modal-mode)
+  ;; :bind ("C-SPC" . ryo-modal-mode)
   ;; :hook ((after-init . ryo-modal-mode))
   )
 
@@ -3945,7 +3963,8 @@ show a different main hydra, depending on major mode
    "Rename"
    (("R" my/rename-current-buffer-file "Rename/move file"))
    "Delete"
-   (("D" delete-file "Delete file"))
+   (("d" my/delete-file-and-buffer "Delete current file")
+    ("D" delete-file "Delete a file"))
    "Save"
    (("s" save-buffer "Save file")
     ("S" write-file "Save file as..."))
