@@ -72,11 +72,9 @@
   - [[#programming-languages][Programming languages]]
     - [[#c][C#]]
     - [[#dockerfile][Dockerfile]]
-    - [[#hcl-hashicorp-configuration-language][HCL (Hashicorp Configuration Language)]]
     - [[#latex][Latex]]
-    - [[#lisp][Lisp]]
     - [[#review-markdown][REVIEW Markdown]]
-    - [[#terraform][Terraform]]
+    - [[#terraform-hcl][Terraform (HCL)]]
     - [[#yaml][YAML]]
   - [[#personal-settings][Personal Settings]]
   - [[#experimentation-area][Experimentation Area]]
@@ -238,10 +236,18 @@ Todo:
 - [X] when using F3 search, check if there's an active region
 - [X] clean up the final section of the config file
 - [X] when I save the config file, a dired-mode *Find* buffer appears
+- [X] use flycheck for elisp (for config file)
+- [X] C-tab = tab-recent doesnt work (also for C-S-tab)
+- [X] ryo-modal messes up C-up and M-Return, in org-mode (happens when loaded before org package)
+- [X] restore bufler workspaces when restoring the session
+- [X] F3 should not start a new search, but always go back to the previous one
+- [X] add margin to the left of org-agenda (between category and todo) (org-agenda-prefix)
+- [X] see if it's possible to remove =*special*= buffers from =C-b=
+- [X] add margin to right side of org source blocks
 - [ ] ctrl+shift+o to open directory in sidebar
-- [ ] use flycheck for elisp (for config file)
 - [ ] error indicator in fringe for flyspell and flycheck
 - [ ] git gutter on left and flycheck gutter on right side
+- [ ] make it possible to see git gutter, company errors and visual line arrows all at the same time, without conflicts
 - [ ] add keybindings tables in config.org
 - [ ] commenting inside source block jumps to top of block. happens with just 'emacs -Q' and comment-dwim
 - [ ] maybe incorporate previous/next concept from wakib-emacs? (it uses the ';' key)
@@ -252,8 +258,6 @@ Todo:
 - [ ] use C-S-page up/down to move tabs
 - [ ] allow jumping between git hunks (git-gutter) or modified buffer areas
 - [ ] use smerge hydra for better merging conflict resolution (https://github.com/alphapapa/unpackaged.el#hydra)
-- [ ] make it possible to see git gutter, company errors and visual line arrows all at the same time, without conflicts
-- [ ] C-tab = tab-recent doesnt work (also for C-S-tab)
 - [ ] give every doom modeline segment a mouse-over description and menu (tooltip)
 - [ ] improve appearance of tab-line arrows (they appear when the bar is too full)
 - [ ] for every package, add a quote from their git repo explaining what the package does
@@ -262,29 +266,24 @@ Todo:
 - [ ] add functions and hydras to convert line endings
 - [ ] when a region is selected and an arrow key is presses in the opposite direction, exchange point and cursor
 - [ ] change C-SPC to do something related to jumping to bookmarks, previous mark location, or something like that
+- [ ] add hydra or M-<key> commands for org-mark-ring-push, pop-global-mark, counsel-mark-ring
+- [ ] C-SPC and C-u SPC no longer work because of ryo-modal (C-SPC C-SPC to mark, C-u C-SPC to jump to prev mark)
 - [ ] related to note-taking: checkout deft, notdeft, org-roam, org-ql, org-rifle, org-journal, idutils
 - [ ] spellcheck modeline segment dissapears when linter is active (confirmed not working in a Dockerfile)
-- [ ] ryo-modal messes up C-up and M-Return, in org-mode
 - [ ] when in a bufler named workspace, new opened buffers are added to the default workspace, instead of the opened workspace
 - [ ] add snippets to hydra-insert, if yasnippet starts being used
-- [ ] restore bufler workspaces when restoring the session
 - [ ] use M-S-left/right to indent by 1 space (already works like that in org tables and lists)
-- [ ] F3 should not start a new search, but always go back to the previous one
 - [ ] hydra toggle for golden-ratio-mode
-- [ ] add some sort of agenda view where I can see tasks without dates (or improve current agenda view) (see calfw)
-- [X] add margin to the left of org-agenda (between category and todo) (org-agenda-prefix)
-- [ ] add toggle in hydra for golden-mode
-- [ ] dashboard agenda shows archived tasks
-- [ ] add hydra or M-<key> commands for org-mark-ring-push, pop-global-mark, counsel-mark-ring
-- [ ] remove tab-line from bufler, magit, and any other like them
-- [ ] see if it's possible to remove =*special*= buffers from =C-b=
-- [ ] C-RET and C-S-RET to make newlines (add docs)
-- [ ] make treemacs change directory when doing bufler focus workspace
-- [ ] treemacs-follow-mode
-- [ ] change treemacs project font (remove underline)
-- [ ] C-SPC and C-u SPC no longer work because of ryo-modal (C-SPC C-SPC to mark, C-u C-SPC to jump to prev mark)
 - [ ] golden-ratio seems to be interfering with which-key
+- [ ] add some sort of agenda view where I can see tasks without dates (or improve current agenda view) (see calfw)
+- [ ] dashboard agenda shows archived tasks
+- [ ] remove tab-line from bufler, magit, and any other like them
+- [ ] C-RET and C-S-RET to make newlines (add keybinding docs)
+- [ ] make treemacs change directory when doing bufler focus workspace
+- [ ] change treemacs project font (remove underline)
 - [ ] add =:ensure-system-package= and more dependencies to use-package declarations
+- [ ] C-t "go to symbol", C-p "go to file" (add to keybindings documentation)
+- [ ] magit diffs use blue and pink for additions and deletions
 
 
 # NOTE: use org-sort and select 'X' to sort this list by what items are checked
@@ -371,6 +370,7 @@ For the GUI changes that deserve to be in early-init. It is more efficient to di
 #+begin_src emacs-lisp :tangle early-init.el
 
 ;;; early-init.el ends here
+
 #+end_src
 
 * Init file
@@ -388,15 +388,14 @@ For the GUI changes that deserve to be in early-init. It is more efficient to di
 
 ** Method 1: load pre-parsed config file
 
-If config.el exists then load it, otherwise tangle config.org
-
 After the first time that config.el is created, this will no longer tangle the config file.
-This is slightly faster than just using org-babel-load-file
+This method is slightly faster than just using org-babel-load-file.
 
 This is very effective when you have a hook to tangle the config.org file everytime you save it.
 
 #+begin_src emacs-lisp :tangle init.el
 
+;; If config.el exists then load it, otherwise tangle config.org
 (if (file-exists-p (expand-file-name "config.el" user-emacs-directory))
     (load-file (expand-file-name "config.el" user-emacs-directory))
   (org-babel-load-file (expand-file-name "config.org" user-emacs-directory)))
@@ -405,10 +404,13 @@ This is very effective when you have a hook to tangle the config.org file everyt
 
 ** Method 2: always parse config file
 
-This can be useful if recovering from errors in the config file is a concern
+Always parse config.org when starting emacs.
+This can be useful if recovering from errors in the config file is a concern.
+The downside is that =org-babel-tangle= can take several seconds to complete.
 
-#+begin_src emacs-lisp :tangle init.el
+#+begin_src emacs-lisp :tangle no
 
+;; load config.el
 (org-babel-load-file (expand-file-name "config.org" user-emacs-directory))
 
 #+end_src
@@ -418,6 +420,7 @@ This can be useful if recovering from errors in the config file is a concern
 #+begin_src emacs-lisp :tangle init.el
 
 ;;; init.el ends here
+
 #+end_src
 
 * Main Configuration file
@@ -1162,6 +1165,10 @@ C-M-b     backward-sexp  Move backward over a balanced expression
 C-M-k     kill-sexp      Kill balanced expression forward
 
 
+# useful resource:
+# https://shortcutworld.com/VSCode/win/Visual-Studio-Code_Shortcuts
+
+
 #+begin_src emacs-lisp :tangle yes
 
 ;; reload emacs config file
@@ -1196,8 +1203,9 @@ C-M-k     kill-sexp      Kill balanced expression forward
 
 (bind-key "<home>" 'my/smarter-move-beginning-of-line wakib-keys-overriding-map)
 
-;; switch to a recent tab
-(bind-key "<C-tab>" 'tab-recent wakib-keys-overriding-map)
+;; navigate through buffer history
+(bind-key "<C-tab>" 'switch-to-prev-buffer wakib-keys-overriding-map)
+(bind-key "<C-iso-lefttab>" 'switch-to-next-buffer wakib-keys-overriding-map)  ; equivalent to C-S-tab
 
 
 (bind-key "C-l" 'swiper-recenter-top-bottom wakib-keys-overriding-map)
@@ -1402,7 +1410,7 @@ Some nice-to have things and general settings.
 #+begin_src emacs-lisp :tangle yes
 
 ;; set default tab width globally
-(setq-default tab-width 4)
+(setq-default tab-width 2)
 
 ;; use spaces for indentation by default
 (setq-default indent-tabs-mode nil)
@@ -3364,18 +3372,27 @@ swiper is a tool for performing searches, powered by Ivy, all while
     (if (region-active-p) (swiper-isearch-thing-at-point)
       (swiper-isearch nil)))
 
+  ;; this function isn't being used. just for reference.
+  (defun my/swiper-isearch-again-with-selection ()
+    "Start swiper-isearch with the last thing searched for.
+Uses the active region as input, if it is active."
+    (interactive)
+    (if (region-active-p) (swiper-isearch-thing-at-point)
+      (swiper-isearch (car swiper-history))
+      ))
+
   (defun my/swiper-isearch-again ()
     "Start swiper-isearch with the last thing searched for."
     (interactive)
-    (if (region-active-p) (swiper-isearch-thing-at-point)
-      (swiper-isearch (car swiper-history))))
+    (deactivate-mark)
+    (swiper-isearch (car swiper-history)))
 
   (defun my/swiper-isearch-again-backward ()
     "Start swiper-isearch with the last thing searched for.
     Search backward."
     (interactive)
-    (if (region-active-p) (swiper-isearch-thing-at-point)
-      (swiper-isearch-backward (car swiper-history))))
+    (deactivate-mark)
+    (swiper-isearch-backward (car swiper-history)))
 
   :bind
   (("<f3>" . my/swiper-isearch-again)
@@ -3387,8 +3404,7 @@ swiper is a tool for performing searches, powered by Ivy, all while
    ("<S-f3>" . previous-line)
    ;; cant use C-m for swiper-mc. when doing that, every time enter is pressed after search, swiper-mc is activated
    ("C-h" . swiper-mc)  ;; swiper-mc puts a cursor on every swiper search result
-   )
-  )
+   ))
 
 #+end_src
 
@@ -4548,9 +4564,8 @@ face used is from term-mode
 
 ** Programming languages
 *** C#
-**** Information
+**** Features
 
-Adds:
   - syntax highlighting
 
 **** Package: csharp-mode
@@ -4564,9 +4579,8 @@ Adds:
 #+end_src
 
 *** Dockerfile
-**** Information
+**** Features
 
-Adds:
   - syntax highlighting
   - image building
 
@@ -4595,22 +4609,12 @@ This variable is declared as safe with the following code, so you aren't asked i
 (put 'dockerfile-image-name 'safe-local-variable #'stringp)
 #+end_example
 
-*** HCL (Hashicorp Configuration Language)
-**** Information
-
-Adds:
-  - syntax highlighting
-
-**** Package: hcl-mode
-
-#+begin_src emacs-lisp :tangle no
-
-(use-package hcl-mode
-  :mode "\\.tf.json\\'")
-
-#+end_src
-
 *** TODO Latex
+**** Features
+
+  - references
+  - minted listings
+
 **** Package: org-ref
 
 #+begin_src emacs-lisp :tangle yes
@@ -4620,6 +4624,7 @@ Adds:
 
 #+end_src
 
+Add support for =minted=
 
 #+begin_src emacs-lisp :tangle yes
 
@@ -4631,11 +4636,9 @@ Adds:
 
 #+end_src
 
-*** TODO Lisp
 *** REVIEW Markdown
-**** Information
+**** Features
 
-Adds:
   - syntax highlighting
 
 **** Package: markdown-mode
@@ -4673,10 +4676,13 @@ For markdown, you need to customize the command to run the markdown parser if yo
 
 #+end_src
 
-*** Terraform
+*** Terraform (HCL)
 **** Information
 
-Adds:
+Also known as Hashicorp Configuration Language (HCL)
+
+**** Features
+
   - syntax highlighting
 
 **** Package: terraform-mode
@@ -4689,9 +4695,8 @@ Adds:
 #+end_src
 
 *** YAML
-**** Information
+**** Features
 
-Adds:
   - syntax highlighting
 
 **** Package: yaml-mode
@@ -4814,4 +4819,5 @@ They are in the end of the config file to allow most of the config to be loaded 
 #+begin_src emacs-lisp :tangle yes
 
 ;;; config.el ends here
+
 #+end_src
