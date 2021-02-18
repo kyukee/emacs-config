@@ -5,4 +5,3 @@ url
 var
 personal.el
 config.el
-early-init.el
