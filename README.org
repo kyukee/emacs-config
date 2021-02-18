@@ -16,8 +16,9 @@
   - [[#file-footer][File Footer]]
 - [[#init-file][Init file]]
   - [[#file-header-1][File Header]]
-  - [[#method-1-load-pre-parsed-config-file][Method 1: load pre-parsed config file]]
-  - [[#method-2-always-parse-config-file][Method 2: always parse config file]]
+  - [[#define-configuration-file-variable][Define configuration file variable]]
+  - [[#method-1-tangle-on-save-and-load-pre-parsed-config-file][Method 1: tangle on save and load pre-parsed config file]]
+  - [[#method-2-always-parse-config-file-on-load][Method 2: always parse config file on load]]
   - [[#file-footer-1][File Footer]]
 - [[#main-configuration-file][Main Configuration file]]
   - [[#file-header-2][File Header]]
@@ -155,7 +156,7 @@ Todo:
 - [X] home key should toggle between row 0 and first character in line (beginning and indentation, in emacs terms)
 - [X] when line number is 0-9, and it changes to a greater value, the numbers column width changes and the whole buffers moves.
 - [X] disable completion for plain text modes (org-mode)
-- [X] config.org should open with 2 levels of headings
+- [X] config file should open with 2 levels of headings
 - [X] add tabs like Sublime Text or somehow show tabs in current project
 - [X] disable tab-line in dashboard
 - [X] hidden tab-bar reappears when doing: M-x ESC
@@ -249,7 +250,7 @@ Todo:
 - [ ] error indicator in fringe for flyspell and flycheck
 - [ ] git gutter on left and flycheck gutter on right side
 - [ ] make it possible to see git gutter, company errors and visual line arrows all at the same time, without conflicts
-- [ ] add keybindings tables in config.org
+- [ ] add keybindings tables in config file
 - [ ] commenting inside source block jumps to top of block. happens with just 'emacs -Q' and comment-dwim
 - [ ] maybe incorporate previous/next concept from wakib-emacs? (it uses the ';' key)
 - [ ] when opening a treemacs workspace in dashboard, it should ask for a file
@@ -286,6 +287,7 @@ Todo:
 - [ ] C-t "go to symbol", C-p "go to file" (add to keybindings documentation)
 - [ ] magit diffs use blue and pink for additions and deletions
 - [ ] highlight whitespace on active selection
+- [ ] make startup time under 1 second with use-package defer features
 
 
 # NOTE: use org-sort and select 'X' to sort this list by what items are checked
@@ -388,32 +390,41 @@ For the GUI changes that deserve to be in early-init. It is more efficient to di
 
 #+end_src
 
-** Method 1: load pre-parsed config file
+** Define configuration file variable
+
+#+begin_src emacs-lisp :tangle init.el
+
+(defvar *config-file* (expand-file-name "README.org" user-emacs-directory)
+    "The configuration file.")
+
+#+end_src
+
+** Method 1: tangle on save and load pre-parsed config file
 
 After the first time that config.el is created, this will no longer tangle the config file.
 This method is slightly faster than just using org-babel-load-file.
 
-This is very effective when you have a hook to tangle the config.org file everytime you save it.
+This is very effective when you have a hook to tangle the config file everytime you save it.
 
 #+begin_src emacs-lisp :tangle init.el
 
-;; If config.el exists then load it, otherwise tangle config.org
+;; If config.el exists then load it, otherwise tangle README.org
 (if (file-exists-p (expand-file-name "config.el" user-emacs-directory))
     (load-file (expand-file-name "config.el" user-emacs-directory))
-  (org-babel-load-file (expand-file-name "config.org" user-emacs-directory)))
+  (org-babel-load-file *config-file*))
 
 #+end_src
 
-** Method 2: always parse config file
+** Method 2: always parse config file on load
 
-Always parse config.org when starting emacs.
+Always parse the config file when starting emacs.
 This can be useful if recovering from errors in the config file is a concern.
 The downside is that =org-babel-tangle= can take several seconds to complete.
 
 #+begin_src emacs-lisp :tangle no
 
 ;; load config.el
-(org-babel-load-file (expand-file-name "config.org" user-emacs-directory))
+(org-babel-load-file *config-file*)
 
 #+end_src
 
@@ -444,7 +455,7 @@ The downside is that =org-babel-tangle= can take several seconds to complete.
 Enable debug mode before we make any changes. This makes is easier to figure out errors when they happen.
 It only stays active while the config is loading.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 ;; when an error occurs during startup, automatically open debugger
 (setq debug-on-error t)
@@ -460,7 +471,7 @@ It only stays active while the config is loading.
 
 straight.el is used to make the init-file the sole source of truth for package operations.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (defvar bootstrap-version)
 (let ((bootstrap-file
@@ -482,7 +493,7 @@ straight.el is used to make the init-file the sole source of truth for package o
 
 **** Package: use-package
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (straight-use-package 'use-package)
 
@@ -496,7 +507,7 @@ straight.el is used to make the init-file the sole source of truth for package o
 
 **** Package: use-package-ensure-system-package
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package use-package-ensure-system-package)
 
@@ -506,7 +517,7 @@ straight.el is used to make the init-file the sole source of truth for package o
 
 nicer syntax for declaring hydras with use-package
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package pretty-hydra)
 
@@ -533,7 +544,7 @@ A note about ":init" and ":config".
 Make emacs configuration directory more organized and keep it clean.
 'no-littering' should be loaded as early as possible since it changes where other packages will save their files.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package no-littering)
 
@@ -557,9 +568,10 @@ not using it because it doesn't really work well with early-init file
 
 **** Package: benchmark-init
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package benchmark-init
+  :defer nil
   :config
   (benchmark-init/activate)
   :hook (after-init . benchmark-init/deactivate))
@@ -584,7 +596,7 @@ Some of my font options:
 
 The unit for the 'height' attribute is 1/10pt, which means a height of 100 is 10pt.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (set-face-attribute 'default nil :font "Cartograph CF-12")
 
@@ -600,7 +612,7 @@ The unit for the 'height' attribute is 1/10pt, which means a height of 100 is 10
 
 *** Theme
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package cyberpunk-theme
   :config
@@ -610,7 +622,7 @@ The unit for the 'height' attribute is 1/10pt, which means a height of 100 is 10
 
 *** Theme Faces
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (setq custom--inhibit-theme-enable nil)
 
@@ -725,7 +737,7 @@ These functions aren't associated with any package since they only use default e
 
 **** Functions: emacs reload, quit, etc
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (defun my/reload-init-file ()
   "Reload Emacs cofiguration."
@@ -738,7 +750,7 @@ These functions aren't associated with any package since they only use default e
   "Open Emacs cofiguration."
   (interactive)
   (message "Opening init.el...")
-  (find-file (expand-file-name "config.org" user-emacs-directory))
+  (find-file *config-file*)
   (message "Opened init.el... done."))
 
 (defun my/kill-emacs ()
@@ -756,7 +768,7 @@ These functions aren't associated with any package since they only use default e
 
 **** Functions: select and navigate text
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (defun my/select-current-line ()
   "Select the current line."
@@ -819,7 +831,7 @@ point reaches the beginning or end of the buffer, stop there."
 
 **** Functions: move, indent and delete text
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (defun my/delete-word-no-clipboard (arg)
   "If the next character is whitespace, delete all until the first character.
@@ -897,7 +909,7 @@ This means that the first and last line don't need to be completly selected."
 
 **** Functions: other
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (defun my/set-buffer-large-fringe ()
   "The fringe is set smaller than default because of the git gutter indicators.
@@ -1080,7 +1092,7 @@ to a pdf, with the decktape utility."
 
 Give the toggle menu function a nicer name so its easier to find if necessary.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (defalias 'toggle-menu-bar 'toggle-menu-bar-mode-from-frame)
 
@@ -1095,7 +1107,7 @@ These are the function used for bookmarks:
 - bookmark-remove
 - bookmark-rename
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (defalias 'bookmark-add-or-open 'counsel-bookmark)
 (defalias 'bookmark-remove 'bookmark-delete)
@@ -1104,7 +1116,7 @@ These are the function used for bookmarks:
 
 **** Functions: revert-buffer
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (defalias 'reload-buffer 'revert-buffer)
 
@@ -1151,7 +1163,7 @@ Here's my history with trying to use "standard" keybinds packages in emacs:
 
 **** Package: wakib-keys
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package wakib-keys
   :init
@@ -1186,7 +1198,7 @@ C-M-k     kill-sexp      Kill balanced expression forward
 # https://shortcutworld.com/VSCode/win/Visual-Studio-Code_Shortcuts
 
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 ;; reload emacs config file
 (bind-key "<C-f5>" 'my/reload-init-file wakib-keys-overriding-map)
@@ -1351,7 +1363,7 @@ Configure stuff that already comes with emacs. No packages are installed in this
 
 Some nice-to have things and general settings.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (setq custom-file                    (expand-file-name "etc/custom.el" user-emacs-directory)  ;; Put Customize blocks in a separate file
       inhibit-startup-screen         t                      ;; disable default startup screen
@@ -1424,7 +1436,7 @@ Some nice-to have things and general settings.
 
 *** Indentation
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 ;; set default tab width globally
 (setq-default tab-width 2)
@@ -1472,7 +1484,7 @@ Some nice-to have things and general settings.
 
 *** Tabs
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 ;; disable "close" (x) button for each tab
 (setq tab-line-close-button-show nil)
@@ -1490,7 +1502,7 @@ Some nice-to have things and general settings.
 
 *** Scrolling
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 ;; try to improve scrolling in emacs. still not ideal though
 (setq scroll-conservatively              99       ;; this value shoul not be higher than 100, or else swiper has issues (text behind modeline)
@@ -1504,7 +1516,7 @@ Some nice-to have things and general settings.
 
 *** Fringe and line numbers
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 ;; only show an indicator on the right fringe and not the left fringe
 (setq-default visual-line-fringe-indicators '(nil right-curly-arrow))
@@ -1524,7 +1536,7 @@ Some nice-to have things and general settings.
 
 *** Backup, Autosave and Lockfiles
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (setq auto-save-file-name-transforms    `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))    ;; change auto-save location
       auto-save-default                 t           ;; put auto-save files in designated folder
@@ -1535,7 +1547,7 @@ Some nice-to have things and general settings.
 
 *** Desktop session
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (setq desktop-save               t             ;; always save on exit and never ask before saving
       desktop-restore-eager      nil           ;; number of buffers to restore immediatly
@@ -1555,7 +1567,7 @@ It is also possible set functions to evaluate at startup, for those directories.
 
 For more information about syntax, check the [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Directory-Variables.html][documentation]].
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 ;; Here, we make the config file show 2 heading levels at startup, to make navigation easier.
 (dir-locals-set-class-variables 'dir-local--emacs-config
@@ -1575,7 +1587,7 @@ For more information about syntax, check the [[https://www.gnu.org/software/emac
 *** Searching
 **** Package: isearch
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package isearch
   :straight nil
@@ -1601,7 +1613,7 @@ Allow Emacs to use icons in various UI elements.
 
 Important: The first time this package is installed, you need to run 'all-the-icons-install-fonts' to install fonts.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package all-the-icons
   :config
@@ -1612,7 +1624,7 @@ Important: The first time this package is installed, you need to run 'all-the-ic
 *** Project Management
 **** Package: projectile
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package projectile
   :config
@@ -1719,7 +1731,7 @@ Currently using: bufler with optional bufler-tabs-mode
 
 When dealing with the =org-directory= variable, it is important to pay attention to the order in which the org package is loaded.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package bufler
   :init
@@ -1919,7 +1931,7 @@ Taking this into account, projectile is a good start but it doesnt give me every
 
 **** Package: treemacs
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package treemacs
   :config
@@ -2001,7 +2013,7 @@ Taking this into account, projectile is a good start but it doesnt give me every
 
 **** Package: treemacs-projectile
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package treemacs-projectile
   :after treemacs projectile)
@@ -2010,7 +2022,7 @@ Taking this into account, projectile is a good start but it doesnt give me every
 
 **** Package: treemacs-magit
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package treemacs-magit
   :after treemacs magit)
@@ -2020,7 +2032,7 @@ Taking this into account, projectile is a good start but it doesnt give me every
 *** Dashboard
 **** Package: hide-mode-line
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 ;; hide the modeline in the dashboard buffer
 (use-package hide-mode-line)
@@ -2029,7 +2041,7 @@ Taking this into account, projectile is a good start but it doesnt give me every
 
 **** Package: page-break-lines
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package page-break-lines
   :config
@@ -2044,7 +2056,7 @@ Taking this into account, projectile is a good start but it doesnt give me every
 
 **** Package: dashboard
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package dashboard
   :defer nil
@@ -2102,7 +2114,7 @@ Taking this into account, projectile is a good start but it doesnt give me every
 *** Modeline
 **** Package: doom-modeline
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package doom-modeline
   :init
@@ -2475,7 +2487,7 @@ Other options are:
 
 **** Package: rg
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package rg
   :bind
@@ -2498,7 +2510,7 @@ Other options are:
 provides a regex backend to be used by visual-regexp-steroids
 this is to avoid having python installed as a dependency
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package pcre2el)
 
@@ -2506,7 +2518,7 @@ this is to avoid having python installed as a dependency
 
 **** Package: visual-regexp (part 1)
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 ;; you can use actual regex with this package, instead of emacs specific regex
 ;; this seems better than Anzu for my uses
@@ -2522,7 +2534,7 @@ this is to avoid having python installed as a dependency
 This is a change to allow searching the whole buffer.
 Copied from a fork of the visual-regexp repository: https://github.com/grahnen/visual-regexp.el/commit/248f5716f8de092c1915d91821681aed7b31f808
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (defvar vr--full-buffer 'nil)
 (setq vr--full-buffer t)
@@ -2547,7 +2559,7 @@ Copied from a fork of the visual-regexp repository: https://github.com/grahnen/v
 This next part changes the package's base code to allow using active region as the input regex pattern.
 The parts that were changed have comments that identify them.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 :config
 ;; these are my own variables
@@ -2629,7 +2641,7 @@ It assumes the region is active."
 
 **** Package: visual-regexp (part 2)
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
   :bind
   ;; (:map wakib-keys-overriding-map
@@ -2829,15 +2841,12 @@ they final view is the same as before the command executed.
 *** Org mode
 **** Package: async
 
-The code below executes org-babel-tangle asynchronously when config.org is saved.
+The code below executes org-babel-tangle asynchronously when the config file is saved.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package async
   :config
-  (defvar *config-file* (expand-file-name "config.org" user-emacs-directory)
-    "The configuration file.")
-
   (defvar *config-last-change* (nth 5 (file-attributes *config-file*))
     "Last modification time of the configuration file.")
 
@@ -2879,7 +2888,7 @@ The code below executes org-babel-tangle asynchronously when config.org is saved
 
 **** Package: org
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package org
   :straight org-plus-contrib
@@ -2971,7 +2980,7 @@ Org Bullets (not used anymore)
 #+end_src
 
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package org-superstar
   :after org
@@ -3064,7 +3073,7 @@ Inline tasks behave as you would expect them to, for the most part. They have tw
 
 **** Package: toc-org
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package toc-org
   :hook (org-mode . toc-org-mode))
@@ -3081,7 +3090,7 @@ Inline tasks behave as you would expect them to, for the most part. They have tw
 
 **** Package: org-super-agenda
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (require 'org-habit)
 (use-package org-super-agenda
@@ -3165,7 +3174,7 @@ it works if I manually execute the use-package after emacs is loaded. probably a
 after some experimentation, is seems there's a conflict with some org package.
 Solution: load this package after the org section.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package ryo-modal
   ;; :init
@@ -3230,7 +3239,7 @@ Solution: load this package after the org section.
 
 Between aspell and hunspell, aspell seems to have much better performance.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 ;; defer is used to only load package when mode is activated
 (use-package flyspell
@@ -3248,7 +3257,7 @@ Between aspell and hunspell, aspell seems to have much better performance.
 
 **** Package: flyspell-correct-ivy
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package flyspell-correct-ivy
   :config
@@ -3267,7 +3276,7 @@ Use hydra menu to enable/disable.
 *** Code Completion
 **** Package: company
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package company
   :config
@@ -3293,7 +3302,7 @@ Use hydra menu to enable/disable.
 
 **** Package: company-quickhelp
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package company-quickhelp
   :unless (display-graphic-p)
@@ -3307,7 +3316,7 @@ Use hydra menu to enable/disable.
 
 **** Package: company-box
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package company-box
   :after company
@@ -3341,7 +3350,7 @@ swiper is a tool for performing searches, powered by Ivy, all while
 
 **** Package: ivy
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package ivy
   :defer 0.1
@@ -3365,7 +3374,7 @@ swiper is a tool for performing searches, powered by Ivy, all while
 
 **** Package: counsel
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package counsel
   :after ivy
@@ -3379,7 +3388,7 @@ swiper is a tool for performing searches, powered by Ivy, all while
 
 **** Package: swiper
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package swiper
   :after ivy
@@ -3430,7 +3439,7 @@ Uses the active region as input, if it is active."
 
 Ivy sorts large lists using flx's scoring mechanism, if it's installed.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package flx)
 
@@ -3438,7 +3447,7 @@ Ivy sorts large lists using flx's scoring mechanism, if it's installed.
 
 **** Package: ivy-prescient
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package prescient
   :custom
@@ -3464,7 +3473,7 @@ Ivy sorts large lists using flx's scoring mechanism, if it's installed.
 
 **** Package: ivy-rich
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package ivy-rich
   :custom
@@ -3483,7 +3492,7 @@ Ivy sorts large lists using flx's scoring mechanism, if it's installed.
 
 **** Package: ivy-posframe
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package ivy-posframe
   :custom
@@ -3508,7 +3517,7 @@ Ivy sorts large lists using flx's scoring mechanism, if it's installed.
 
 **** Package: counsel-projectile
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package counsel-projectile)
 
@@ -3525,7 +3534,7 @@ When using swiper, press C-7 to add a cursor to all highlighted items
 Magit is a complete text-based user interface to Git. It fills the glaring gap between the Git command-line interface and various GUIs, letting you perform trivial as well as elaborate version control tasks with just a couple of mnemonic key presses.
 #+end_quote
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package magit
   :hook (magit-mode . my/set-buffer-large-fringe))
@@ -3538,7 +3547,7 @@ Magit is a complete text-based user interface to Git. It fills the glaring gap b
 Emacs package for highlighting uncommitted changes
 #+end_quote
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package diff-hl
   :config
@@ -3594,7 +3603,7 @@ Emacs package for highlighting uncommitted changes
 
 Use multiple cursors on swiper candidates with the corresponding swiper keybinding.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package multiple-cursors
   :init
@@ -3619,7 +3628,7 @@ Use multiple cursors on swiper candidates with the corresponding swiper keybindi
 
 Write in Org mode and export to HTML with reveal.js
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package ox-reveal
   :custom
@@ -3630,7 +3639,7 @@ Write in Org mode and export to HTML with reveal.js
 
 #+end_src
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 ;; necessary to highlight source code
 (use-package htmlize)
@@ -3666,7 +3675,7 @@ decktape reveal <my-file.html> <output>
 Moving text both horizontally and vertically.
 I use the M + arrow keys for this. Since this interferes with org-mode, we use the default org-mode keybinds when the cursor is in an org-heading.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 ;; alt+up/down to move line or region
 (use-package drag-stuff
@@ -3718,7 +3727,7 @@ Otherwise, just execute the normal behaviour"
 *** Hydras
 **** Package: hydra
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package hydra)
 
@@ -3758,7 +3767,7 @@ n - notes menu
 
 **** Package: hydra-posframe
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package hydra-posframe
   :hook (after-init . hydra-posframe-mode)
@@ -3782,7 +3791,7 @@ n - notes menu
 
 show a different main hydra, depending on major mode
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package major-mode-hydra
   :init
@@ -3809,7 +3818,7 @@ show a different main hydra, depending on major mode
 
 **** Hydra: toggles
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (pretty-hydra-define hydra-toggles
   (:color amaranth :quit-key "q" :title "Toggles Hydra")
@@ -3843,7 +3852,7 @@ show a different main hydra, depending on major mode
 
 **** Hydra: open
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (pretty-hydra-define hydra-open
   (:color teal :quit-key "q"  :title "Open/Utilities Hydra")
@@ -3859,7 +3868,7 @@ show a different main hydra, depending on major mode
 
 **** Hydra: search
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (pretty-hydra-define hydra-search
   (:color teal :quit-key "q" :title "Search Hydra")
@@ -3878,7 +3887,7 @@ show a different main hydra, depending on major mode
 
 **** Hydra: version control
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (pretty-hydra-define hydra-git
   (:color teal :quit-key "q" :title "Git Hydra")
@@ -3890,7 +3899,7 @@ show a different main hydra, depending on major mode
 
 **** Hydra: package manager
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (pretty-hydra-define hydra-packages
   (:color teal :quit-key "q" :title "Packages Hydra")
@@ -3903,7 +3912,7 @@ show a different main hydra, depending on major mode
 
 **** Hydra: indentation
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (pretty-hydra-define hydra-indentation
   (:color teal :quit-key "q" :title "Indentation Hydra")
@@ -3923,7 +3932,7 @@ show a different main hydra, depending on major mode
 
 **** Hydra: spellcheck
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (pretty-hydra-define hydra-spellcheck
   (:color teal :quit-key "q" :title "Spellcheck Hydra")
@@ -3935,7 +3944,7 @@ show a different main hydra, depending on major mode
 
 **** Hydra: bookmarks
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (pretty-hydra-define hydra-bookmarks
   (:color teal :quit-key "q" :title "Bookmarks Hydra")
@@ -3950,7 +3959,7 @@ show a different main hydra, depending on major mode
 
 **** Hydra: file
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (pretty-hydra-define hydra-file
   (:color teal :quit-key "q" :title "Files Hydra")
@@ -3977,7 +3986,7 @@ show a different main hydra, depending on major mode
 
 **** Hydra: insert
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (pretty-hydra-define hydra-insert
   (:color teal :quit-key "q" :title "Insert Hydra")
@@ -3991,7 +4000,7 @@ show a different main hydra, depending on major mode
 
 **** Hydra: quit/session
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (pretty-hydra-define hydra-quit
   (:color teal :quit-key "q" :title "Quit/Session Hydra")
@@ -4009,7 +4018,7 @@ show a different main hydra, depending on major mode
 
 **** Hydra: buffer
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (pretty-hydra-define hydra-buffer
   (:color teal :quit-key "q" :title "Buffer Hydra")
@@ -4026,7 +4035,7 @@ show a different main hydra, depending on major mode
 Depending on the font, the line below the hydra title can be too long or too short.
 Here, we are replacing the font, only targeting the unicode symbol used to draw the line.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (set-fontset-font "fontset-default"
                   '(#x2500 . #x250F) (font-spec :name "SourceCodePro"))
@@ -4051,15 +4060,16 @@ Behavior by color:
 *** PDF viewer
 **** Package: pdf-tools
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package pdf-tools
    :config
-   (pdf-tools-install)
+   (pdf-tools-install :no-query)
    (setq-default pdf-view-display-size 'fit-page)
    (define-key pdf-view-mode-map (kbd "C-f") 'isearch-forward)
    :custom
-   (pdf-annot-activate-created-annotations t "automatically annotate highlights"))
+   (pdf-annot-activate-created-annotations t "automatically annotate highlights")
+   :mode ("\\.pdf\\'" . pdf-view-mode))
 
 #+end_src
 
@@ -4073,7 +4083,7 @@ This needs to be added to the end of any org file that is being used to create a
 # End:
 #+end_example
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (defun my/scroll-other-window-down ()
   "Scroll other window down, with support for pdf-view-mode."
@@ -4099,7 +4109,7 @@ This needs to be added to the end of any org file that is being used to create a
 
 #+end_src
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 ;; my/scroll-other-window-pdf-tools-mode.el
 ;; Temporary minor mode
 ;; Main use is to enable it only in specific buffers to achieve the goal of buffer-specific keymaps
@@ -4127,7 +4137,7 @@ Not sure, but this might have to load after flyspell package
 
 # see "flycheck-select-checker" function
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package flycheck
   :hook
@@ -4136,7 +4146,7 @@ Not sure, but this might have to load after flyspell package
 #+end_src
 
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package flycheck-aspell
   :config
@@ -4152,7 +4162,7 @@ The other packages first have to create their hydras and only after that should 
 
 Note: dont forget to update which-key with the descriptions when creating new hydras.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package general
   :config
@@ -4182,7 +4192,7 @@ Note: dont forget to update which-key with the descriptions when creating new hy
 
 Change undo/redo behaviour
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package undo-tree
   :config
@@ -4198,7 +4208,7 @@ Change undo/redo behaviour
 
 Edit files with elevated permissions
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package sudo-edit)
 
@@ -4208,7 +4218,7 @@ Edit files with elevated permissions
 
  Key Rebinding utility. Will be used in the keybinds section
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package bind-key)
 
@@ -4218,7 +4228,7 @@ Edit files with elevated permissions
 
 Display available keybindings in popup after a prefix key is pressed
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package which-key
   :config
@@ -4246,7 +4256,7 @@ Display available keybindings in popup after a prefix key is pressed
 Save a list of most recently edited files.
 We exclude elpa folder from recent files to prevent autoload files filling it up.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package recentf
   :config
@@ -4262,7 +4272,7 @@ We exclude elpa folder from recent files to prevent autoload files filling it up
 
 Add an easy way to restart emacs
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package restart-emacs
   :commands (restart-emacs))
@@ -4273,7 +4283,7 @@ Add an easy way to restart emacs
 
 Expand region in logical increments.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package expand-region
   :bind ("M-A" . er/expand-region))
@@ -4282,7 +4292,7 @@ Expand region in logical increments.
 
 **** Package: switch-window
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package switch-window
   :bind
@@ -4295,7 +4305,7 @@ Expand region in logical increments.
 
 quickly go to any character on screen.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package avy
   :bind ("M-m" . avy-goto-char))
@@ -4322,7 +4332,7 @@ quickly go to any character on screen.
 
 **** Package: comment-dwim-2
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package comment-dwim-2
   :init
@@ -4356,7 +4366,7 @@ cut/copy whole line or region
 when C-x or C-c are pressed with no active selection, cut/copy the line instead
 default behaviour is to do the operation between the cursor and the mark, which is hidden
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package whole-line-or-region
   :config
@@ -4380,7 +4390,7 @@ default behaviour is to do the operation between the cursor and the mark, which 
 
 Use this so magit can actually access the host system's ssh keys.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package ssh-agency)
 
@@ -4393,7 +4403,7 @@ mostly helps by adding support for terminal colors.
 Deals with terminal escape codes in compilation-mode.
 This should make compilation buffers handle ANSI escape sequences instead of displaying them as raw strings.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package ansi-color
   :config
@@ -4411,7 +4421,7 @@ This should make compilation buffers handle ANSI escape sequences instead of dis
 
 Show a buffer position indicator on the right fringe
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package yascroll
   :config
@@ -4434,7 +4444,7 @@ Show a buffer position indicator on the right fringe
 
 Replace the default fringe icons with more modern looking ones
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package modern-fringes
   :config
@@ -4464,7 +4474,7 @@ Replace the default fringe icons with more modern looking ones
 
 Better formatting for help buffers
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package helpful
   :config
@@ -4475,7 +4485,7 @@ Better formatting for help buffers
 
 **** Package: exec-path-from-shell
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package exec-path-from-shell
   :config
@@ -4501,7 +4511,7 @@ https://github.com/roman/golden-ratio.el/issues/82
 
 rules for popup windows
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package shackle
   :init
@@ -4514,7 +4524,7 @@ rules for popup windows
 
 **** Package: fd-dired
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package fd-dired)
 
@@ -4529,7 +4539,7 @@ use ~/.config/fd/ignore to ignore files
 
 face used is from term-mode
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package fzf
   :ensure-system-package (fd fzf)
@@ -4546,15 +4556,16 @@ face used is from term-mode
 
 **** Package: rainbow-mode
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
-(use-package rainbow-mode)
+(use-package rainbow-mode
+  :commands (rainbow-mode))
 
 #+end_src
 
 **** Package: visual-fill-column
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package visual-fill-column
   :defer t
@@ -4589,7 +4600,7 @@ face used is from term-mode
 
 **** Package: csharp-mode
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package csharp-mode
    :mode ("\\.cs\\'" . csharp-mode)
@@ -4605,7 +4616,7 @@ face used is from term-mode
 
 **** Package: dockerfile-mode
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package dockerfile-mode
   :mode "Dockerfile\\'")
@@ -4636,7 +4647,9 @@ This variable is declared as safe with the following code, so you aren't asked i
 
 **** Package: org-ref
 
-#+begin_src emacs-lisp :tangle yes
+This takes a long time to load. Maybe add :mode or :commands to defer loading.
+
+#+begin_src emacs-lisp :tangle no
 
 (use-package org-ref
   :after org)
@@ -4645,7 +4658,7 @@ This variable is declared as safe with the following code, so you aren't asked i
 
 Add support for =minted=
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (setq org-latex-listings          'minted
       org-latex-packages-alist    '(("" "minted"))
@@ -4664,7 +4677,7 @@ Add support for =minted=
 
 For markdown, you need to customize the command to run the markdown parser if you use something else.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 ;; (use-package markdown-mode
 ;;   :mode "\\.\\(m\\(ark\\)?down\\|md\\)$")
@@ -4678,7 +4691,7 @@ For markdown, you need to customize the command to run the markdown parser if yo
 
 #+end_src
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 ;; (use-package markdown-preview-mode)
 
@@ -4706,7 +4719,7 @@ Also known as Hashicorp Configuration Language (HCL)
 
 **** Package: terraform-mode
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package terraform-mode
   :mode "\\.tf\\'")
@@ -4720,7 +4733,7 @@ Also known as Hashicorp Configuration Language (HCL)
 
 **** Package: yaml-mode
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package yaml-mode
   :mode "\\.y\\(a\\)?ml\\'")
@@ -4733,7 +4746,7 @@ Load personal settings file if it exists.
 This is where you put sensitive information like emails and credentials.
 Remember to add this file to =.gitignore=.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (let ((personal-settings (expand-file-name "personal.el" user-emacs-directory)))
  (when (file-exists-p personal-settings)
@@ -4835,7 +4848,7 @@ They are in the end of the config file to allow most of the config to be loaded 
 
 ** File Footer
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 ;;; config.el ends here
 
