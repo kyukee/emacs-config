@@ -16,16 +16,19 @@
   - [[#file-footer][File Footer]]
 - [[#init-file][Init file]]
   - [[#file-header-1][File Header]]
-  - [[#define-configuration-file-variable][Define configuration file variable]]
-  - [[#method-1-tangle-on-save-and-load-pre-parsed-config-file][Method 1: tangle on save and load pre-parsed config file]]
-  - [[#method-2-always-parse-config-file-on-load][Method 2: always parse config file on load]]
+  - [[#configuration-file-variable][Configuration file variable]]
+  - [[#load-config-file][Load config file]]
+    - [[#method-1-tangle-on-save-and-load-pre-parsed-config-file][Method 1: tangle on save and load pre-parsed config file]]
+    - [[#method-2-always-parse-config-file-on-load][Method 2: always parse config file on load]]
   - [[#file-footer-1][File Footer]]
 - [[#main-configuration-file][Main Configuration file]]
   - [[#file-header-2][File Header]]
   - [[#setup][Setup]]
+    - [[#enforce-minimum-emacs-version][Enforce minimum Emacs version]]
     - [[#enable-debug-while-loading-config][Enable Debug while loading config]]
     - [[#package-management][Package management]]
     - [[#organize-configuration-directory][Organize configuration directory]]
+    - [[#system-path][System Path]]
     - [[#startup-profiler][Startup Profiler]]
   - [[#appearance][Appearance]]
     - [[#font][Font]]
@@ -54,36 +57,47 @@
     - [[#file-explorer][File Explorer]]
     - [[#dashboard][Dashboard]]
     - [[#modeline][Modeline]]
-    - [[#search-across-multiple-files][Search Across Multiple Files]]
+    - [[#search-across-directories][Search Across Directories]]
     - [[#interactive-visual-replace][Interactive Visual Replace]]
     - [[#org-mode][Org mode]]
-    - [[#modal-editing][Modal editing]]
+    - [[#review-modal-editing][REVIEW Modal editing]]
     - [[#spellcheck][Spellcheck]]
     - [[#code-completion][Code Completion]]
-    - [[#generic-completion-framework][Generic Completion Framework]]
+    - [[#emacs-completion-framework][Emacs Completion Framework]]
     - [[#git-integration][Git Integration]]
     - [[#templates-and-snippets][Templates and Snippets]]
     - [[#multiple-cursors][Multiple Cursors]]
     - [[#presentations][Presentations]]
-    - [[#move-text][Move text]]
+    - [[#move-text][Move Text]]
     - [[#hydras][Hydras]]
-    - [[#pdf-viewer][PDF viewer]]
+    - [[#pdf-viewer][PDF Viewer]]
     - [[#code-linter][Code Linter]]
-    - [[#spacemacs-like-menu][Spacemacs-like menu]]
+    - [[#spacemacs-esque-menu][Spacemacs-esque menu]]
     - [[#other-additions][Other additions]]
-  - [[#programming-languages][Programming languages]]
+  - [[#language-support][Language Support]]
     - [[#c][C#]]
+    - [[#csv][CSV]]
     - [[#dockerfile][Dockerfile]]
-    - [[#latex][Latex]]
-    - [[#review-markdown][REVIEW Markdown]]
+    - [[#dotenv][Dotenv]]
+    - [[#git][Git]]
+    - [[#java][Java]]
+    - [[#json][JSON]]
+    - [[#review-latex][REVIEW Latex]]
+    - [[#markdown][Markdown]]
+    - [[#python][Python]]
     - [[#terraform-hcl][Terraform (HCL)]]
     - [[#yaml][YAML]]
   - [[#personal-settings][Personal Settings]]
   - [[#experimentation-area][Experimentation Area]]
     - [[#navigate-words-by-only-moving-to-the-first-character-backward-and-forward][navigate words by only moving to the first character, backward and forward]]
-    - [[#stuff-i-need-to-try-that-might-improve-scrolling][Stuff I need to try that might improve scrolling.]]
+    - [[#stuff-i-need-to-try-that-might-improve-scrolling][stuff I need to try that might improve scrolling.]]
     - [[#org-agenda-custom-commands][org agenda custom commands]]
     - [[#make-tab-line-empty][make tab-line empty]]
+    - [[#emacs-server][Emacs server]]
+    - [[#system-notifications][system notifications]]
+    - [[#ledger][ledger]]
+    - [[#org-babel-execute][org babel execute]]
+    - [[#agenda-todo-list---ignore-scheduled-and-deadline][agenda todo list - ignore scheduled and deadline]]
   - [[#file-footer-2][File Footer]]
 
 * Introduction
@@ -104,16 +118,17 @@ In order for everything to work correctly, you should have the following install
 - fzf
 - aspell (or hunspell)
 - git
-- marked (or some other markdown parser)
+- pandoc (or some other markdown parser)
 - python
 - vmd (node.js package)
 - decktape (node.js package)
+- some icon fonts
 
-Some things like markdown and spellchecking have multiple options available.
+Some things like markdown and spellchecking have multiple alternatives available.
 
 ** Installation
 
-Eventually, this config will work on windows, but for now, only unix is supported.
+Eventually, this config will work on windows but, for now, only unix is supported.
 
 optional backup:
 cp ~/.emacs.d ~/.emacs.d_backup
@@ -142,7 +157,13 @@ The following image shows all the keys you need to know to get started:
 The wakib-keys package defines a lot more bindings that are more oriented towars speed and productivity.
 If you're interested, go check it out.
 
-Note: this image was done using [[http://www.keyboard-layout-editor.com/#/][Keyboard Layout Editor]].
+# How to modify layout images:
+#  - go to http://www.keyboard-layout-editor.com/#/
+#  - import json file
+#  - make changes
+#  - zoom in and take screenshot
+#    - firefox screenshot tool can easily select correct area
+#    - website export function exists but doesnt work verl well
 
 ** Fixes and improvements
 
@@ -246,6 +267,10 @@ Todo:
 - [X] add margin to the left of org-agenda (between category and todo) (org-agenda-prefix)
 - [X] see if it's possible to remove =*special*= buffers from =C-b=
 - [X] add margin to right side of org source blocks
+- [X] add functions and hydras to convert line endings
+- [X] change C-SPC to do something related to jumping to bookmarks, previous mark location, or something like that
+- [X] remove tab-line from bufler, magit, and any other like them
+- [X] add help hydra to describe functions at point
 - [ ] ctrl+shift+o to open directory in sidebar
 - [ ] error indicator in fringe for flyspell and flycheck
 - [ ] git gutter on left and flycheck gutter on right side
@@ -263,11 +288,8 @@ Todo:
 - [ ] give every doom modeline segment a mouse-over description and menu (tooltip)
 - [ ] improve appearance of tab-line arrows (they appear when the bar is too full)
 - [ ] for every package, add a quote from their git repo explaining what the package does
-- [ ] add documentation for the following: (in org mode) M-left/right -> promote/demote single heading; M-S-left/right -> promote/demote heading subtree
 - [ ] allow jumping to a function definition by ctrl-click or f2 or something else (check 'embark' package)
-- [ ] add functions and hydras to convert line endings
 - [ ] when a region is selected and an arrow key is presses in the opposite direction, exchange point and cursor
-- [ ] change C-SPC to do something related to jumping to bookmarks, previous mark location, or something like that
 - [ ] add hydra or M-<key> commands for org-mark-ring-push, pop-global-mark, counsel-mark-ring
 - [ ] C-SPC and C-u SPC no longer work because of ryo-modal (C-SPC C-SPC to mark, C-u C-SPC to jump to prev mark)
 - [ ] related to note-taking: checkout deft, notdeft, org-roam, org-ql, org-rifle, org-journal, idutils
@@ -279,24 +301,56 @@ Todo:
 - [ ] golden-ratio seems to be interfering with which-key
 - [ ] add some sort of agenda view where I can see tasks without dates (or improve current agenda view) (see calfw)
 - [ ] dashboard agenda shows archived tasks
-- [ ] remove tab-line from bufler, magit, and any other like them
-- [ ] C-RET and C-S-RET to make newlines (add keybinding docs)
 - [ ] make treemacs change directory when doing bufler focus workspace
 - [ ] change treemacs project font (remove underline)
 - [ ] add =:ensure-system-package= and more dependencies to use-package declarations
-- [ ] C-t "go to symbol", C-p "go to file" (add to keybindings documentation)
 - [ ] magit diffs use blue and pink for additions and deletions
 - [ ] highlight whitespace on active selection
 - [ ] make startup time under 1 second with use-package defer features
-
+- [ ] bufler - make scratch buffer accessible to all projectile groups
+- [ ] reduce font size for hydra menus (should see menus even at 60% window width)
+- [ ] use minted for latex listings
+- [X] some functions have package dependencies and shouldnt be in the Functions section
+- [ ] highlight FIXME, TODO, etc
+- [ ] crux has a lot of useful commands. I could replace my functions with their package.
+- [ ] pg-up pg-down should return cursor to same place in document
+- [ ] bufler frame title
+- [ ] C-c doesn't work in llncsorg-master Makefile
+- [ ] ivy-yasnippet "src" snippet gives warning because the snippet declaration file has extra spaces
+- [ ] rainbow-mode gets overshadowed by current line highlighting
 
 # NOTE: use org-sort and select 'X' to sort this list by what items are checked
+
+
+documentation:
+
+- [ ] (in org mode) M-left/right -> promote/demote single heading; M-S-left/right -> promote/demote heading subtree
+- [ ] C-RET and C-S-RET to make newlines (add keybinding docs)
+- [ ] C-t "go to symbol", C-p "go to file" (add to keybindings documentation)
+
+
+from sublime:
+
+- [ ] use vertical lines to signal indentation
+- [ ] highlight vertical indentation of current scope / show bracket symbol in gutter (start and end of scope)
+- [ ] diff files
+- [ ] show git untracked/unstaged/staged number in the modeline segment (also N of commits ahead/behind)
+- [ ] markdown preview (in browser) asks you what flavour to use
+- [ ] bookmarks (C-F2 toggle, F2 next, S-F2 prev, C-S-F2 clear all, M-F2 select all)
+- [ ] file - reveal in sidebar
+- [ ] using git - compare file against commit
+- [ ] C-- comment, C-S-- block comment
+- [ ] snippet shows in autocomplete menu. just type and use tab for autocomplete. then use tab to jump in next snippet position
+- [ ] notifications plugin
+- [ ] convert unicode to escaped string back and forth
+- [ ] C-F6 for spellcheck, F6 for next error
+- [ ] jumping to start/end and PG-up/down all use scrolling
+- [ ] open external terminal in current directory
 
 
 and also:
 
 - [ ] look at vscode settings + extensions and import anything I like
-- [ ] look at sublime settings + extensions and import anything I like
 - [ ] when this config is developed enough, see what it needs to work on Windows
 
 * Early Init file
@@ -335,7 +389,7 @@ Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before p
 
 ** User Interface
 
-For the GUI changes that deserve to be in early-init. It is more efficient to disable UI elements before they are even loaded than to load them with the wrong configuration than change them.
+For the GUI changes that deserve to be in early-init. It is more efficient to disable UI elements before they are even loaded than to load them with the wrong configuration and then change them.
 
 #+begin_src emacs-lisp :tangle early-init.el
 
@@ -390,7 +444,7 @@ For the GUI changes that deserve to be in early-init. It is more efficient to di
 
 #+end_src
 
-** Define configuration file variable
+** Configuration file variable
 
 #+begin_src emacs-lisp :tangle init.el
 
@@ -399,7 +453,8 @@ For the GUI changes that deserve to be in early-init. It is more efficient to di
 
 #+end_src
 
-** Method 1: tangle on save and load pre-parsed config file
+** Load config file
+*** Method 1: tangle on save and load pre-parsed config file
 
 After the first time that config.el is created, this will no longer tangle the config file.
 This method is slightly faster than just using org-babel-load-file.
@@ -415,7 +470,7 @@ This is very effective when you have a hook to tangle the config file everytime 
 
 #+end_src
 
-** Method 2: always parse config file on load
+*** Method 2: always parse config file on load
 
 Always parse the config file when starting emacs.
 This can be useful if recovering from errors in the config file is a concern.
@@ -450,6 +505,16 @@ The downside is that =org-babel-tangle= can take several seconds to complete.
 #+end_src
 
 ** Setup
+*** Enforce minimum Emacs version
+
+#+begin_src emacs-lisp
+
+(let ((min-version "27.0"))
+  (when (version< emacs-version min-version)
+    (error "Gnu Emacs %s or newer is required" min-version)))
+
+#+end_src
+
 *** Enable Debug while loading config
 
 Enable debug mode before we make any changes. This makes is easier to figure out errors when they happen.
@@ -550,25 +615,34 @@ Make emacs configuration directory more organized and keep it clean.
 
 #+end_src
 
+*** System Path
+**** Package: exec-path-from-shell
+
+#+begin_src emacs-lisp
+
+(use-package exec-path-from-shell
+  :config
+  (exec-path-from-shell-initialize))
+
+#+end_src
+
 *** Startup Profiler
 **** Package: esup
 
 This isn't in the same section as the other features because it needs to loaded as early as possible to get accurate results.
 
-not using it because it doesn't really work well with early-init file
+One small issue is that it doesn't seem to load the early init file.
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package esup
-  :commands (esup)
-  :config
-  (setq esup-depth 0))
+  :commands (esup))
 
 #+end_src
 
 **** Package: benchmark-init
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 
 (use-package benchmark-init
   :defer nil
@@ -606,7 +680,9 @@ The unit for the 'height' attribute is 1/10pt, which means a height of 100 is 10
   '(tab-line-tab               ((t (:family "Cartograph CF" :height 100))))
   '(line-number                ((t (:family "Cartograph CF" :height 110))))
   '(line-number-current-line   ((t (:family "Cartograph CF" :height 110))))
-  '(treemacs-file-face         ((t (:family "Cartograph CF" :height 100)))))
+  '(treemacs-file-face         ((t (:family "Cartograph CF" :height 100))))
+  '(hydra-posframe-face        ((t (:family "Cartograph CF" :height 100))))
+  '(ivy-posframe               ((t (:family "Cartograph CF" :height 100)))))
 
 #+end_src
 
@@ -621,110 +697,181 @@ The unit for the 'height' attribute is 1/10pt, which means a height of 100 is 10
 #+end_src
 
 *** Theme Faces
+**** Color theme examples
+
+Resources:
+  - https://vimcolorschemes.com/
+  - https://github.com/pineapplegiant/spaceduck#emacs
+  - https://ciembor.github.io/4bit/
+
+Finish later:
+  - https://vimcolorschemes.com/artanikin/vim-synthwave84
+  - https://vimcolorschemes.com/ghifarit53/tokyonight-vim
+  - https://vimcolorschemes.com/wadackel/vim-dogrun
+  - https://vimcolorschemes.com/pineapplegiant/spaceduck
+  - https://vimcolorschemes.com/glepnir/oceanic-material
+  - https://vimcolorschemes.com/dracula/vim
+  - https://vimcolorschemes.com/reedes/vim-colors-pencil
+
+
+| Theme             | bg      | red     | green   | yellow  | blue    | magenta | cyan    | fg      |
+|-------------------+---------+---------+---------+---------+---------+---------+---------+---------|
+| embark            | #1e1c31 | #f48fb1 | #a1efd3 | #ffe6b3 | #91ddff | #d4bfff | #87dfeb | #cbe3e7 |
+| snazzy            | #1e1f29 | #da514d | #51e88e | #eead0d | #80c1cf | #b45391 | #3aa0e8 | #b7b7bf |
+| pop-punk          | #000000 | #d50f62 | #43d726 | #fd9c27 | #168fc0 | #9e2ccb | #4adfd0 | #ffffff |
+| challenger-deep   | #1a172b | #ff5458 | #62d196 | #ffb378 | #65b2ff | #906cff | #63f2f1 | #a6b3cc |
+| kabukicho-vscode  | #130d1a | #f829ac | #5df390 | #fdca00 | #5d6dc7 | #9963ff | #60e1fe |         |
+|                   |         |         |         |         |         |         |         |         |
+| vim-synthwave84   |         |         |         |         |         |         |         |         |
+| tokyonight-vim    |         |         |         |         |         |         |         |         |
+| vim-dogrun        |         |         |         |         |         |         |         |         |
+| dogrun            |         |         |         |         |         |         |         |         |
+| oceanic-material  |         |         |         |         |         |         |         |         |
+| vim-dracula       |         |         |         |         |         |         |         |         |
+| vim-colors-pencil |         |         |         |         |         |         |         |         |
+|                   |         |         |         |         |         |         |         |         |
+| test              |         | #ff1493 | #12F292 | #ffa500 | #4c83ff | #A840F4 | #21D7D7 |         |
+
+**** My color theme
 
 #+begin_src emacs-lisp
 
 (setq custom--inhibit-theme-enable nil)
 
 (with-eval-after-load "cyberpunk-theme"
-  (let ((color-bg   "#14141D")
-        (color-fg   "#c8c9ad")  ;; #bdbdb3, #ecf0c1
-        (color-cyan "#21D7D7")
-        (color-lime "#12F292"))
+  (let ((bg_1      "#14141D")
+        (bg_2      "#15151f")     ;; #13141A
+        (bg_3      "#151522")     ;; #151424
+        (bg_4      "#17162a")
+        (red_1     "#ff1493")
+        (red_2     "#D92027")
+        (green_1   "#12F292")     ;; #00fa9a, #14FF82, #40e66c
+        (green_2   "#fff")
+        (yellow_1  "#ffa500")
+        (yellow_2  "#fff")
+        (blue_1    "#add8e6")
+        (blue_2    "#fff")
+        (magenta_1 "#9963ff")
+        (magenta_2 "#fff")
+        (cyan_1    "#21D7D7")
+        (cyan_2    "#fff")
+        (fg_1      "#c8c9ad")     ;; #bdbdb3, #ecf0c1
+        (fg_2      "#dedede"))
     (custom-theme-set-faces
      'cyberpunk
 
      ;; defaults
-     `(default                       ((t (:background ,color-bg :foreground ,color-fg))))
-     `(fringe                        ((t (:background ,color-bg :foreground "#dcdccc"))))
-     '(region                        ((t (:background "#5e153c" :extend t))))
-     '(error                         ((t (:foreground "#D92027" :weight bold))))
+     `(default                       ((t (:background ,bg_1 :foreground ,fg_1))))
+     `(fringe                        ((t (:background ,bg_1 :foreground ,fg_2))))
+     '(region                        ((t (:background "#5e153c" :extend t))))  ; #34294f, #5e153c
+     `(error                         ((t (:foreground ,red_2 :weight bold))))
      '(whitespace-tab                ((t (:background nil))))
      '(whitespace-trailing           ((t (:background nil))))
-     `(font-lock-keyword-face        ((t (:foreground ,color-cyan))))
-     '(font-lock-variable-name-face  ((t (:foreground "#f76f8f"))))  ; #f54dce, #f461c6
+
+      ;; programming
+     `(font-lock-keyword-face        ((t (:foreground "#21D7D7"))))
+     '(font-lock-variable-name-face  ((t (:foreground "#ff1493"))))  ; #f54dce, #f461c6, #f7658d
+     '(font-lock-string-face         ((t (:foreground "#fdca00"))))  ; #89E2A1, #CCE8D3
+     '(font-lock-type-face           ((t (:foreground "#9963ff"))))
+     '(font-lock-constant-face       ((t (:foreground "#96CBFE"))))
+     '(font-lock-builtin-face        ((t (:foreground "#4c83ff"))))
+     '(font-lock-function-name-face  ((t (:foreground "#12F292"))))
+     '(font-lock-doc-face            ((t (:foreground "#fee47f"))))
 
      ;; line numbers
      '(line-number                   ((t (:foreground "gray30"))))
-     `(line-number-current-line      ((t (:background ,color-bg :foreground "#dedede"))))
+     `(line-number-current-line      ((t (:background ,bg_1 :foreground ,fg_2))))
 
      ;; tab-line
-     `(tab-line                      ((t (:background ,color-bg :foreground "white" :height 1.0))))
-     `(tab-line-tab                  ((t (:inherit tab-line :background ,color-bg :foreground "#dedede"))))       ; selected but window not in focus
-     `(tab-line-tab-current          ((t (:inherit tab-line-tab :overline ,color-lime))))                         ; selected
-     '(tab-line-tab-inactive         ((t (:inherit tab-line-tab :foreground "gray50"))))                          ; not selected
-     '(tab-line-highlight            ((t (:inherit tab-line-tab :background "orange" :foreground "#222222"))))    ; on mouse-over
+     `(tab-line                      ((t (:background ,bg_1 :foreground "white" :height 1.0))))
+     `(tab-line-tab                  ((t (:inherit tab-line :background ,bg_1 :foreground ,fg_2))))               ; selected but window not in focus
+     `(tab-line-tab-current          ((t (:inherit tab-line-tab :overline ,green_1))))                            ; selected
+     '(tab-line-tab-inactive         ((t (:inherit tab-line-tab :foreground "gray40"))))                          ; not selected
+     `(tab-line-highlight            ((t (:inherit tab-line-tab :background ,yellow_1 :foreground "#222222"))))   ; on mouse-over
 
      ;; modeline
-     '(doom-modeline-persp-buffer-not-in-persp ((t (:inherit (font-lock-comment-face italic)))))
-     '(doom-modeline-persp-name      ((t (:inherit (font-lock-doc-face italic bold)))))
+     '(mode-line                     ((t (:background "#251F33" :foreground "gray60" :box (:line-width -1 :color "#14141D")))))
+     '(mode-line-inactive            ((t (:background "#1A1A1A" :foreground "gray40" :box (:line-width -1 :color "#14141D")))))
+     '(mode-line-highlight           ((t (:box (:line-width 2 :color "gray70")))))
+     '(mode-line-buffer-id           ((t (:foreground "gray70"))))
+     `(mode-line-emphasis            ((t (:foreground ,green_1 :weight bold))))
+
+     ;; doom-modeline
      '(doom-modeline-bar             ((t (:background "#251F33"))))
      '(doom-modeline-bar-inactive    ((t (:background "#1A1A1A"))))
-     '(doom-modeline-buffer-path     ((t (:inherit (mode-line-emphasis) :foreground "gray60"))))
-     `(doom-modeline-project-dir     ((t (:inherit (doom-modeline-buffer-path) :foreground ,color-lime))))
-     '(mode-line                     ((t (:background "#251F33" :foreground "gray60" :box (:line-width -1 :color "#0d1a1e")))))
-     '(mode-line-inactive            ((t (:background "#1A1A1A" :foreground "#4D4D4D" :box (:line-width -1 :color "#0d1a1e")))))
-     '(mode-line-highlight           ((t (:box (:line-width 2 :color "gray70")))))
-     '(mode-line-buffer-id           ((t (:foreground "gray70"))))  ;; #21D7D7
-     `(mode-line-emphasis            ((t (:foreground ,color-lime :weight bold))))
+     '(doom-modeline-persp-buffer-not-in-persp ((t (:inherit (font-lock-comment-face italic)))))
+     '(doom-modeline-persp-name      ((t (:inherit (font-lock-doc-face italic bold)))))
+     `(doom-modeline-project-dir     ((t (:foreground ,green_1 :weight bold))))
+     '(doom-modeline-buffer-path     ((t (:foreground "gray60" :weight bold))))
      '(doom-modeline-info            ((t (:foreground "gray60" ))))
 
      ;; ivy
-     '(minibuffer-prompt             ((t (:background "#02242b" :foreground "medium spring green"))))
-     '(highlight                     ((t (:background "#333333"))))
+     `(minibuffer-prompt             ((t (:background ,bg_2 :foreground ,green_1))))
+     '(highlight                     ((t (:background "gray20"))))
      '(ivy-current-match             ((t (:box nil :underline "#dc8cc3" :weight extra-bold))))
-     '(ivy-minibuffer-match-face-1   ((t (:background "#444444"))))
-     '(ivy-minibuffer-match-face-2   ((t (:background "#666666" :weight bold))))
+     '(ivy-minibuffer-match-face-1   ((t (:background "gray27"))))
+     '(ivy-minibuffer-match-face-2   ((t (:background "gray40" :weight bold))))
      '(ivy-minibuffer-match-face-3   ((t (:background "#5654ca" :weight bold))))
      '(ivy-minibuffer-match-face-4   ((t (:background "#8b4887" :weight bold))))
+     `(ivy-posframe                  ((t (:background ,bg_2))))
      '(ivy-posframe-border           ((t (:background "#A13878"))))
-     '(ivy-posframe                  ((t (:background "#1B1821"))))   ; #13141A
+
+      ;; hydra-posframe
+     `(hydra-posframe-face           ((t (:background ,bg_2))))
+     '(hydra-posframe-border-face    ((t (:background "#A13878"))))
 
      ;; flyspell
-     '(flyspell-incorrect            ((t (:underline (:style wave :color "red2")))))
+     `(flyspell-incorrect            ((t (:underline (:style wave :color ,red_2)))))
      '(flyspell-duplicate            ((nil)))
 
      ;; org mode
-     '(org-todo                      ((t (:foreground "#ffa500" :box (:line-width 1 :style none) :weight bold))))
+     `(org-todo                      ((t (:foreground ,yellow_1 :box (:line-width 1 :style none) :weight bold))))
      '(org-done                      ((t (:foreground "#00ff00" :box (:line-width 1 :style none) :weight bold))))
-     '(org-checkbox-statistics-todo  ((t (:foreground "#ffa500"))))
+     `(org-checkbox-statistics-todo  ((t (:foreground ,yellow_1))))
      '(org-checkbox-statistics-done  ((t (:foreground "#00ff00"))))
-     '(org-block                     ((t (:background "#151522"))))
-     '(org-block-begin-line          ((t (:background "#17162a" :foreground "#5a5a5a" :extend t))))  ; #151424
-     '(org-block-end-line            ((t (:background "#17162a" :foreground "#5a5a5a" :extend t))))
-     '(org-ellipsis                  ((t (:foreground "gainsboro"))))
-     '(org-level-3                   ((t (:foreground "#A840F4"))))
-     '(org-level-4                   ((t (:foreground "#0cf456"))))
-     `(org-document-title            ((t (:background ,color-bg :foreground "#add8e6" :weight bold :height 1.8))))
-     `(org-checkbox                  ((t (:background ,color-bg :foreground "#dddddd"))))
-     '(org-document-info             ((t (:foreground "#add8e6" :weight bold))))
-     '(org-document-info-keyword     ((t (:foreground "#8B8989"))))
+     `(org-block                     ((t (:background ,bg_3))))
+     `(org-block-begin-line          ((t (:background ,bg_4 :foreground "gray35" :extend t))))
+     `(org-block-end-line            ((t (:background ,bg_4 :foreground "gray35" :extend t))))
+     `(org-ellipsis                  ((t (:foreground ,fg_2))))
+     `(org-level-1                   ((t (:foreground ,red_1 :height 1.15))))
+     '(org-level-2                   ((t (:foreground "#ffff00" :height 1.1))))
+     '(org-level-3                   ((t (:foreground "#A840F4" :height 1.05))))
+     '(org-level-4                   ((t (:foreground "#379ff0"))))
+     `(org-checkbox                  ((t (:background ,bg_1 :foreground ,red_1))))
+     `(org-document-title            ((t (:background ,bg_1 :foreground ,blue_1 :weight bold :height 1.6))))
+     `(org-document-info             ((t (:foreground ,blue_1 :weight bold))))
+     '(org-document-info-keyword     ((t (:foreground "gray55"))))
+
+      ;; customize face for 'DONE' headings
+     '(org-headline-done             ((((class color) (min-colors 16) (background dark)) (:foreground "gray40"))))
 
      ;; other packages
      '(dashboard-banner-logo-title   ((t (:foreground "#A840F4" :height 1.0))))
 
-     '(diff-hl-insert                ((t (:background "green4" :foreground "green4"))))
-     '(diff-hl-change                ((t (:background "yellow4" :foreground "yellow4"))))
-     '(diff-hl-delete                ((t (:background "red4" :foreground "red4"))))
+     '(diff-hl-insert                ((t (:background "#008b00" :foreground "#008b00"))))
+     '(diff-hl-change                ((t (:background "#8b8b00" :foreground "#8b8b00"))))
+     '(diff-hl-delete                ((t (:background "#8b0000" :foreground "#8b0000"))))
 
      ;; '(anzu-replace-highlight        ((t (:foreground "red"))))
      ;; '(anzu-replace-to               ((t (:foreground "green"))))
 
      ;; change face of bullets for all headers
-     ;; '(org-superstar-header-bullet   ((t (:height 1.4 :foreground ,color-cyan))))
+     ;; '(org-superstar-header-bullet   ((t (:height 1.4 :foreground ,cyan_1))))
 
-     '(vr/match-0                    ((t (:background "#5654ca" :foreground "#ffffff"))))
-     '(vr/match-1                    ((t (:background "#8b4887" :foreground "#ffffff"))))
+     '(vr/match-0                    ((t (:background "#5654ca" :foreground "white"))))
+     '(vr/match-1                    ((t (:background "#8b4887" :foreground "white"))))
 
-     '(lazy-highlight                ((t (:background "yellow4" :foreground "#ffffff"))))
-     '(isearch                       ((t (:background "#ff1493" :foreground "#000000"))))
-     '(match                         ((t (:background "#8b4887" :foreground "#ffffff"))))
-     '(isearch-fail                  ((t (:background "#5654ca" :foreground "#ffffff"))))
+     '(lazy-highlight                ((t (:background "#8b8b00" :foreground "white"))))
+     `(isearch                       ((t (:background ,red_1 :foreground "black"))))
+     '(isearch-fail                  ((t (:background "#5654ca" :foreground "white"))))
+     '(match                         ((t (:background "#8b4887" :foreground "white"))))
 
-     `(bufler-group                  ((t (:foreground ,color-cyan))))
-     '(header-line                   ((t (:box (:line-width -1 :color "#4e4e00" :style nil) :foreground "#ffff00" :background "#2b2b2b"))))
+     ;; '(header-line                   ((t (:box (:line-width -1 :color "#4e4e00" :style nil) :foreground "#ffff00" :background "gray15"))))
+     '(header-line                   ((t (:foreground "#ffff00" :background "#3e466f"))))
+     `(bufler-group                  ((t (:foreground ,cyan_1))))
 
-     '(company-tooltip               ((t (:background "#1B1821"))))  ;; same as ivy-posframe
+     `(company-tooltip               ((t (:background ,bg_2))))
+
      )))
 
 #+end_src
@@ -734,6 +881,7 @@ The unit for the 'height' attribute is 1/10pt, which means a height of 100 is 10
 
 General user created functions.
 These functions aren't associated with any package since they only use default emacs functionality.
+Functions that depend on an emacs package will be declared alongside their respective package.
 
 **** Functions: emacs reload, quit, etc
 
@@ -879,13 +1027,13 @@ This means that the first and last line don't need to be completly selected."
     (when (use-region-p)
       (setq regionStart (region-beginning))
       (setq regionEnd (region-end)))
-    (save-excursion ; restore the position afterwards
-      (goto-char regionStart) ; go to the start of region
+    (save-excursion                          ; restore the position afterwards
+      (goto-char regionStart)                ; go to the start of region
       (setq start (line-beginning-position)) ; save the start of the line
-      (goto-char regionEnd) ; go to the end of region
-      (setq end (line-end-position)) ; save the end of the line
-      (indent-rigidly start end numSpaces) ; indent between start and end
-      (setq deactivate-mark nil) ; restore the selected region
+      (goto-char regionEnd)                  ; go to the end of region
+      (setq end (line-end-position))         ; save the end of the line
+      (indent-rigidly start end numSpaces)   ; indent between start and end
+      (setq deactivate-mark nil)             ; restore the selected region
       )))
 
 (defun my/untab-region (N)
@@ -901,9 +1049,24 @@ This means that the first and last line don't need to be completly selected."
     (my/indent-region-custom N) ; call my/indent-region-custom
     ))
 
-;; can't use this yet because it would interfere with ivy
-;;(bind-key "<backtab>" 'untab-region)
-;;(bind-key "<tab>" 'tab-region)
+(defun my/switch-indentation-use-spaces ()
+  "Use spaces for indentation."
+  (interactive)
+  (setq indent-tabs-mode nil))
+
+(defun my/switch-indentation-use-tabs ()
+  "Use tabs for indentation."
+  (interactive)
+  ;; (local-set-key (kbd "TAB") 'tab-to-tab-stop)
+  (setq indent-tabs-mode t))
+
+(defun my/switch-indentation-width ()
+  "Change indentation tab width."
+  (interactive)
+  ;; (local-set-key (kbd "TAB") 'tab-to-tab-stop)
+  (setq-default tab-width
+        (string-to-number
+         (completing-read "Chose tab width: " '("2" "4" "8")))))
 
 #+end_src
 
@@ -998,12 +1161,12 @@ the last line of the region, extend to end of line (including final newline)."
         (exchange-point-and-mark))
     (goto-char beg)
     (exchange-point-and-mark)
-    (goto-char end)
-    (right-char)))
+    (goto-char end)))
 
 ;; move/rename current file
 (defun my/rename-current-buffer-file ()
-  "Renames current buffer and file it is visiting."
+  "Renames current buffer and file it is visiting.
+This will delete the old version."
   (interactive)
   (let* ((name (buffer-name))
          (filename (buffer-file-name))
@@ -1050,25 +1213,11 @@ the last line of the region, extend to end of line (including final newline)."
     (desktop-save-mode 1))
   (message "Previous session loaded"))
 
-(defun my/export-reveal-presentation-to-pdf ()
-  "Create a pdf from an org file using a reveal.js package.
-Take the name of the currently open buffer and search for a file with
-the same name and an html extension. Then convert the Reveal html file
-to a pdf, with the decktape utility."
-  (interactive)
-  (let* ((file-name (file-name-sans-extension (buffer-name)))
-         (html-file-name (concat file-name ".html"))
-         (pdf-file-name (concat file-name ".pdf")))
-    (if (not (file-exists-p html-file-name))
-        (error (concat "Reveal HTML file " html-file-name " not found"))
-      (async-shell-command
-       (concat "decktape reveal --size='2048x1536' " html-file-name " " pdf-file-name))
-      (message (concat pdf-file-name " successfully created")))))
-
 (defun my/open-scratch-buffer ()
   "Switch to scratch buffer, creating it if it doesn't exist."
   (interactive)
-  (switch-to-buffer "*scratch*"))
+  (switch-to-buffer (get-buffer-create "*scratch*"))
+  (lisp-interaction-mode))
 
 ;; this is also available in the 'crux' package
 (defun my/delete-file-and-buffer ()
@@ -1084,6 +1233,30 @@ to a pdf, with the decktape utility."
               (message "Deleted file %s" filename)
               (kill-buffer)))))
     (message "Canceled file delete.")))
+
+(defun my/set-buffer-line-ending-style ()
+  "Change line endings in current buffer."
+  (interactive)
+  (set-buffer-file-coding-system
+   (intern (completing-read "Chose line ending style: " '("unix" "dos" "mac")))))
+
+(defun my/open-file-from-org-dir ()
+  "Open one of the files belonging to the main org directory."
+  (interactive)
+  (counsel-fzf "" org-directory))
+
+(defun my/org-content-with-argument ()
+  "Change line endings in current buffer."
+  (interactive)
+  (org-content
+   (string-to-number (completing-read "Show content up to level N: " '("1" "2" "3" "4" "5" "6" "7" "8" "9")))))
+
+(defun my/open-external-terminal-here ()
+  "Open external terminal"
+  (interactive "@")
+  (shell-command (concat "kitty --directory \'"
+            (file-name-directory (or load-file-name buffer-file-name))
+              "\' > /dev/null 2>&1 & disown") nil nil))
 
 #+end_src
 
@@ -1276,6 +1449,11 @@ C-M-k     kill-sexp      Kill balanced expression forward
 ;;     make the syntax equal
 (define-key key-translation-map (kbd "<apps>") (kbd "<menu>"))
 
+
+;; can't use this because it would interfere with ivy
+;;(bind-key "<backtab>" 'untab-region)
+;;(bind-key "<tab>" 'tab-region)
+
 #+end_src
 
 **** *navigation*
@@ -1365,7 +1543,8 @@ Some nice-to have things and general settings.
 
 #+begin_src emacs-lisp
 
-(setq custom-file                    (expand-file-name "etc/custom.el" user-emacs-directory)  ;; Put Customize blocks in a separate file
+(setq load-prefer-newer              t
+      custom-file                    (expand-file-name "etc/custom.el" user-emacs-directory)  ;; Put Customize blocks in a separate file
       inhibit-startup-screen         t                      ;; disable default startup screen
       uniquify-buffer-name-style     'forward               ;; for files with the same name, include part of directory name at the beginning of the buffer name
       shift-select-mode              t                      ;; allow marks to be set when shift arrow-ing
@@ -1386,6 +1565,7 @@ Some nice-to have things and general settings.
 (fset 'yes-or-no-p 'y-or-n-p)
 
 ;; Try to always use utf8
+(set-language-environment "UTF-8")
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
 (prefer-coding-system 'utf-8)
@@ -1460,26 +1640,6 @@ Some nice-to have things and general settings.
 
 (setq backward-delete-char-untabify-method 'untabify)
 
-;; functions to call from the M-x menu
-(defun my/switch-indentation-use-spaces ()
-  "Use spaces for indentation."
-  (interactive)
-  (setq indent-tabs-mode nil))
-
-(defun my/switch-indentation-use-tabs ()
-  "Use tabs for indentation."
-  (interactive)
-  ;; (local-set-key (kbd "TAB") 'tab-to-tab-stop)
-  (setq indent-tabs-mode t))
-
-(defun my/switch-indentation-width ()
-  "Change indentation tab width."
-  (interactive)
-  ;; (local-set-key (kbd "TAB") 'tab-to-tab-stop)
-  (setq-default tab-width
-        (string-to-number
-         (completing-read "Chose tab width: " '("2" "4" "8")))))
-
 #+end_src
 
 *** Tabs
@@ -1496,7 +1656,13 @@ Some nice-to have things and general settings.
 (defun my/tab-line-tab-name-buffer (buffer &optional _buffers)
   "Define format of tab names."
   (format "  %s  " (buffer-name buffer)))
+
 (setq tab-line-tab-name-function #'my/tab-line-tab-name-buffer)
+
+(setq tab-line-exclude-modes '(dashboard-mode
+                               magit-status-mode
+                               bufler-list-mode
+                               org-agenda-mode))
 
 #+end_src
 
@@ -1505,10 +1671,12 @@ Some nice-to have things and general settings.
 #+begin_src emacs-lisp
 
 ;; try to improve scrolling in emacs. still not ideal though
-(setq scroll-conservatively              99       ;; this value shoul not be higher than 100, or else swiper has issues (text behind modeline)
-      mouse-wheel-scroll-amount          '(1 ((shift) . 1) ((control) . nil))
+(setq scroll-conservatively              101       ;; this value shoul not be higher than 100, or else swiper has issues (text behind modeline)
+      mouse-wheel-scroll-amount          '(1)
       scroll-margin                      3
-      scroll-preserve-screen-position    't)
+      scroll-preserve-screen-position    nil
+      mouse-wheel-progressive-speed      nil
+      fast-but-imprecise-scrolling       t)
 
 ;;(pixel-scroll-mode)   ; this makes it a bit laggy
 
@@ -1634,8 +1802,7 @@ Important: The first time this package is installed, you need to run 'all-the-ic
   :pretty-hydra
   ((:title "Project" :color teal :quit-key "q")
    ("Find file"
-    (("f" counsel-projectile-find-file "find file")
-     ("F" counsel-fzf "find file (without gitignore)")
+    (("f" counsel-fzf "find file")
      ("r" projectile-recentf "recent file"))
     "Switch Buffer"
     (("b" projectile-switch-to-buffer "switch to buffer (in project)"))
@@ -1742,6 +1909,28 @@ When dealing with the =org-directory= variable, it is important to pay attention
   (defun my/bufler-workspace-mode-lighter ()
     "Return lighter string for mode line."
     (frame-parameter nil 'bufler-workspace-path-formatted))
+
+  (defun my/bufler-workspace-mode-lighter-shorter ()
+    "Return lighter string for mode line.
+Only the last element of the path is displayed."
+    (replace-regexp-in-string ".*» " ""
+                              (replace-regexp-in-string "Projectile:" ""
+                                                        (frame-parameter nil 'bufler-workspace-path-formatted))))
+
+  ;; ;; redefine core bufler function (frame title)
+  ;; (defun bufler-workspace-set-frame-name (path)
+  ;;   "Set current frame's name according to PATH."
+  ;;   (set-frame-name (when path
+  ;;                     (format "Emacs / Workspace: %s" (my/bufler-workspace-mode-lighter-shorter)))))
+
+
+  (defun my/bufler-format-path (path)
+    "Return PATH formatted as a string."
+    (replace-regexp-in-string ".*» " ""
+                              (replace-regexp-in-string "Projectile:" ""
+                                                        (bufler-format-path path))))
+
+  (setq bufler-workspace-format-path-fn 'my/bufler-format-path)
 
   :config
   (bufler-tabs-mode 1)
@@ -1870,6 +2059,9 @@ Inside bufler workspace list
 | ?       | show available keybinds  |
 | f       | focus selected workspace |
 | q       | close bufler window      |
+
+Note: When you use bufler-switch-buffer, the first result is always the last opened buffer.
+So you can use =C-b RET= to quickly return to the previously used buffer.
 
 **** History
 
@@ -2105,8 +2297,7 @@ Taking this into account, projectile is a good start but it doesnt give me every
                                            (lambda (&rest _) (my/desktop-enable)))
                                           )))
 
-  :hook ((dashboard-mode . (lambda () (tab-line-mode -1)))
-         (dashboard-mode . hide-mode-line-mode)
+  :hook ((dashboard-mode . hide-mode-line-mode)
          (dashboard-mode . my/set-buffer-dashboard-fringe)))
 
 #+end_src
@@ -2133,9 +2324,7 @@ Taking this into account, projectile is a good start but it doesnt give me every
     (if (and (boundp 'bufler-workspace-tabs-mode) bufler-workspace-tabs-mode)
         (let ((active (doom-modeline--active)))
           (when-let (text
-                     (propertize (format " %s"
-                                         (replace-regexp-in-string ".*» " ""
-                                                                   (replace-regexp-in-string "Projectile:" "" (my/bufler-workspace-mode-lighter))))
+                     (propertize (format " %s" (my/bufler-workspace-mode-lighter-shorter))
                                  'face '(:foreground "gray60")))
             (if active
                 text
@@ -2146,13 +2335,13 @@ Taking this into account, projectile is a good start but it doesnt give me every
   ;; ------ Segment - Buffer Position ------
   ;; Provides information to the buffer position segment
   (setq-default mode-line-position
-                '((mode-line-percent-position (" " mode-line-percent-position))
-                  (line-number-mode
+                '((line-number-mode
                    (column-number-mode
-                    (column-number-indicator-zero-based " %06l L,%03c C" " %l:%C")
+                    (column-number-indicator-zero-based "%06l L,%03c C" " %l:%C")
                     " %l")
                    (column-number-mode (column-number-indicator-zero-based " :%c" " :%C")))
-                  (:eval (when (or line-number-mode mode-line-percent-position column-number-mode) " "))))
+                  (mode-line-percent-position ("  " mode-line-percent-position))
+                  (:eval (when (or line-number-mode mode-line-percent-position column-number-mode) "  "))))
 
   (doom-modeline-def-segment my/buffer-position
     '("" mode-line-position))
@@ -2298,7 +2487,7 @@ lines are selected, or the NxM dimensions of a block selection."
     (if flyspell-mode
         (let ((active (doom-modeline--active)))
           (when-let (text
-                     (propertize (format " %s " ispell-current-dictionary)
+                     (propertize (format " %s " ispell-current-dictionary)  ;
                                  'face '(:foreground "gray60")))
             (if active
                 text
@@ -2475,21 +2664,23 @@ This can be used to define a segment for any modeline.
 
 #+end_src
 
-*** Search Across Multiple Files
+*** Search Across Directories
 **** Information
 
 My choice for what package to use is =rg=.
 
 Other options are:
-- deadgrep
-- ripgrep
-- ag
+
+  - deadgrep
+  - ripgrep
+  - ag
 
 **** Package: rg
 
 #+begin_src emacs-lisp
 
 (use-package rg
+  :ensure-system-package (rg)
   :bind
   (:map wakib-keys-overriding-map
         ("C-S-f" . rg-search-current-dir))  ;; replace 'occur' with rg
@@ -2523,6 +2714,7 @@ this is to avoid having python installed as a dependency
 ;; you can use actual regex with this package, instead of emacs specific regex
 ;; this seems better than Anzu for my uses
 (use-package visual-regexp-steroids
+  :ensure-system-package (python)
   :init
   ;; visual-regexp-steroids allows using python engine
   ;; (setq vr/engine 'pcre2el)
@@ -2643,11 +2835,13 @@ It assumes the region is active."
 
 #+begin_src emacs-lisp
 
-  :bind
-  ;; (:map wakib-keys-overriding-map
-  ;;       ("C-h" . my/visual-replace-with-active-region-support)))
+:bind
+;; (:map wakib-keys-overriding-map
+;;       ("C-h" . my/visual-replace-with-active-region-support)))
 
-  (("C-h" . my/visual-replace-with-active-region-support)))
+((:map wakib-keys-overriding-map
+       ("C-r" . my/visual-replace-with-active-region-support))
+ ("C-h" . my/visual-replace-with-active-region-support)))
 
 ;; using C-7 inside swiper seems better. it does the same thing
 ;; (bind-key "C-S-h" 'vr/mc-mark wakib-keys-overriding-map)
@@ -2881,8 +3075,7 @@ The code below executes org-babel-tangle asynchronously when the config file is 
                          ,org-file
                          (float-time (time-subtract (current-time)
                                                     ',init-tangle-start-time)))
-              (message "ERROR: %s as tangle failed." ,org-file)))))))
-  )
+              (message "ERROR: %s as tangle failed." ,org-file))))))))
 
 #+end_src
 
@@ -2897,19 +3090,17 @@ The code below executes org-babel-tangle asynchronously when the config file is 
   (setq org-startup-indented                 t             ;; indent text to heading level
         org-startup-folded                   'content      ;; set initial view to 'content' (show all headlines)
         org-indent-indentation-per-level     2
+        org-export-exclude-tags              '("NOEXPORT")
         org-descriptive-links                t             ;; highlight links
-        org-agenda-dim-blocked-tasks         t             ;; dim blocked tasks
-        org-agenda-skip-deadline-if-done     t             ;; avoid showing unecessary tasks
-        org-agenda-skip-scheduled-if-done    t
-        org-agenda-skip-archived-trees       t
         org-cycle-separator-lines            2             ;; set how may real newlines are necessary to display a newline when folded.
         org-todo-keywords                    '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")   ;; default todo keywords ✔ ✘
                                                (sequence "SOMEDAY(s)" "WAITING(w)" "PAUSED(p)" "REVIEW(r)" "|" "CANCELLED(c)"))
-        org-directory                        "~/Cloud/Work - Google Cloud/Org/"    ;; where to look for org files
-        org-agenda-files                     (quote ("~/Cloud/Work - Google Cloud/Org/agenda/private"
-                                                     "~/Cloud/Work - Google Cloud/Org"
-                                                     "~/Cloud/Work - Google Cloud/Org/agenda/work"
-                                                     "~/Cloud/Work - Google Cloud/Org/agenda/work/IST/year 5/"))
+        org-todo-repeat-to-state             "NEXT"
+        org-todo-keyword-faces               '(("TODO" . "#efcb82")
+                                               ("SOMEDAY" . "#3dc7f0")
+                                               ("WAITING" . "#3dc7f0")
+                                               ("PAUSED"  . "#3dc7f0")
+                                               ("REVIEW"  . "#3dc7f0"))
         org-log-done                         (quote time)  ;; insert a note in a task when it is marked as done, which includes a timestamp
         org-support-shift-select             t             ;; allows using the shif key for selecting text
         org-fontify-done-headline            t             ;; grey out completed tasks
@@ -2918,40 +3109,51 @@ The code below executes org-babel-tangle asynchronously when the config file is 
         org-ellipsis                         " ⤵"          ;; Changing the org-mode ellipsis
         ;; setq org-ellipsis                 " ▼"
         org-image-actual-width               nil           ;; if there is something like #+ATTR_ORG: width="200", resize to 200, otherwise don't resize
+        org-directory                        "~/Cloud/Work - Google Cloud/Org/"    ;; where to look for org files
+        my/org-inbox-file                    (expand-file-name "inbox.org" org-directory)
+        org-default-notes-file               (expand-file-name "notes/notes.org" org-directory)
+        org-agenda-files                     `(,org-directory
+                                               ,(expand-file-name "agenda/private" org-directory)
+                                               ,(expand-file-name "agenda/work" org-directory)
+                                               ,(expand-file-name "agenda/work/IST/year 5" org-directory))
+        org-agenda-dim-blocked-tasks         t             ;; dim blocked tasks
+        org-agenda-skip-deadline-if-done     t             ;; avoid showing unecessary tasks
+        org-agenda-skip-scheduled-if-done    t
+        org-agenda-skip-archived-trees       t
+        org-agenda-skip-deadline-prewarning-if-scheduled t
         ;; org-agenda-span                      30            ;; amount of days in the agenda
         org-agenda-start-on-weekday          nil           ;; start the agenda in the current day
-        org-agenda-skip-deadline-prewarning-if-scheduled t
         org-agenda-prefix-format             '((agenda . " %i %-21:c%?-21t% s")    ;; make the first column in agenda wider (default is 12 characters)
                                                (todo . " %i %-21:c")
                                                (tags . " %i %-21:c")
-                                               (search . " %i %-21:c")))
+                                               (search . " %i %-21:c"))
+        org-agenda-window-setup              'only-window
+        org-confirm-babel-evaluate           nil)
 
-  ;; customize face for 'DONE' headings
-  (custom-set-faces '(org-headline-done
-                      ((((class color) (min-colors 16) (background dark))
-                        (:foreground "dim gray")))))
-
-  ;; allow C-S-<arrow> selection of text
-  (eval-after-load "org"
-    '(progn
-       (define-key org-mode-map (kbd "<C-S-left>") nil)
-       (define-key org-mode-map (kbd "<C-S-right>") nil)
-       (define-key org-mode-map (kbd "<C-S-up>") nil)
-       (define-key org-mode-map (kbd "<C-S-down>") nil)))
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((shell . t)
+     (python . t)
+     (emacs-lisp . t)))
 
   :bind
   (:map org-mode-map
         ("C-d C-<left>" . outline-up-heading)
         ("C-d C-<up>" . outline-previous-visible-heading)
-        ("C-d C-<down>" . outline-next-visible-heading))
+        ("C-d C-<down>" . outline-next-visible-heading)
+        ;; allow C-S-<arrow> selection of text
+        ("<C-S-left>" .  nil)
+        ("<C-S-right>" .  nil)
+        ("<C-S-up>" .  nil)
+        ("<C-S-down>" .  nil))
 
   :hook ((after-save . my/config-tangle)
          (org-mode . (lambda ()
-                       "Beautify Org Checkbox Symbol"
-                       (push '("[ ]" .  "☐") prettify-symbols-alist)
-                       (push '("[X]" . "☑" ) prettify-symbols-alist)
-                       (push '("[-]" . "❍" ) prettify-symbols-alist)
-                       ;; replace text of org blocks with symbols
+                       ;; ;; "Beautify Org Checkbox Symbol"
+                       ;; (push '("[ ]" .  "☐") prettify-symbols-alist)
+                       ;; (push '("[X]" . "☑" ) prettify-symbols-alist)
+                       ;; (push '("[-]" . "❍" ) prettify-symbols-alist)
+                       ;; ;; replace text of org blocks with symbols
                        ;; (push '("#+BEGIN_SRC" . "↦" ) prettify-symbols-alist)
                        ;; (push '("#+END_SRC" . "⇤" ) prettify-symbols-alist)
                        ;; (push '("#+BEGIN_EXAMPLE" . "↦" ) prettify-symbols-alist)
@@ -2964,40 +3166,17 @@ The code below executes org-babel-tangle asynchronously when the config file is 
                        ;; (push '("#+end_example" . "⇤" ) prettify-symbols-alist)
                        ;; (push '("#+begin_src" . "↦" ) prettify-symbols-alist)
                        ;; (push '("#+end_src" . "⇤" ) prettify-symbols-alist)
-                       (prettify-symbols-mode)))))
+                       (prettify-symbols-mode)))
+         (org-agenda-mode . (lambda() (display-line-numbers-mode -1)))))
 
 #+end_src
 
 **** Package: org-superstar
 
-Org Bullets (not used anymore)
-
-#+begin_src emacs-lisp :tangle no
-
-(use-package org-bullets
-    :hook (org-mode . org-bullets-mode))
-
-#+end_src
-
-
 #+begin_src emacs-lisp
 
 (use-package org-superstar
   :after org
-  :hook (org-mode . org-superstar-mode)
-
-  :init
-  (dolist (face '((org-level-1 . 1.15)
-                  (org-level-2 . 1.1)
-                  (org-level-3 . 1.05)
-                  (org-level-4 . 1.0)
-                  (org-level-5 . 1.0)
-                  (org-level-6 . 1.0)
-                  (org-level-7 . 1.0)
-                  (org-level-8 . 1.0)))
-    (set-face-attribute (car face) nil :weight 'regular :height (cdr face)))
-  ;; :font "DejaVu Sans Mono"
-
   :custom
   (org-superstar-headline-bullets-list '("◈" "❖" "✽" "✲" "✜" "✛" "✝" "†"))
   (org-superstar-item-bullet-alist '((?* . ?►)
@@ -3011,7 +3190,7 @@ Org Bullets (not used anymore)
   ;; (org-hide-leading-stars nil)
   ;; (org-superstar-remove-leading-stars t)
 
-  )
+  :hook (org-mode . org-superstar-mode))
 
 #+end_src
 
@@ -3082,7 +3261,7 @@ Inline tasks behave as you would expect them to, for the most part. They have tw
 
 **** Package: org-ql
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package org-ql)
 
@@ -3126,43 +3305,7 @@ Inline tasks behave as you would expect them to, for the most part. They have tw
 
 #+end_src
 
-**** REVIEW Org block templates
-
-#+begin_src emacs-lisp :tangle no
-
-(add-to-list 'org-structure-template-alist
-        '("s" "#+begin_src ?\n\n#+end_src" "<src lang=\"?\">\n\n</src>"))
-
-(add-to-list 'org-structure-template-alist
-        '("m" "#+begin_src emacs-lisp :tangle init.el\n\n#+end_src" "<src lang=\"emacs-lisp\">\n\n</src>"))
-
-(add-to-list 'org-structure-template-alist
-        '("r" "#+begin_src R :results output :session *R* :exports both\n\n#+end_src" "<src lang=\"R\">\n\n</src>"))
-
-(add-to-list 'org-structure-template-alist
-        '("p" "#+begin_src python :results output :exports both\n\n#+end_src" "<src lang=\"python\">\n\n</src>"))
-
-(add-to-list 'org-structure-template-alist
-        '("P" "#+begin_src python :results output :session *python* :exports both\n\n#+end_src" "<src lang=\"python\">\n\n</src>"))
-
-(add-to-list 'org-structure-template-alist
-        '("b" "#+begin_src shell :results output :exports both\n\n#+end_src" "<src lang=\"sh\">\n\n</src>"))
-
-(add-to-list 'org-structure-template-alist
-        '("B" "#+begin_src shell :session *shell* :results output :exports both \n\n#+end_src" "<src lang=\"sh\">\n\n</src>"))
-
-(add-to-list 'org-structure-template-alist
-        '("g" "#+begin_src dot :results output graphics :file \"/tmp/graph.pdf\" :exports both
-   digraph G {
-      node [color=black,fillcolor=white,shape=rectangle,style=filled,fontname=\"Helvetica\"];
-      A[label=\"A\"]
-      B[label=\"B\"]
-      A->B
-   }\n#+end_src" "<src lang=\"dot\">\n\n</src>"))
-
-#+end_src
-
-*** TODO Modal editing
+*** REVIEW Modal editing
 **** Package: ryo-modal
 
 try out a modal configuration
@@ -3177,6 +3320,7 @@ Solution: load this package after the org section.
 #+begin_src emacs-lisp
 
 (use-package ryo-modal
+  :commands ryo-modal-mode
   ;; :init
   ;; (unbind-key "C-SPC")
   :config
@@ -3243,6 +3387,7 @@ Between aspell and hunspell, aspell seems to have much better performance.
 
 ;; defer is used to only load package when mode is activated
 (use-package flyspell
+  :ensure-system-package (aspell)
   :defer t
   :config
   ;; set backend and default language
@@ -3251,7 +3396,8 @@ Between aspell and hunspell, aspell seems to have much better performance.
   :bind
   (:map wakib-keys-overriding-map
         ("C-." . flyspell-correct-at-point))
-  :hook (org-mode . flyspell-mode)) ;; automatically enable spellchecker for org files (doesn't affect source blocks)
+  :hook ((org-mode . flyspell-mode)            ;; automatically enable spellchecker for org files (doesn't affect source blocks)
+         (prog-mode . flyspell-prog-mode)))    ;; only for comments and strings
 
 #+end_src
 
@@ -3325,7 +3471,7 @@ Use hydra menu to enable/disable.
 
 #+end_src
 
-*** Generic Completion Framework
+*** Emacs Completion Framework
 **** Information
 
 Helm and ivy are Emacs frameworks for incremental completions and narrowing selections.
@@ -3359,10 +3505,13 @@ swiper is a tool for performing searches, powered by Ivy, all while
   (ivy-use-virtual-buffers t)
   (ivy-count-format "%d/%d ")
   (ivy-wrap t)
-  ;; completion options: ivy–regex-plus, ivy–regex-ignore-order, and ivy--regex-fuzzy
+  ;; completion options: ivy–-regex-plus, ivy–regex-ignore-order, and ivy--regex-fuzzy
   (ivy-re-builders-alist
-   '((t . ivy--regex-plus)
-     (counsel-M-x . ivy--regex-ignore-order)))
+   '((t . ivy--regex-ignore-order)
+     (counsel-M-x . ivy--regex-ignore-order)
+     (swiper-isearch . ivy--regex-plus)
+     (swiper-isearch-backward . ivy--regex-plus)
+     (swiper-isearch-thing-at-point . ivy--regex-plus)))
   (ivy-initial-inputs-alist nil)
   :config
   (ivy-mode)
@@ -3461,7 +3610,7 @@ Ivy sorts large lists using flx's scoring mechanism, if it's installed.
   :custom
   (ivy-prescient-sort-commands
    ;; things that shouldnt be sorted go in this list
-   '(:not swiper swiper-isearch ivy-switch-buffer counsel-switch-buffer flyspell-correct-ivy counsel-find-file find-file bufler-workspace-switch-buffer bufler-switch-buffer))
+   '(:not swiper swiper-isearch ivy-switch-buffer counsel-switch-buffer flyspell-correct-ivy counsel-find-file find-file bufler-workspace-switch-buffer bufler-switch-buffer counsel-fzf))
   (ivy-prescient-excluded-commands '(counsel-find-file find-file))
   (ivy-prescient-retain-classic-highlighting t)
   (ivy-prescient-enable-filtering nil)
@@ -3476,6 +3625,7 @@ Ivy sorts large lists using flx's scoring mechanism, if it's installed.
 #+begin_src emacs-lisp
 
 (use-package ivy-rich
+  :after ivy
   :custom
   (ivy-rich-path-style 'abbreviate)
   :config
@@ -3484,6 +3634,7 @@ Ivy sorts large lists using flx's scoring mechanism, if it's installed.
   (ivy-rich-mode 1))
 
 (use-package all-the-icons-ivy-rich
+  :after ivy-rich
   :custom
   (all-the-icons-ivy-rich-icon-size 1.0)
   :config (all-the-icons-ivy-rich-mode 1))
@@ -3495,6 +3646,7 @@ Ivy sorts large lists using flx's scoring mechanism, if it's installed.
 #+begin_src emacs-lisp
 
 (use-package ivy-posframe
+  :after ivy
   :custom
   (ivy-posframe-parameters
    '((left-fringe           . 2)
@@ -3519,7 +3671,8 @@ Ivy sorts large lists using flx's scoring mechanism, if it's installed.
 
 #+begin_src emacs-lisp
 
-(use-package counsel-projectile)
+(use-package counsel-projectile
+  :after counsel)
 
 #+end_src
 
@@ -3537,6 +3690,7 @@ Magit is a complete text-based user interface to Git. It fills the glaring gap b
 #+begin_src emacs-lisp
 
 (use-package magit
+  :ensure-system-package (git)
   :hook (magit-mode . my/set-buffer-large-fringe))
 
 #+end_src
@@ -3578,23 +3732,24 @@ Emacs package for highlighting uncommitted changes
 
 #+end_src
 
-*** TODO Templates and Snippets
+*** Templates and Snippets
 **** Package: yasnippet
 
-#+begin_src emacs-lisp :tangle no
+Can use either hydra menu or type a snippet abbreviation and press TAB to expand
+
+#+begin_src emacs-lisp
 
 (use-package yasnippet-snippets
   :defer t)
 
 (use-package yasnippet
-  :hook
-  ((prog-mode . yas-minor-mode))
+  :after yasnippet-snippets
   :config
-  (require 'yasnippet-snippets)
-  (yas-reload-all))
+  (yas-global-mode 1))
 
 (use-package ivy-yasnippet
-  :bind ("M-y" . ivy-yasnippet))
+  :after yasnippet
+  :commands ivy-yasnippet)
 
 #+end_src
 
@@ -3614,12 +3769,12 @@ Use multiple cursors on swiper candidates with the corresponding swiper keybindi
   ;; use C-7 to add a cursor to every swiper selection
   (add-to-list 'mc/cmds-to-run-once 'swiper-mc)
   :bind
+  ("C-<mouse-1>" . mc/add-cursor-on-click)
   (:map wakib-keys-overriding-map
         ("M-S" . set-rectangular-region-anchor)
         :map mc/keymap
         ("M-S-<down>" . mc/mark-next-like-this)
-        ("M-S-<up>" . mc/mark-previous-like-this)
-        ("<C-down-mouse-1>" . mc/add-cursor-on-click)))
+        ("M-S-<up>" . mc/mark-previous-like-this)))
 
 #+end_src
 
@@ -3631,6 +3786,24 @@ Write in Org mode and export to HTML with reveal.js
 #+begin_src emacs-lisp
 
 (use-package ox-reveal
+  :ensure-system-package (decktape)
+  :commands (my/export-reveal-presentation-to-pdf org-reveal-export-to-html)
+  :init
+  (defun my/export-reveal-presentation-to-pdf ()
+    "Create a pdf from an org file using a reveal.js package.
+Take the name of the currently open buffer and search for a file with
+the same name and an html extension. Then convert the Reveal html file
+to a pdf, with the decktape utility."
+    (interactive)
+    (let* ((file-name (file-name-sans-extension (buffer-name)))
+           (html-file-name (concat file-name ".html"))
+           (pdf-file-name (concat file-name ".pdf")))
+      (if (not (file-exists-p html-file-name))
+          (error (concat "Reveal HTML file " html-file-name " not found"))
+        (async-shell-command
+         (concat "decktape reveal --size='2048x1536' " html-file-name " " pdf-file-name))
+        (message (concat pdf-file-name " successfully created")))))
+
   :custom
   ;; (setq org-reveal-root      "~/.reveal/reveal.js")
   (org-reveal-root           "https://cdn.jsdelivr.net/npm/reveal.js")
@@ -3669,7 +3842,7 @@ Another simpler option is to use the decktape cli utility.
 Assuming you have it installed, run:
 decktape reveal <my-file.html> <output>
 
-*** Move text
+*** Move Text
 **** Package: drag-stuff
 
 Moving text both horizontally and vertically.
@@ -3733,6 +3906,28 @@ Otherwise, just execute the normal behaviour"
 
 #+end_src
 
+**** Package: hydra-posframe
+
+#+begin_src emacs-lisp
+
+(use-package hydra-posframe
+  :hook (after-init . hydra-posframe-mode)
+  :custom
+  ;; copy the border values from 'ivy-posframe-parameters'
+  (hydra-posframe-parameters'((min-height            . 12)
+                              (min-width             . 50)
+                              (left-fringe           . 2)
+                              (right-fringe          . 2)
+                              (internal-border-width . 2)))
+  :straight
+  (hydra-posframe
+   :type git
+   :host github
+   :repo "Ladicle/hydra-posframe"
+   :fork (:host github :repo "jerrypnz/hydra-posframe")))
+
+#+end_src
+
 **** Hydra Usage
 
 # menu entries that are also menus have a different color
@@ -3765,54 +3960,262 @@ i - insert menu
 
 n - notes menu
 
-**** Package: hydra-posframe
-
-#+begin_src emacs-lisp
-
-(use-package hydra-posframe
-  :hook (after-init . hydra-posframe-mode)
-  :custom
-  ;; copy the border values from 'ivy-posframe-parameters'
-  (hydra-posframe-parameters'((min-height            . 12)
-                              (min-width             . 50)
-                              (left-fringe           . 2)
-                              (right-fringe          . 2)
-                              (internal-border-width . 2)))
-  :straight
-  (hydra-posframe
-   :type git
-   :host github
-   :repo "Ladicle/hydra-posframe"
-   :fork (:host github :repo "jerrypnz/hydra-posframe")))
-
-#+end_src
-
 **** Package: major-mode-hydra
 
 show a different main hydra, depending on major mode
 
 #+begin_src emacs-lisp
 
-(use-package major-mode-hydra
-  :init
-  (major-mode-hydra-define org-mode
-    (:color teal :quit-key "q" :title "Org hydra" :separator "-")
-    ("Export"
-     (("e" org-export-dispatch "export dispatch")
-      ("l" org-latex-export-to-latex "export to latex file")
-      ("L" my/org-latex-compile-and-open-pdf "compile org file and export to latex pdf")
-      ("r" org-reveal-export-to-html "export to reveal.js HTML file")
-      ("R" my/export-reveal-presentation-to-pdf "convert reveal.js HTML file to pdf"))
-     "Navigation"
-     (("g" counsel-org-goto "goto an org heading"))
-     "Sorting"
-     (("s" org-sort "sort item list at cursor "))
-     "Insert"
-     (("ib" org-insert-structure-template "insert block template")
-      ("it" org-time-stamp "insert timestamp")
-      ("is" org-schedule "insert \"scheduled\" string")
-      ("id" org-deadline "insert \"deadline\" string"))
-     )))
+(use-package major-mode-hydra)
+
+#+end_src
+
+**** Hydra: bookmarks
+
+#+begin_src emacs-lisp
+
+(pretty-hydra-define hydra-bookmarks
+  (:color teal :quit-key "q" :title "Bookmarks Hydra")
+  ("Bookmarks"
+   (("o" counsel-bookmark "open bookmark")
+    ("c" bookmark-set "create bookmark (current file)")
+    ("r" bookmark-rename "rename bookmark")
+    ("d" bookmark-remove "delete bookmark"))
+   ))
+
+#+end_src
+
+**** Hydra: buffer
+
+#+begin_src emacs-lisp
+
+(pretty-hydra-define hydra-buffer
+  (:color teal :quit-key "q" :title "Buffer Hydra")
+  ("Save"
+   (("s" save-some-buffers "Save all buffers"))
+   "Switch"
+   (("b" bufler "Show all buffers and workspaces")
+    ("B" bufler-switch-buffer "Switch buffer"))
+   "Line Endings"
+   (("l" my/set-buffer-line-ending-style "Set line endings for current buffer"))
+   ))
+
+#+end_src
+
+**** Hydra: code
+
+#+begin_src emacs-lisp
+
+(pretty-hydra-define hydra-code
+  (:color teal :quit-key "q" :title "Code Hydra")
+  ("Function"
+   (("c" compile "Compile current buffer program")
+    ("d" find-function-at-point "Go to Declaration (symbol at point)")
+    ("r" xref-find-references "Show References (symbol at point)"))
+   ))
+
+#+end_src
+
+**** Hydra: file
+
+#+begin_src emacs-lisp
+
+(pretty-hydra-define hydra-file
+  (:color teal :quit-key "q" :title "Files Hydra")
+  ("Generic File"
+   (("f" counsel-find-file "Open a File")
+    ("p" my/open-init-file "Open Private config")
+    ("r" counsel-recentf "Open Recent file")
+    ("D" delete-file "Delete a file")
+    ("U" sudo-edit-find-file "Sudo open a file"))
+   "Current File"
+   (("s" save-buffer "Save current file")
+    ("S" write-file "Copy/Save as...")
+    ("R" my/rename-current-buffer-file "Rename/Move current file")
+    ("d" my/delete-file-and-buffer "Delete current file")
+    ("u" sudo-edit "Sudo open current file")
+    ("x" executable-make-buffer-file-executable-if-script-p "Make script executable"))
+   "Filename"
+   (("y" my/show-buffer-name "Yank filename")
+    ("Y" my/show-buffer-file-name "Yank filename with full path"))
+   "Comparison"
+   (("e" ediff "Ediff two files"))
+   ))
+
+#+end_src
+
+**** Hydra: help
+
+#+begin_src emacs-lisp
+
+(pretty-hydra-define hydra-help
+  (:color teal :quit-key "q" :title "Help Hydra")
+  ("Emacs Describe"
+   (("f" counsel-describe-function "Function")
+    ("v" counsel-describe-variable "Variable")
+    ("F" counsel-faces "Face")
+    ("k" describe-key "Key"))
+   ))
+
+#+end_src
+
+**** Hydra: indentation
+
+#+begin_src emacs-lisp
+
+(pretty-hydra-define hydra-indentation
+  (:color teal :quit-key "q" :title "Indentation Hydra")
+  ("Switch"
+   (("t" my/switch-indentation-use-tabs "indent with tabs")
+    ("s" my/switch-indentation-use-spaces "indent with spaces"))
+   "Convert"
+   (("cT" my/tabify-whole-buffer "convert indentation (in whole buffer) to tabs")
+    ("cS" my/untabify-whole-buffer "convert indentation (in whole buffer) to spaces")
+    ("ct" tabify "convert indentation (in active region) to tabs")
+    ("cs" untabify "convert indentation (in active region) to spaces"))
+   "Resize"
+   (("w" my/switch-indentation-width-buffer "set indentation width"))
+   ))
+
+#+end_src
+
+**** Hydra: insert
+
+#+begin_src emacs-lisp
+
+(pretty-hydra-define hydra-insert
+  (:color teal :quit-key "q" :title "Insert Hydra")
+  ("Unicode"
+   (("u" counsel-unicode-char "insert unicode character"))
+   "Clipboard"
+   (("y" counsel-yank-pop "select from clipboard history"))
+   "Snippet"
+   (("s" ivy-yasnippet "insert snippet"))
+   ))
+
+#+end_src
+
+**** Hydra: markdown-mode
+
+#+begin_src emacs-lisp
+
+(major-mode-hydra-define markdown-mode
+  (:color teal :quit-key "q" :title "Markdown hydra" :separator "-")
+  ("Preview"
+   (("p" vmd-mode "live preview"))
+   ))
+
+#+end_src
+
+**** Hydra: open
+
+#+begin_src emacs-lisp
+
+(pretty-hydra-define hydra-open
+  (:color teal :quit-key "q"  :title "Open/Utilities Hydra")
+  ("Special Buffer"
+   (("d" my/open-dashboard "open dashboard buffer")
+    ("s" my/open-scratch-buffer "open scratch buffer"))
+   "Agenda"
+   (("a" org-agenda "open agenda menu"))
+   "Org Directory"
+   (("o" my/open-file-from-org-dir "open file from org directory"))
+   "URL"
+   (("u" browse-url-xdg-open "open URL in browser"))
+   ))
+
+#+end_src
+
+**** Hydra: org-mode
+
+#+begin_src emacs-lisp
+
+(major-mode-hydra-define org-mode
+  (:color teal :quit-key "q" :title "Org hydra" :separator "-")
+  ("General"
+   (("C" my/org-content-with-argument "show content up to level N")
+    ("g" counsel-org-goto "goto org heading")
+    ("e" org-export-dispatch "export dispatch")
+    ("i" org-insert-link "insert/edit link"))
+   "Org Latex"
+   (("l" org-latex-export-to-latex "export to Latex file")
+    ("L" my/org-latex-compile-and-open-pdf "export to PDF (with Makefile)"))
+   "Reveal.js"
+   (("r" org-reveal-export-to-html "export to HTML file")
+    ("R" my/export-reveal-presentation-to-pdf "convert HTML file to PDF"))
+   "Heading"
+   (("s" org-sort "sort subtree")
+    ("x" org-cut-subtree "cut subtree")
+    ("c" org-copy-subtree "copy subtree")
+    ("v" org-paste-subtree "paste subtree")
+    ("m" org-refile "move subtree"))
+   "Timestamp"
+   (("tt" org-time-stamp "insert timestamp")
+    ("ts" org-schedule "insert \"scheduled\" string")
+    ("td" org-deadline "insert \"deadline\" string"))
+   ))
+
+#+end_src
+
+**** Hydra: package manager
+
+#+begin_src emacs-lisp
+
+(pretty-hydra-define hydra-packages
+  (:color teal :quit-key "q" :title "Packages Hydra")
+  ("Package Manager"
+   (("i" straight-use-package "install package (for this session only)")
+    ("u" straight-rebuild-all "update all packages"))
+   ))
+
+#+end_src
+
+**** Hydra: quit/session
+
+#+begin_src emacs-lisp
+
+(pretty-hydra-define hydra-quit
+  (:color teal :quit-key "q" :title "Quit/Session Hydra")
+  ("Emacs"
+   (("Q" my/kill-emacs "Quit Emacs")
+    ("r" restart-emacs "Restart emacs"))
+   "Session"
+   (("l" my/desktop-enable "Restore last session")
+    ("L" desktop-read "Restore session from file")
+    ("s" desktop-save-in-desktop-dir "Quick save current session")
+    ("S" desktop-save "Save session to file"))
+   ))
+
+#+end_src
+
+**** Hydra: search
+
+#+begin_src emacs-lisp
+
+(pretty-hydra-define hydra-search
+  (:color teal :quit-key "q" :title "Search Hydra")
+  ("String in buffer (regex)"
+   (("b" swiper "search in current buffer")
+    ("d" rg-search-current-dir "search in current directory")
+    ("D" rg "search and choose directory"))
+   "String in filenames (glob)"
+   (("f" fd-dired "locate files"))
+   "Project"
+   (("p"  counsel-projectile-rg "search text")
+    ("r"  projectile-replace "replace text (literal)"))
+   ))
+
+#+end_src
+
+**** Hydra: spellcheck
+
+#+begin_src emacs-lisp
+
+(pretty-hydra-define hydra-spellcheck
+  (:color teal :quit-key "q" :title "Spellcheck Hydra")
+  ("Dictionary"
+   (("d" ispell-change-dictionary "change dictionary language"))
+   ))
 
 #+end_src
 
@@ -3846,41 +4249,7 @@ show a different main hydra, depending on major mode
     ("m" hide-mode-line-mode "modeline" :toggle t))
    "Emacs"
    (("D" toggle-debug-on-error "debug on error" :toggle (default-value 'debug-on-error))
-    ("X" toggle-debug-on-quit "debug on quit" :toggle (default-value 'debug-on-quit)))))
-
-#+end_src
-
-**** Hydra: open
-
-#+begin_src emacs-lisp
-
-(pretty-hydra-define hydra-open
-  (:color teal :quit-key "q"  :title "Open/Utilities Hydra")
-  ("Dashboard"
-   (("d" my/open-dashboard "dashboard"))
-   "Agenda"
-   (("a" org-agenda "open agenda menu"))
-   "Scratch"
-   (("s" my/open-scratch-buffer "open scratch buffer"))
-   ))
-
-#+end_src
-
-**** Hydra: search
-
-#+begin_src emacs-lisp
-
-(pretty-hydra-define hydra-search
-  (:color teal :quit-key "q" :title "Search Hydra")
-  ("String in buffer (regex)"
-   (("b" swiper "search in current buffer")
-    ("d" rg-search-current-dir "search in current directory")
-    ("D" rg "search and choose directory"))
-   "String in filenames (glob)"
-   (("f" fd-dired "locate files"))
-   "Project"
-   (("p"  counsel-projectile-rg "search text")
-    ("r"  projectile-replace "replace text (literal)"))
+    ("X" toggle-debug-on-quit "debug on quit" :toggle (default-value 'debug-on-quit)))
    ))
 
 #+end_src
@@ -3892,140 +4261,7 @@ show a different main hydra, depending on major mode
 (pretty-hydra-define hydra-git
   (:color teal :quit-key "q" :title "Git Hydra")
   ("Magit"
-   (("g" magit-status "show git status")
-    )))
-
-#+end_src
-
-**** Hydra: package manager
-
-#+begin_src emacs-lisp
-
-(pretty-hydra-define hydra-packages
-  (:color teal :quit-key "q" :title "Packages Hydra")
-  ("Package Manager"
-   (("i" straight-use-package "install package (for this session only)")
-    ("u" straight-rebuild-all "update all packages")
-    )))
-
-#+end_src
-
-**** Hydra: indentation
-
-#+begin_src emacs-lisp
-
-(pretty-hydra-define hydra-indentation
-  (:color teal :quit-key "q" :title "Indentation Hydra")
-  ("Switch"
-   (("t" my/switch-indentation-use-tabs "indent with tabs")
-    ("s" my/switch-indentation-use-spaces "indent with spaces"))
-   "Convert"
-   (("cT" my/tabify-whole-buffer "convert indentation (in whole buffer) to tabs")
-    ("cS" my/untabify-whole-buffer "convert indentation (in whole buffer) to spaces")
-    ("ct" tabify "convert indentation (in active region) to tabs")
-    ("cs" untabify "convert indentation (in active region) to spaces"))
-   "Resize"
-   (("w" my/switch-indentation-width-buffer "set indentation width"))
-   ))
-
-#+end_src
-
-**** Hydra: spellcheck
-
-#+begin_src emacs-lisp
-
-(pretty-hydra-define hydra-spellcheck
-  (:color teal :quit-key "q" :title "Spellcheck Hydra")
-  ("Dictionary"
-   (("d" ispell-change-dictionary "change dictionary language"))
-   ))
-
-#+end_src
-
-**** Hydra: bookmarks
-
-#+begin_src emacs-lisp
-
-(pretty-hydra-define hydra-bookmarks
-  (:color teal :quit-key "q" :title "Bookmarks Hydra")
-  ("Bookmarks"
-   (("o" counsel-bookmark "open bookmark")
-    ("c" bookmark-set "create bookmark (current file)")
-    ("r" bookmark-rename "rename bookmark")
-    ("d" bookmark-remove "delete bookmark"))
-   ))
-
-#+end_src
-
-**** Hydra: file
-
-#+begin_src emacs-lisp
-
-(pretty-hydra-define hydra-file
-  (:color teal :quit-key "q" :title "Files Hydra")
-  ("Open"
-   (("f" counsel-find-file "find file")
-    ("p" my/open-init-file "open private config")
-    ("r" recentf-open-files "Recent files")
-    ("u" sudo-edit-find-file "Sudo find file")
-    ("U" sudo-edit "Sudo this file"))
-   "Rename"
-   (("R" my/rename-current-buffer-file "Rename/move file"))
-   "Delete"
-   (("d" my/delete-file-and-buffer "Delete current file")
-    ("D" delete-file "Delete a file"))
-   "Save"
-   (("s" save-buffer "Save file")
-    ("S" write-file "Save file as..."))
-   "Filename"
-   (("y" my/show-buffer-name "Yank filename")
-    ("Y" my/show-buffer-file-name "Yank filename with full path"))
-   ))
-
-#+end_src
-
-**** Hydra: insert
-
-#+begin_src emacs-lisp
-
-(pretty-hydra-define hydra-insert
-  (:color teal :quit-key "q" :title "Insert Hydra")
-  ("Unicode"
-   (("u" counsel-unicode-char "insert unicode character"))
-   "Clipboard"
-   (("y" counsel-yank-pop "select from clipboard history"))
-   ))
-
-#+end_src
-
-**** Hydra: quit/session
-
-#+begin_src emacs-lisp
-
-(pretty-hydra-define hydra-quit
-  (:color teal :quit-key "q" :title "Quit/Session Hydra")
-  ("Emacs"
-   (("Q" my/kill-emacs "Quit Emacs")
-    ("r" restart-emacs "Restart emacs"))
-   "Session"
-   (("l" my/desktop-enable "Restore last session")
-    ("L" desktop-read "Restore session from file")
-    ("s" desktop-save-in-desktop-dir "Quick save current session")
-    ("S" desktop-save "Save session to file"))
-   ))
-
-#+end_src
-
-**** Hydra: buffer
-
-#+begin_src emacs-lisp
-
-(pretty-hydra-define hydra-buffer
-  (:color teal :quit-key "q" :title "Buffer Hydra")
-  ("Save"
-   (("s" save-some-buffers "Save all buffers"))
-   "Switch"
-   (("b" bufler "Show all buffers and workspaces"))
+   (("g" magit-status "show git status"))
    ))
 
 #+end_src
@@ -4057,7 +4293,7 @@ Behavior by color:
 | teal     | :foreign-keys warn :exit t |
 | pink     | :foreign-keys run          |
 
-*** PDF viewer
+*** PDF Viewer
 **** Package: pdf-tools
 
 #+begin_src emacs-lisp
@@ -4066,10 +4302,12 @@ Behavior by color:
    :config
    (pdf-tools-install :no-query)
    (setq-default pdf-view-display-size 'fit-page)
-   (define-key pdf-view-mode-map (kbd "C-f") 'isearch-forward)
    :custom
    (pdf-annot-activate-created-annotations t "automatically annotate highlights")
-   :mode ("\\.pdf\\'" . pdf-view-mode))
+   :mode ("\\.pdf\\'" . pdf-view-mode)
+   :bind
+   (:map pdf-view-mode-map
+         ("C-f" . isearch-forward)))
 
 #+end_src
 
@@ -4077,13 +4315,15 @@ Behavior by color:
 
 This needs to be added to the end of any org file that is being used to create a LaTeX pdf.
 
+Not currently being used.
+
 #+begin_example
 # Local Variables:
 # eval: (my/scroll-other-window-pdf-tools-mode 1)
 # End:
 #+end_example
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 
 (defun my/scroll-other-window-down ()
   "Scroll other window down, with support for pdf-view-mode."
@@ -4109,7 +4349,7 @@ This needs to be added to the end of any org file that is being used to create a
 
 #+end_src
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 ;; my/scroll-other-window-pdf-tools-mode.el
 ;; Temporary minor mode
 ;; Main use is to enable it only in specific buffers to achieve the goal of buffer-specific keymaps
@@ -4126,6 +4366,7 @@ This needs to be added to the end of any org file that is being used to create a
 
 (define-key my/scroll-other-window-pdf-tools-mode-map (kbd "M-<next>") 'my/scroll-other-window-down)
 (define-key my/scroll-other-window-pdf-tools-mode-map (kbd "M-<prior>") 'my/scroll-other-window)
+
 #+end_src
 
 *** Code Linter
@@ -4133,7 +4374,7 @@ This needs to be added to the end of any org file that is being used to create a
 
 Code syntax checking.
 
-Not sure, but this might have to load after flyspell package
+Not sure, but this might have to load after flyspell package.
 
 # see "flycheck-select-checker" function
 
@@ -4145,8 +4386,7 @@ Not sure, but this might have to load after flyspell package
 
 #+end_src
 
-
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 
 (use-package flycheck-aspell
   :config
@@ -4154,36 +4394,41 @@ Not sure, but this might have to load after flyspell package
 
 #+end_src
 
-*** Spacemacs-like menu
+*** Spacemacs-esque menu
 **** Package: general
 
 This should be one of the last packages to be loaded.
 The other packages first have to create their hydras and only after that should we create a menu using those hydras.
-
-Note: dont forget to update which-key with the descriptions when creating new hydras.
 
 #+begin_src emacs-lisp
 
 (use-package general
   :config
   (unbind-key "<menu>")
+
   (general-define-key
    :prefix "<menu>"
-   "s" 'hydra-search/body
-   "o" 'hydra-open/body
-   "f" 'hydra-file/body
-   "b" 'hydra-buffer/body
-   "B" 'hydra-bookmarks/body
-   "p" 'projectile-hydra/body
-   "g" 'hydra-git/body
-   "i" 'hydra-insert/body
-   "t" 'hydra-toggles/body
-   "P" 'hydra-packages/body
-   "I" 'hydra-indentation/body
-   "S" 'hydra-spellcheck/body
-   "q" 'hydra-quit/body
-   "m" 'major-mode-hydra
-   ))
+   "\"" '(eshell :which-key "open emacs shell")
+   "\'" '(my/open-external-terminal-here :which-key "open external terminal"))
+
+  (general-define-key
+   :prefix "<menu>"
+   "b" '(hydra-buffer/body :which-key "+buffer")
+   "B" '(hydra-bookmarks/body :which-key "+bookmarks")
+   "c" '(hydra-code/body :which-key "+code")
+   "f" '(hydra-file/body :which-key "+file")
+   "g" '(hydra-git/body :which-key "+git")
+   "h" '(hydra-help/body :which-key "+help")
+   "i" '(hydra-insert/body :which-key "+insert")
+   "I" '(hydra-indentation/body :which-key "+indentation")
+   "m" '(major-mode-hydra :which-key "+major-mode")
+   "o" '(hydra-open/body :which-key "+open")
+   "p" '(projectile-hydra/body :which-key "+project")
+   "P" '(hydra-packages/body :which-key "+packages")
+   "q" '(hydra-quit/body :which-key "+quit/session")
+   "s" '(hydra-search/body :which-key "+search")
+   "S" '(hydra-spellcheck/body :which-key "+spellcheck")
+   "t" '(hydra-toggles/body :which-key "+toggles")))
 
 #+end_src
 
@@ -4210,7 +4455,8 @@ Edit files with elevated permissions
 
 #+begin_src emacs-lisp
 
-(use-package sudo-edit)
+(use-package sudo-edit
+  :commands (sudo-edit sudo-edit-find-file sudo-edit-indicator-mode))
 
 #+end_src
 
@@ -4232,21 +4478,7 @@ Display available keybindings in popup after a prefix key is pressed
 
 (use-package which-key
   :config
-  (which-key-add-key-based-replacements
-    "<menu> s" "+search"
-    "<menu> o" "+open"
-    "<menu> f" "+file"
-    "<menu> b" "+buffer"
-    "<menu> B" "+bookmarks"
-    "<menu> p" "+project"
-    "<menu> g" "+git"
-    "<menu> i" "+insert"
-    "<menu> t" "+toggles"
-    "<menu> P" "+packages"
-    "<menu> I" "+indentation"
-    "<menu> S" "+spellcheck"
-    "<menu> q" "+quit/session"
-    "<menu> m" "+major-mode")
+  (set-face-attribute 'which-key-local-map-description-face nil :weight 'bold)
   (which-key-mode))
 
 #+end_src
@@ -4477,19 +4709,10 @@ Better formatting for help buffers
 #+begin_src emacs-lisp
 
 (use-package helpful
+  :commands helpful-mode
   :config
   (setq counsel-describe-function-function #'helpful-callable
         counsel-describe-variable-function #'helpful-variable))
-
-#+end_src
-
-**** Package: exec-path-from-shell
-
-#+begin_src emacs-lisp
-
-(use-package exec-path-from-shell
-  :config
-  (exec-path-from-shell-initialize))
 
 #+end_src
 
@@ -4516,7 +4739,8 @@ rules for popup windows
 (use-package shackle
   :init
   (setq shackle-default-alignment    'right
-        shackle-rules                '(("*Bufler*" :regexp t :align below)))
+        shackle-rules                '(("*Bufler*" :regexp t :align below)
+                                       (help-mode :select t)))
   :config
   (shackle-mode 1))
 
@@ -4526,7 +4750,9 @@ rules for popup windows
 
 #+begin_src emacs-lisp
 
-(use-package fd-dired)
+(use-package fd-dired
+  :ensure-system-package (fd)
+  :commands fd-dired)
 
 #+end_src
 
@@ -4592,7 +4818,10 @@ face used is from term-mode
 
 #+end_src
 
-** Programming languages
+** Language Support
+
+Add support for programming languages in the form of syntax highlighting, code completion, linters, etc.
+
 *** C#
 **** Features
 
@@ -4605,6 +4834,20 @@ face used is from term-mode
 (use-package csharp-mode
    :mode ("\\.cs\\'" . csharp-mode)
    :interpreter ("csharp" . csharp-mode))
+
+#+end_src
+
+*** CSV
+**** Features
+
+  - syntax highlighting
+
+**** Package: csv-mode
+
+#+begin_src emacs-lisp
+
+(use-package csv-mode
+  :mode ("\\.csv\\'" . csv-mode))
 
 #+end_src
 
@@ -4639,11 +4882,78 @@ This variable is declared as safe with the following code, so you aren't asked i
 (put 'dockerfile-image-name 'safe-local-variable #'stringp)
 #+end_example
 
-*** TODO Latex
+*** Dotenv
 **** Features
 
-  - references
-  - minted listings
+  - syntax highlighting
+
+**** Package: dotenv-mode
+
+#+begin_src emacs-lisp
+
+(use-package dotenv-mode
+  :mode "\\.env\\..*\\'")
+
+#+end_src
+
+*** Git
+**** Features
+
+  - syntax highlighting
+
+**** Package: gitconfig-mode
+
+#+begin_src emacs-lisp
+
+(use-package gitconfig-mode
+  :mode ("/\\.gitconfig\\'" "/\\.git/config\\'" "/git/config\\'"
+         "/\\.gitmodules\\'"))
+
+#+end_src
+
+**** Package: gitignore-mode
+
+#+begin_src emacs-lisp
+
+(use-package gitignore-mode
+  :mode ("/\\.gitignore\\'" "/\\.git/info/exclude\\'" "/git/ignore\\'"))
+
+#+end_src
+
+*** Java
+**** Features
+
+  - language server
+
+**** Package: java-mode+
+
+#+begin_src emacs-lisp :tangle no
+
+(use-package lsp-java
+  :ensure nil
+  :hook (java-mode . lsp))
+
+#+end_src
+
+*** JSON
+**** Features
+
+  - syntax highlighting
+
+**** Package: json-mode
+
+#+begin_src emacs-lisp
+
+(use-package json-mode
+  :mode "\\.json\\'")
+
+#+end_src
+
+*** REVIEW Latex
+**** Features
+
+- references (deactivated)
+- minted code listings
 
 **** Package: org-ref
 
@@ -4656,9 +4966,11 @@ This takes a long time to load. Maybe add :mode or :commands to defer loading.
 
 #+end_src
 
-Add support for =minted=
+**** Latex package: minted
 
-#+begin_src emacs-lisp
+Add support for =minted= Latex package.
+
+#+begin_src emacs-lisp :tangle no
 
 (setq org-latex-listings          'minted
       org-latex-packages-alist    '(("" "minted"))
@@ -4666,9 +4978,16 @@ Add support for =minted=
                                     "%latex -shell-escape -interaction nonstopmode -output-directory %o %f"
                                     "%latex -shell-escape -interaction nonstopmode -output-directory %o %f"))
 
+;; (setq org-latex-listings 'minted
+;;       org-latex-packages-alist '(("" "minted"))
+;;       org-latex-pdf-process
+;;       '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+;;         "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"))
+
+
 #+end_src
 
-*** REVIEW Markdown
+*** Markdown
 **** Features
 
   - syntax highlighting
@@ -4678,9 +4997,6 @@ Add support for =minted=
 For markdown, you need to customize the command to run the markdown parser if you use something else.
 
 #+begin_src emacs-lisp
-
-;; (use-package markdown-mode
-;;   :mode "\\.\\(m\\(ark\\)?down\\|md\\)$")
 
 (use-package markdown-mode
   :ensure-system-package (pandoc)
@@ -4693,18 +5009,19 @@ For markdown, you need to customize the command to run the markdown parser if yo
 
 #+begin_src emacs-lisp
 
-;; (use-package markdown-preview-mode)
-
 ;; Fast GitHub-flavored live preview
 (use-package vmd-mode
-  :ensure-system-package (python))
+  :ensure-system-package (vmd))
 
-;; ;; Or using hooks
-;; (use-package grip-mode
-;;   :config
-;;   (setq grip-preview-use-webkit t)
-;;   :bind (:map markdown-mode-command-map
-;;          ("g" . grip-mode)))
+#+end_src
+
+*** Python
+
+Prefer Python 3.
+
+#+begin_src emacs-lisp
+
+(setq python-shell-interpreter "python3")
 
 #+end_src
 
@@ -4783,7 +5100,7 @@ They are in the end of the config file to allow most of the config to be loaded 
 
 #+end_src
 
-*** Stuff I need to try that might improve scrolling.
+*** stuff I need to try that might improve scrolling.
 
 #+begin_src emacs-lisp :tangle no
 
@@ -4824,13 +5141,22 @@ They are in the end of the config file to allow most of the config to be loaded 
 
 *** org agenda custom commands
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
+
+;; (setq org-agenda-custom-commands
+;;       '(("cm" "Custom: This month"
+;;          ((org-ql-block '(ts-active :from today :to (format-time-string "%Y-%m-%d" (org-read-date nil t "+30d")))
+;;                         ((org-ql-block-header "This month")))
+;;           (agenda)))
+
+;;         ))
 
 (setq org-agenda-custom-commands
-      '(("cm" "Custom: This month"
-         ((org-ql-block '(ts-active :from today :to (format-time-string "%Y-%m-%d" (org-read-date nil t "+30d")))
-                        ((org-ql-block-header "This month")))
-          (agenda)))))
+      '(("a" "Agenda and all NEXT items"
+         ((agenda "")
+          (todo "NEXT"))
+         ((org-agenda-todo-ignore-with-date t)))
+        ))
 
 #+end_src
 
@@ -4843,6 +5169,78 @@ They are in the end of the config file to allow most of the config to be loaded 
 (setq header-line-format " ")
 
 ;; another option is to use the tab-line. Just give the function responsible for tab names an error and the tab line will be empty.
+
+#+end_src
+
+*** Emacs server
+
+Detect existing emacs server and switch to it if possible
+
+#+begin_src emacs-lisp :tangle no
+
+(require 'server)
+
+(defun my-server-shunt ()
+  "Shunts to emacsclient"
+  (let ((args (append '("emacsclient" "-a" "\"\"" "-n")
+                      (cdr command-line-args))))
+    (shell-command (substring (format "%S" args) 1 -1))
+    (kill-emacs)))
+
+;; Keep only one Emacs server instance
+(if (server-running-p)
+    (if (daemonp)
+        (error "Another running Emacs server detected, abort")
+      (my-server-shunt))
+  (server-start))
+
+#+end_src
+
+*** system notifications
+
+#+begin_src emacs-lisp :tangle no
+
+(use-package alert
+  :ensure t
+  :config
+  (setq alert-default-style 'libnotify))
+
+#+end_src
+
+*** ledger
+
+#+begin_src emacs-lisp :tangle no
+
+(use-package ledger-mode
+  :ensure nil
+  :mode ("\\.ledger\\'" . ledger-mode)
+  :config
+  (use-package flycheck-ledger
+    :ensure t))
+
+#+end_src
+
+*** org babel execute
+
+#+begin_src emacs-lisp :tangle no
+
+;; (add-to-list 'dashboard-heading-icons '(treemacs-workspaces . "book"))
+
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((shell . t)
+   (emacs-lisp . t)))
+
+#+end_src
+
+*** agenda todo list - ignore scheduled and deadline
+
+#+begin_src emacs-lisp :tangle no
+
+;;don't show tasks that are scheduled or have deadlines in the
+;;normal todo list
+(setq org-agenda-todo-ignore-deadlines (quote all))
+(setq org-agenda-todo-ignore-scheduled (quote all))
 
 #+end_src
 

@@ -1,8 +1,12 @@
 [
   {
-    "css": "/* set the size for all keycaps */\n.keylabel { font-size: 8px !important; }\n\n/* set different sizes for each legend/text value */\n.keylabel.textsize1 { font-size: 4px !important; }\n.keylabel.textsize2 { font-size: 6px !important; }\n/* etc */"
+    "css": " /* set the size for all keycaps */\n .keylabel { font-size: 8px !important; }\n \n /* set different sizes for each legend/text value */\n .keylabel.textsize1 { font-size: 4px !important; }\n .keylabel.textsize2 { font-size: 6px !important; }\n /* etc */"
   },
   [
+    {
+      "t": "#000000\n\n\n#4920d4",
+      "f": 2
+    },
     "Esc",
     {
       "x": 1
@@ -12,9 +16,15 @@
     "F3",
     "F4",
     {
-      "x": 0.5
+      "x": 0.5,
+      "fa": [
+        0,
+        0,
+        0,
+        3
+      ]
     },
-    "F5",
+    "F5\n\n\nreload init file",
     "F6",
     "F7",
     "F8",
@@ -36,10 +46,10 @@
     {
       "y": 0.5
     },
-    "¬\n`",
+    "~\n`",
     "!\n1",
-    "\"\n2",
-    "£\n3",
+    "@\n2",
+    "#\n3",
     "$\n4",
     "%\n5",
     "^\n6",
@@ -47,9 +57,6 @@
     "*\n8",
     "(\n9",
     ")\n0",
-    {
-      "t": "#000000\n\n\n#330ec4"
-    },
     "_\n-\n\nzoom out",
     "+\n=\n\nzoom in",
     {
@@ -57,150 +64,95 @@
     },
     "Backspace\n\n\ndelete backward word",
     {
-      "x": 0.25,
-      "t": "#000000"
+      "x": 0.25
     },
     "Insert",
-    {
-      "t": "#000000\n\n\n#330ec4"
-    },
     "Home\n\n\nbuffer beginning",
-    "PgUp\n\n\nprevious buffer"
+    "PgUp\n\n\nprevious project buffer"
   ],
   [
     {
-      "t": "#000000",
       "w": 1.5
     },
-    "Tab",
-    {
-      "t": "#000000\n\n\n#330ec4"
-    },
+    "Tab\n\n\ncycle buffers",
     "Q\n\n\nquit emacs",
-    "W\n\n\nclose",
+    "W\n\n\nclose buffer",
     "E\n\n\ncommand prefix",
-    {
-      "t": "#000000"
-    },
-    "R",
-    "T",
-    {
-      "t": "#000000\n\n\n#330ec4"
-    },
+    "R\n\n\nreplace",
+    "T\n\n\njump to function",
     "Y\n\n\nredo",
-    {
-      "t": "#000000"
-    },
-    "U",
+    "U\n\n\nuniversal argument",
     "I",
-    {
-      "t": "#000000\n\n\n#330ec4"
-    },
     "O\n\n\nopen file",
     "P\n\n\nopen project file",
-    {
-      "t": "#000000"
-    },
     "{\n[",
     "}\n]",
     {
-      "x": 0.25,
-      "w": 1.25,
-      "h": 2,
-      "w2": 1.5,
-      "h2": 1,
-      "x2": -0.25
+      "w": 1.5
     },
-    "Enter",
+    "|\n\\",
     {
-      "x": 0.25,
-      "t": "#000000\n\n\n#330ec4"
+      "x": 0.25
     },
     "Delete\n\n\ndelete forward word",
     "End\n\n\nbuffer end",
-    "PgDn\n\n\nnext buffer"
+    "PgDn\n\n\nnext project buffer"
   ],
   [
     {
-      "t": "#000000",
       "w": 1.75
     },
     "Caps Lock",
-    {
-      "t": "#000000\n\n\n#330ec4",
-      "sm": "cherry"
-    },
     "A\n\n\nselect all",
-    {
-      "sm": ""
-    },
-    "S\n\n\nsave",
+    "S\n\n\nsave buffer",
     "D\n\n\nmode prefix",
     "F\n\n\nfind",
-    "G\n\n\ngoto line",
+    "G\n\n\nkeyboard quit",
     "H\n\n\nreplace",
-    {
-      "t": "#000000"
-    },
     "J",
-    "K",
-    {
-      "t": "#000000\n\n\n#330ec4"
-    },
-    "L\n\n\nselect current line",
-    {
-      "t": "#000000"
-    },
+    "K\n\n\ndelete current line",
+    "L\n\n\nrecenter current line",
     ":\n;",
-    "@\n'",
-    "~\n#"
+    "\"\n'",
+    {
+      "w": 2.25
+    },
+    "Enter"
   ],
   [
     {
-      "w": 1.25
+      "w": 2.25
     },
     "Shift",
-    "|\n\\",
-    {
-      "t": "#000000\n\n\n#330ec4"
-    },
     "Z\n\n\nundo",
     "X\n\n\ncut",
     "C\n\n\ncopy",
     "V\n\n\npaste",
     "B\n\n\nswitch buffer",
     "N\n\n\nnew buffer",
-    {
-      "t": "#000000"
-    },
     "M",
-    "<\n,",
+    "<\n,\n\ncorrect coding error",
+    ">\n.\n\ncorrect spelling error",
+    "?\n/\n\ncoment toggle",
     {
-      "t": "#000000\n\n\n#330ec4"
-    },
-    ">\n.\n\ncorrect error",
-    "?\n/\n\ntoggle comment",
-    {
-      "t": "#000000",
       "w": 2.75
     },
     "Shift",
     {
-      "x": 1.25,
-      "t": "#000000\n\n\n#330ec4"
+      "x": 1.25
     },
     "↑\n\n\nbackward paragraph"
   ],
   [
     {
-      "c": "#330ec4",
+      "c": "#4920d4",
       "t": "#ffffff",
       "w": 1.25
     },
     "Ctrl",
     {
       "c": "#cccccc",
-      "t": "#000000",
+      "t": "#000000\n\n\n#4920d4",
       "w": 1.25
     },
     "Win",
@@ -209,17 +161,17 @@
     },
     "Alt",
     {
-      "t": "#000000\n#330ec4",
-      "a": 5,
+      "t": "#000000",
+      "a": 7,
       "w": 6.25
     },
-    "\nrectangle selection",
+    "",
     {
-      "t": "#000000",
+      "t": "#000000\n\n\n#4920d4",
       "a": 4,
       "w": 1.25
     },
-    "AltGr",
+    "Alt",
     {
       "w": 1.25
     },
@@ -229,7 +181,7 @@
     },
     "Menu",
     {
-      "c": "#330ec4",
+      "c": "#4920d4",
       "t": "#ffffff",
       "w": 1.25
     },
@@ -237,9 +189,9 @@
     {
       "x": 0.25,
       "c": "#cccccc",
-      "t": "#000000\n\n\n#330ec4"
+      "t": "#000000\n\n\n#4920d4"
     },
-    "←\n\n\nbacward word",
+    "←\n\n\nbackward word",
     "↓\n\n\nforward paragraph",
     "→\n\n\nforward word"
   ]
