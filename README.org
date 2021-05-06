@@ -98,10 +98,16 @@
     - [[#ledger][ledger]]
     - [[#org-babel-execute][org babel execute]]
     - [[#agenda-todo-list---ignore-scheduled-and-deadline][agenda todo list - ignore scheduled and deadline]]
+    - [[#export-org-agenda-to-ics-file-for-google-calendar][export org agenda to .ics file for Google calendar]]
+    - [[#change-terminal-face-to-alter-fzf-prompt][change terminal face to alter fzf prompt]]
+    - [[#bufler-list-newline-between-groups][bufler-list newline between groups]]
+    - [[#dired-sidebar][dired-sidebar]]
   - [[#file-footer-2][File Footer]]
 
 * Introduction
 ** What is this and who is it for?
+
+Just as Spacemacs and Doom Emacs are a combination of Emacs + Vim, this is my attempt at a configuration that combines Emacs + VSCode.
 
 This emacs configuration allows you to use Org mode and still have access to "modern" keybindings.
 
@@ -271,11 +277,21 @@ Todo:
 - [X] change C-SPC to do something related to jumping to bookmarks, previous mark location, or something like that
 - [X] remove tab-line from bufler, magit, and any other like them
 - [X] add help hydra to describe functions at point
+- [X] spellcheck modeline segment dissapears when linter is active (confirmed not working in a Dockerfile)
+- [X] when in a bufler named workspace, new opened buffers are added to the default workspace, instead of the opened workspace
+- [X] add some sort of agenda view where I can see tasks without dates (or improve current agenda view)
+- [X] dashboard agenda shows archived tasks
+- [X] add =:ensure-system-package= and more dependencies to use-package declarations
+- [X] use minted for latex listings
+- [X] some functions have package dependencies and shouldnt be in the Functions section
+- [X] ivy-yasnippet "src" snippet gives warning because the snippet declaration file has extra spaces
+- [X] add window hydra with functions: maximize, minimize and balance
+- [X] bufler-list space between sections =bufler-list-group-separators= (https://github.com/alphapapa/bufler.el/issues/7)
+- [X] fzf-directory - completion works poorly (uses ido completion by default)
 - [ ] ctrl+shift+o to open directory in sidebar
 - [ ] error indicator in fringe for flyspell and flycheck
 - [ ] git gutter on left and flycheck gutter on right side
 - [ ] make it possible to see git gutter, company errors and visual line arrows all at the same time, without conflicts
-- [ ] add keybindings tables in config file
 - [ ] commenting inside source block jumps to top of block. happens with just 'emacs -Q' and comment-dwim
 - [ ] maybe incorporate previous/next concept from wakib-emacs? (it uses the ';' key)
 - [ ] when opening a treemacs workspace in dashboard, it should ask for a file
@@ -289,40 +305,41 @@ Todo:
 - [ ] improve appearance of tab-line arrows (they appear when the bar is too full)
 - [ ] for every package, add a quote from their git repo explaining what the package does
 - [ ] allow jumping to a function definition by ctrl-click or f2 or something else (check 'embark' package)
-- [ ] when a region is selected and an arrow key is presses in the opposite direction, exchange point and cursor
+- [ ] when a region is selected and an arrow key is pressed in the opposite direction, exchange point and cursor (or make jump to prev mark work)
 - [ ] add hydra or M-<key> commands for org-mark-ring-push, pop-global-mark, counsel-mark-ring
 - [ ] C-SPC and C-u SPC no longer work because of ryo-modal (C-SPC C-SPC to mark, C-u C-SPC to jump to prev mark)
 - [ ] related to note-taking: checkout deft, notdeft, org-roam, org-ql, org-rifle, org-journal, idutils
-- [ ] spellcheck modeline segment dissapears when linter is active (confirmed not working in a Dockerfile)
-- [ ] when in a bufler named workspace, new opened buffers are added to the default workspace, instead of the opened workspace
 - [ ] add snippets to hydra-insert, if yasnippet starts being used
 - [ ] use M-S-left/right to indent by 1 space (already works like that in org tables and lists)
 - [ ] hydra toggle for golden-ratio-mode
 - [ ] golden-ratio seems to be interfering with which-key
-- [ ] add some sort of agenda view where I can see tasks without dates (or improve current agenda view) (see calfw)
-- [ ] dashboard agenda shows archived tasks
+- [ ] try out =calfw= package
 - [ ] make treemacs change directory when doing bufler focus workspace
-- [ ] change treemacs project font (remove underline)
-- [ ] add =:ensure-system-package= and more dependencies to use-package declarations
+- [ ] change treemacs project root faces (remove underline)
 - [ ] magit diffs use blue and pink for additions and deletions
 - [ ] highlight whitespace on active selection
 - [ ] make startup time under 1 second with use-package defer features
 - [ ] bufler - make scratch buffer accessible to all projectile groups
 - [ ] reduce font size for hydra menus (should see menus even at 60% window width)
-- [ ] use minted for latex listings
-- [X] some functions have package dependencies and shouldnt be in the Functions section
 - [ ] highlight FIXME, TODO, etc
 - [ ] crux has a lot of useful commands. I could replace my functions with their package.
 - [ ] pg-up pg-down should return cursor to same place in document
 - [ ] bufler frame title
 - [ ] C-c doesn't work in llncsorg-master Makefile
-- [ ] ivy-yasnippet "src" snippet gives warning because the snippet declaration file has extra spaces
 - [ ] rainbow-mode gets overshadowed by current line highlighting
+- [ ] electric-indent-mode in gitconfig-mode adds unnecessary tab
+- [ ] divide org-agenda NEXT section into sections based on different projects, and show warning if no NEXT action exists for a project
+- [ ] bufler file list (Menu-b-b): reorganize /special/ and /help/ so that one has things that I can delete at any time and the other is essential
+- [ ] can't customize variables because of =wakib-keys= package
+- [ ] open function help buffer -> click link to go to definition -> opens with cursor on top of function, at bottom of screen (org-link-frame-setup / find-file-other-window). Should open on top of screen instead.
+- [ ] add keybindings tables (or a cheatsheet image) in config file
+- [ ] make the bufler focus function also change the sidebar directory
+
 
 # NOTE: use org-sort and select 'X' to sort this list by what items are checked
 
 
-documentation:
+add documentation:
 
 - [ ] (in org mode) M-left/right -> promote/demote single heading; M-S-left/right -> promote/demote heading subtree
 - [ ] C-RET and C-S-RET to make newlines (add keybinding docs)
@@ -331,11 +348,11 @@ documentation:
 
 from sublime:
 
-- [ ] use vertical lines to signal indentation
+- [X] use vertical lines to signal indentation
 - [ ] highlight vertical indentation of current scope / show bracket symbol in gutter (start and end of scope)
 - [ ] diff files
 - [ ] show git untracked/unstaged/staged number in the modeline segment (also N of commits ahead/behind)
-- [ ] markdown preview (in browser) asks you what flavour to use
+- [X] markdown preview (in browser) asks you what flavour to use
 - [ ] bookmarks (C-F2 toggle, F2 next, S-F2 prev, C-S-F2 clear all, M-F2 select all)
 - [ ] file - reveal in sidebar
 - [ ] using git - compare file against commit
@@ -712,6 +729,7 @@ Finish later:
   - https://vimcolorschemes.com/glepnir/oceanic-material
   - https://vimcolorschemes.com/dracula/vim
   - https://vimcolorschemes.com/reedes/vim-colors-pencil
+  - https://packagecontrol.io/packages/DinkDonk%20Color%20Scheme
 
 
 | Theme             | bg      | red     | green   | yellow  | blue    | magenta | cyan    | fg      |
@@ -871,6 +889,10 @@ Finish later:
      `(bufler-group                  ((t (:foreground ,cyan_1))))
 
      `(company-tooltip               ((t (:background ,bg_2))))
+
+     ;; this is mostly for the fzf prompt
+     `(term                          ((t (:background ,bg_3 :foreground ,fg_1))))
+     `(term-bold                     ((t (:background ,bg_3 :foreground ,fg_1 :weight bold))))
 
      )))
 
@@ -1258,6 +1280,13 @@ This will delete the old version."
             (file-name-directory (or load-file-name buffer-file-name))
               "\' > /dev/null 2>&1 & disown") nil nil))
 
+(defun my/org-toggle-emphasis ()
+  "Toggle hiding/showing of org emphasize markers."
+  (interactive)
+  (if org-hide-emphasis-markers
+      (set-variable 'org-hide-emphasis-markers nil)
+    (set-variable 'org-hide-emphasis-markers t)))
+
 #+end_src
 
 *** Function Aliases
@@ -1553,7 +1582,8 @@ Some nice-to have things and general settings.
       browse-url-generic-program     "xdg-open"
       ring-bell-function             'ignore                ;; disable bell
       blink-cursor-interval          1                      ;; change cursor blink speed. default is 0.5
-      require-final-newline          t)                     ;; On save, automatically add final newline
+      require-final-newline          t                      ;; On save, automatically add final newline
+      vc-follow-symlinks             t)                     ;; don't ask for confirmation when opening symlinked file
 
 ;; open new buffers in an already existing frame
 ;; (setq ns-pop-up-frames nil)
@@ -1662,7 +1692,9 @@ Some nice-to have things and general settings.
 (setq tab-line-exclude-modes '(dashboard-mode
                                magit-status-mode
                                bufler-list-mode
-                               org-agenda-mode))
+                               org-agenda-mode
+                               term-mode
+                               dired-sidebar-mode))
 
 #+end_src
 
@@ -1805,7 +1837,7 @@ Important: The first time this package is installed, you need to run 'all-the-ic
     (("f" counsel-fzf "find file")
      ("r" projectile-recentf "recent file"))
     "Switch Buffer"
-    (("b" projectile-switch-to-buffer "switch to buffer (in project)"))
+    (("b" projectile-switch-to-buffer "switch buffer (in project)"))
     "Manage Projects"
     (("p" counsel-projectile-switch-project "switch to project")
      ("a" projectile-add-known-project "add a new project")
@@ -1935,7 +1967,10 @@ Only the last element of the path is displayed."
   :config
   (bufler-tabs-mode 1)
   (tab-bar-mode 0)
+  ;; show files first and special buffers last
   (setq bufler-reverse t)
+  ;; add newline at end of top-level each group
+  (setq bufler-list-group-separators '((0 . "\n")))
 
   ;; try to filter/ignore special buffers
 
@@ -2121,6 +2156,38 @@ This is a desired but not required feature:
 
 Taking this into account, projectile is a good start but it doesnt give me everything I want, so I'm also using Treemacs workspaces.
 
+**** Package: dired-sidebar
+
+The sidebar only changes when bufler focuses a new workspace.
+
+#+begin_src emacs-lisp
+
+(use-package dired-sidebar
+  :commands (dired-sidebar-toggle-sidebar)
+  :init
+  (add-hook 'dired-sidebar-mode-hook
+             (lambda ()
+               (unless (file-remote-p default-directory)
+                 (auto-revert-mode))))
+
+  (defun my/dired-sidebar-focus-bufler (a)
+    "Make dired-sidebar focus current bufler workspace."
+    (with-current-buffer (car (bufler-workspace-buffers))
+      (let ((root (dired-sidebar-get-dir-to-show)))
+        (dired-sidebar-switch-to-dir root))))
+
+  :config
+  (setq dired-sidebar-theme 'ascii)
+  (setq dired-sidebar-one-instance-p t)
+  (setq dired-sidebar-no-delete-other-windows t)
+
+  :hook
+  (dired-sidebar-mode . (lambda() (display-line-numbers-mode -1)))
+  (dired-sidebar-mode . hide-mode-line-mode)
+  (bufler-workspace-set . my/dired-sidebar-focus-bufler))
+
+#+end_src
+
 **** Package: treemacs
 
 #+begin_src emacs-lisp
@@ -2276,8 +2343,7 @@ Taking this into account, projectile is a good start but it doesnt give me every
 
   (setq dashboard-items                '((projects  . 5)
                                          (bookmarks . 5)
-                                         (recents   . 5)
-                                         (agenda    . 5))
+                                         (recents   . 5))
         dashboard-center-content       t
         dashboard-set-heading-icons    t
         dashboard-set-init-info        t
@@ -3114,8 +3180,8 @@ The code below executes org-babel-tangle asynchronously when the config file is 
         org-default-notes-file               (expand-file-name "notes/notes.org" org-directory)
         org-agenda-files                     `(,org-directory
                                                ,(expand-file-name "agenda/private" org-directory)
-                                               ,(expand-file-name "agenda/work" org-directory)
-                                               ,(expand-file-name "agenda/work/IST/year 5" org-directory))
+                                               ,(expand-file-name "agenda/projects" org-directory)
+                                               ,(expand-file-name "agenda/projects/IST/year 5" org-directory))
         org-agenda-dim-blocked-tasks         t             ;; dim blocked tasks
         org-agenda-skip-deadline-if-done     t             ;; avoid showing unecessary tasks
         org-agenda-skip-scheduled-if-done    t
@@ -3123,12 +3189,14 @@ The code below executes org-babel-tangle asynchronously when the config file is 
         org-agenda-skip-deadline-prewarning-if-scheduled t
         ;; org-agenda-span                      30            ;; amount of days in the agenda
         org-agenda-start-on-weekday          nil           ;; start the agenda in the current day
-        org-agenda-prefix-format             '((agenda . " %i %-21:c%?-21t% s")    ;; make the first column in agenda wider (default is 12 characters)
-                                               (todo . " %i %-21:c")
-                                               (tags . " %i %-21:c")
-                                               (search . " %i %-21:c"))
+        org-agenda-prefix-format             '((agenda . " %i %-23:c%?-23t% s")    ;; make the first column in agenda wider (default is 12 characters)
+                                               (todo . " %i %-23:c")
+                                               (tags . " %i %-23:c")
+                                               (search . " %i %-23:c"))
         org-agenda-window-setup              'only-window
-        org-confirm-babel-evaluate           nil)
+        org-confirm-babel-evaluate           nil
+        org-show-context-detail              '((agenda . local)
+                                               (default . lineage)))
 
   (org-babel-do-load-languages
    'org-babel-load-languages
@@ -3138,9 +3206,10 @@ The code below executes org-babel-tangle asynchronously when the config file is 
 
   :bind
   (:map org-mode-map
-        ("C-d C-<left>" . outline-up-heading)
-        ("C-d C-<up>" . outline-previous-visible-heading)
-        ("C-d C-<down>" . outline-next-visible-heading)
+        ("C-d C-<left>" . org-backward-element)
+        ("C-d C-<right>" . org-forward-element)
+        ("C-d C-<up>" . org-up-element)
+        ("C-d C-<down>" . org-down-element)
         ;; allow C-S-<arrow> selection of text
         ("<C-S-left>" .  nil)
         ("<C-S-right>" .  nil)
@@ -3610,7 +3679,7 @@ Ivy sorts large lists using flx's scoring mechanism, if it's installed.
   :custom
   (ivy-prescient-sort-commands
    ;; things that shouldnt be sorted go in this list
-   '(:not swiper swiper-isearch ivy-switch-buffer counsel-switch-buffer flyspell-correct-ivy counsel-find-file find-file bufler-workspace-switch-buffer bufler-switch-buffer counsel-fzf))
+   '(:not swiper swiper-isearch ivy-switch-buffer counsel-switch-buffer flyspell-correct-ivy counsel-find-file find-file bufler-workspace-switch-buffer bufler-switch-buffer counsel-fzf counsel-imenu))
   (ivy-prescient-excluded-commands '(counsel-find-file find-file))
   (ivy-prescient-retain-classic-highlighting t)
   (ivy-prescient-enable-filtering nil)
@@ -3995,7 +4064,7 @@ show a different main hydra, depending on major mode
    (("s" save-some-buffers "Save all buffers"))
    "Switch"
    (("b" bufler "Show all buffers and workspaces")
-    ("B" bufler-switch-buffer "Switch buffer"))
+    ("B" bufler-switch-buffer "Switch buffer (in workspace)"))
    "Line Endings"
    (("l" my/set-buffer-line-ending-style "Set line endings for current buffer"))
    ))
@@ -4016,25 +4085,53 @@ show a different main hydra, depending on major mode
 
 #+end_src
 
+**** Hydra: dockerfile-mode
+
+#+begin_src emacs-lisp
+
+(major-mode-hydra-define dockerfile-mode
+  (:color teal :quit-key "q" :title "Dockerfile hydra" :separator "-")
+  ("Build"
+   (("b" dockerfile-build-buffer "build dockerfile")
+    ("B" dockerfile-build-no-cache-buffer "build dockerfile with no cache"))
+   ))
+
+#+end_src
+
+**** Hydra: emacs-lisp-mode
+
+#+begin_src emacs-lisp
+
+(major-mode-hydra-define emacs-lisp-mode
+  (:color teal :quit-key "q" :title "Emacs Lisp hydra" :separator "-")
+  ("Eval sexp before point"
+   (("e" eval-last-sexp "Eval and print value in the echo area")
+    ("b" eval-print-last-sexp "Eval and print value into current buffer")
+    ("p" pp-eval-last-sexp "Eval and pretty print value in new buffer"))
+   ))
+
+#+end_src
+
 **** Hydra: file
 
 #+begin_src emacs-lisp
 
 (pretty-hydra-define hydra-file
   (:color teal :quit-key "q" :title "Files Hydra")
-  ("Generic File"
+  ("New File"
    (("f" counsel-find-file "Open a File")
-    ("p" my/open-init-file "Open Private config")
-    ("r" counsel-recentf "Open Recent file")
+    ("r" counsel-recentf "Open recent file")
+    ("p" my/open-init-file "Open private Emacs config")
     ("D" delete-file "Delete a file")
-    ("U" sudo-edit-find-file "Sudo open a file"))
+    ("U" sudo-edit-find-file "Sudo open a file")
+    ("z" fzf-directory "Open fzf on a directory"))
    "Current File"
-   (("s" save-buffer "Save current file")
+   (("s" save-buffer "Save")
     ("S" write-file "Copy/Save as...")
-    ("R" my/rename-current-buffer-file "Rename/Move current file")
-    ("d" my/delete-file-and-buffer "Delete current file")
-    ("u" sudo-edit "Sudo open current file")
-    ("x" executable-make-buffer-file-executable-if-script-p "Make script executable"))
+    ("R" my/rename-current-buffer-file "Rename/Move")
+    ("d" my/delete-file-and-buffer "Delete")
+    ("u" sudo-edit "Sudo open")
+    ("x" executable-make-buffer-file-executable-if-script-p "Make .sh executable"))
    "Filename"
    (("y" my/show-buffer-name "Yank filename")
     ("Y" my/show-buffer-file-name "Yank filename with full path"))
@@ -4050,11 +4147,14 @@ show a different main hydra, depending on major mode
 
 (pretty-hydra-define hydra-help
   (:color teal :quit-key "q" :title "Help Hydra")
-  ("Emacs Describe"
-   (("f" counsel-describe-function "Function")
-    ("v" counsel-describe-variable "Variable")
-    ("F" counsel-faces "Face")
-    ("k" describe-key "Key"))
+  ("Specific Symbols"
+   (("f" counsel-describe-function "Describe Function")
+    ("v" counsel-describe-variable "Describe Variable")
+    ("F" counsel-faces "Describe Face"))
+   "All Symbols"
+   (("o" counsel-describe-symbol "Describe Symbol"))
+   "Keyindings"
+   (("k" describe-key "Describe Key"))
    ))
 
 #+end_src
@@ -4136,7 +4236,8 @@ show a different main hydra, depending on major mode
    (("C" my/org-content-with-argument "show content up to level N")
     ("g" counsel-org-goto "goto org heading")
     ("e" org-export-dispatch "export dispatch")
-    ("i" org-insert-link "insert/edit link"))
+    ("i" org-insert-link "insert/edit link")
+    ("p" org-emphasize "insert or change text emphasis"))
    "Org Latex"
    (("l" org-latex-export-to-latex "export to Latex file")
     ("L" my/org-latex-compile-and-open-pdf "export to PDF (with Makefile)"))
@@ -4201,8 +4302,8 @@ show a different main hydra, depending on major mode
    "String in filenames (glob)"
    (("f" fd-dired "locate files"))
    "Project"
-   (("p"  counsel-projectile-rg "search text")
-    ("r"  projectile-replace "replace text (literal)"))
+   (("p" counsel-projectile-rg "search text")
+    ("r" projectile-replace "replace text (literal)"))
    ))
 
 #+end_src
@@ -4230,7 +4331,8 @@ show a different main hydra, depending on major mode
     ("N" global-display-line-numbers-mode "line numbers (global)" :toggle t)
     ("r" rainbow-mode "rainbow" :toggle t)
     ("b" page-break-lines-mode "page break lines" :toggle t)
-    ("g" diff-hl-mode "git gutter" :toggle t))
+    ("g" diff-hl-mode "git gutter" :toggle t)
+    ("o" my/org-toggle-emphasis "org-mode emphasis markers" :toggle t))
    "Highlight"
    (;;("s" symbol-overlay-mode "symbol" :toggle t)
     ("l" global-hl-line-mode "current line (global)" :toggle t)
@@ -4244,7 +4346,7 @@ show a different main hydra, depending on major mode
     ("c" company-mode "company" :toggle t)
     ("P" electric-pair-mode "automatic parens pairing" :toggle t))
    "UI"
-   (("e" treemacs "file explorer sidebar" :toggle t)
+   (("e" dired-sidebar-toggle-sidebar "file explorer sidebar" :toggle t)
     ("t" tab-line-mode "tab-line" :toggle t)
     ("m" hide-mode-line-mode "modeline" :toggle t))
    "Emacs"
@@ -4262,6 +4364,29 @@ show a different main hydra, depending on major mode
   (:color teal :quit-key "q" :title "Git Hydra")
   ("Magit"
    (("g" magit-status "show git status"))
+   ))
+
+#+end_src
+
+**** Hydra: window
+
+#+begin_src emacs-lisp
+
+(pretty-hydra-define hydra-window
+  (:color teal :quit-key "q" :title "Window Hydra")
+  ("Create Split"
+   (("h" split-window-horizontally "new horizontal split")
+    ("v" split-window-vertically "new vertical split"))
+   "Delete Split"
+   (("d" delete-window "Close current window")
+    ("D" delete-other-windows "Close all other windows"))
+   "Window Size"
+   (("M" maximize-window "Maximize")
+    ("m" minimize-window "Minimize")
+    ("b" balance-windows "Balance"))
+   "Window Selection"
+   (("s" other-window "Select other window")
+    ("c" switch-window "Cycle windows"))
    ))
 
 #+end_src
@@ -4293,21 +4418,37 @@ Behavior by color:
 | teal     | :foreign-keys warn :exit t |
 | pink     | :foreign-keys run          |
 
+As for naming conventions inside a hydra:
+  - section names should be objects
+  - section entries should be actions (performed on the respective object)
+
 *** PDF Viewer
 **** Package: pdf-tools
+
+*ensure-system-package* looks for binaries and is agnostic of package managers.
+
+For Arch, the respective necessary packages are:
+  - base-devel
+  - libpng
+  - zlib
+  - poppler-glib.
 
 #+begin_src emacs-lisp
 
 (use-package pdf-tools
-   :config
-   (pdf-tools-install :no-query)
-   (setq-default pdf-view-display-size 'fit-page)
-   :custom
-   (pdf-annot-activate-created-annotations t "automatically annotate highlights")
-   :mode ("\\.pdf\\'" . pdf-view-mode)
-   :bind
-   (:map pdf-view-mode-map
-         ("C-f" . isearch-forward)))
+  :ensure-system-package
+  (("/usr/lib/libpoppler-glib.so" . libpng)
+   ("/usr/lib/libz.so"            . zlib)
+   ("/usr/lib/libpng.so"          . poppler-glib))
+  :config
+  (pdf-tools-install :no-query :no-dependencies)
+  (setq-default pdf-view-display-size 'fit-page)
+  :custom
+  (pdf-annot-activate-created-annotations t "automatically annotate highlights")
+  :mode ("\\.pdf\\'" . pdf-view-mode)
+  :bind
+  (:map pdf-view-mode-map
+        ("C-f" . isearch-forward)))
 
 #+end_src
 
@@ -4428,7 +4569,8 @@ The other packages first have to create their hydras and only after that should 
    "q" '(hydra-quit/body :which-key "+quit/session")
    "s" '(hydra-search/body :which-key "+search")
    "S" '(hydra-spellcheck/body :which-key "+spellcheck")
-   "t" '(hydra-toggles/body :which-key "+toggles")))
+   "t" '(hydra-toggles/body :which-key "+toggles")
+   "w" '(hydra-window/body :which-key "+window")))
 
 #+end_src
 
@@ -4535,7 +4677,8 @@ Expand region in logical increments.
 
 **** Package: avy
 
-quickly go to any character on screen.
+Quickly go to any character on screen.
+Can also be used to jump to word, line, symbol, etc.
 
 #+begin_src emacs-lisp
 
@@ -4776,7 +4919,14 @@ face used is from term-mode
                                         " --ignore-case"
                                         " --exclude '.git/*'"
                                         ;; " --no-ignore-vcs"
-                                        )))
+                                        ))
+
+  :config
+  ;; replace ido-read-directory-name with counsel-read-directory-name
+  (defun fzf-directory ()
+    "Starts a fzf session at the specified directory."
+    (interactive)
+    (fzf/start (counsel-read-directory-name "Directory: " fzf/directory-start))))
 
 #+end_src
 
@@ -5241,6 +5391,103 @@ Detect existing emacs server and switch to it if possible
 ;;normal todo list
 (setq org-agenda-todo-ignore-deadlines (quote all))
 (setq org-agenda-todo-ignore-scheduled (quote all))
+
+#+end_src
+
+*** export org agenda to .ics file for Google calendar
+
+#+begin_src emacs-lisp :tangle no
+
+(setq org-icalendar-combined-agenda-file "~/tmp/org-agenda-export.ics"
+      org-icalendar-use-scheduled        '(event-if-todo-not-done)
+      org-icalendar-use-deadline         '(event-if-todo-not-done))
+
+(org-icalendar-combine-agenda-files)
+
+#+end_src
+
+*** change terminal face to alter fzf prompt
+
+#+begin_src emacs-lisp :tangle no
+
+(custom-set-faces
+  '(term         ((t (:background ,bg_1 :foreground ,fg_1))))
+  '(term-bold    ((t (:background ,bg_1 :foreground ,fg_1 :weight bold)))))
+
+#+end_src
+
+*** bufler-list newline between groups
+
+#+begin_src emacs-lisp :tangle no
+
+(setq bufler-list-group-separators '((0 . "\n")))
+
+#+end_src
+
+*** dired-sidebar
+
+#+begin_src emacs-lisp :tangle no
+
+(use-package dired-sidebar
+  :commands (dired-sidebar-toggle-sidebar)
+  :init
+  (add-hook 'dired-sidebar-mode-hook
+             (lambda ()
+               (unless (file-remote-p default-directory)
+                 (auto-revert-mode))))
+
+  :config
+  ;; (setq dired-sidebar-should-follow-file t)
+  ;; (setq dired-sidebar-theme 'icons)
+  (setq dired-sidebar-theme 'ascii)
+  (setq dired-sidebar-one-instance-p t)
+  (setq dired-sidebar-no-delete-other-windows t)
+  ;; (setq dired-sidebar-refresh-on-projectile-switch t)
+
+  ;; (defun my/bufler-sidebar-advice ()
+  ;;   (dired-sidebar-follow-file))
+  ;; (advice-add 'bufler-list-buffer-switch :after #'my/bufler-sidebar-advice)
+
+  (defun my/dired-sidebar-focus-bufler (a)
+    "Make dired-sidebar focus current bufler workspace."
+    (with-current-buffer (car (bufler-workspace-buffers))
+      (let ((root (dired-sidebar-get-dir-to-show)))
+        (dired-sidebar-switch-to-dir root))))
+
+  :hook
+  (dired-sidebar-mode . (lambda() (display-line-numbers-mode -1)))
+  (dired-sidebar-mode . hide-mode-line-mode)
+  (bufler-workspace-set-hook . my/dired-sidebar-focus-bufler))
+
+;; (use-package all-the-icons-dired)
+;; (dired-sidebar-switch-to-dir "~/")
+
+;; (custom-set-faces
+;;  '(doom-modeline-buffer-modified      ((t (:foreground "#ff0000")))))
+
+;; (push '(bufler-list-buffer-switch . 1) dired-sidebar-special-refresh-commands)
+
+;; (bufler-buffers)
+;; (bufler-group-tree-paths (bufler-buffers))
+
+;; (add-hook 'bufler-workspace-set-hook
+;;   (lambda () (projectile-switch-project-by-name (projectile-project-name))))
+
+;; (projectile-project-name)
+
+;; (bufler-workspace-focus-buffer BUFFER)
+
+
+
+;; (defun my/bufler-advice (buffer)
+;;   (projectile-project-name buffer))
+
+;; (projectile-project-name)
+
+;; (advice-add 'bufler-workspace-focus-buffer :after #'my/bufler-advice)
+
+
+;; (dired-sidebar-switch-to-dir (dired-sidebar-get-dir-to-show))
 
 #+end_src
 
