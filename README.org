@@ -45,11 +45,12 @@
     - [[#indentation][Indentation]]
     - [[#tabs][Tabs]]
     - [[#scrolling][Scrolling]]
-    - [[#fringe-and-line-numbers][Fringe and line numbers]]
+    - [[#fringe-margin-and-line-numbers][Fringe, Margin and line numbers]]
     - [[#backup-autosave-and-lockfiles][Backup, Autosave and Lockfiles]]
     - [[#desktop-session][Desktop session]]
     - [[#directory-local-variables][Directory local variables]]
     - [[#searching][Searching]]
+    - [[#window-splits][Window Splits]]
   - [[#additional-features][Additional Features]]
     - [[#icon-integration][Icon integration]]
     - [[#project-management][Project Management]]
@@ -88,7 +89,7 @@
     - [[#terraform-hcl][Terraform (HCL)]]
     - [[#yaml][YAML]]
   - [[#personal-settings][Personal Settings]]
-  - [[#experimentation-area][Experimentation Area]]
+  - [[#experimental-snippets][Experimental Snippets]]
     - [[#navigate-words-by-only-moving-to-the-first-character-backward-and-forward][navigate words by only moving to the first character, backward and forward]]
     - [[#stuff-i-need-to-try-that-might-improve-scrolling][stuff I need to try that might improve scrolling.]]
     - [[#org-agenda-custom-commands][org agenda custom commands]]
@@ -101,7 +102,7 @@
     - [[#export-org-agenda-to-ics-file-for-google-calendar][export org agenda to .ics file for Google calendar]]
     - [[#change-terminal-face-to-alter-fzf-prompt][change terminal face to alter fzf prompt]]
     - [[#bufler-list-newline-between-groups][bufler-list newline between groups]]
-    - [[#dired-sidebar][dired-sidebar]]
+    - [[#dired-sidebar-test][dired-sidebar test]]
   - [[#file-footer-2][File Footer]]
 
 * Introduction
@@ -288,52 +289,61 @@ Todo:
 - [X] add window hydra with functions: maximize, minimize and balance
 - [X] bufler-list space between sections =bufler-list-group-separators= (https://github.com/alphapapa/bufler.el/issues/7)
 - [X] fzf-directory - completion works poorly (uses ido completion by default)
-- [ ] ctrl+shift+o to open directory in sidebar
-- [ ] error indicator in fringe for flyspell and flycheck
-- [ ] git gutter on left and flycheck gutter on right side
-- [ ] make it possible to see git gutter, company errors and visual line arrows all at the same time, without conflicts
-- [ ] commenting inside source block jumps to top of block. happens with just 'emacs -Q' and comment-dwim
+- [X] make treemacs change directory when doing bufler focus workspace
+- [X] change treemacs project root faces (remove underline)
+- [X] highlight whitespace on active selection
+- [X] bufler - make scratch buffer accessible to all projectile groups
+- [X] pg-up pg-down should return cursor to same place in document
+- [X] bufler frame title (add =-- Emacs=)
+- [X] C-c doesn't work in llncsorg-master Makefile
+- [X] make the bufler focus function also change the sidebar directory
+- [X] frame title stopped working after patching split-window-sensibly (maybe some bufler-list hook?)
+- [X] when opening a treemacs workspace in dashboard, it should ask for a file
+- [X] add snippets to hydra-insert, if yasnippet starts being used
+- [X] bufler file list (<menu>-b-b): reorganize /special/ and /help/ so that one has things that I can delete at any time and the other is essential
+- [X] ctrl+shift+o to open directory in sidebar (or use dired instead)
+- [X] error indicator in fringe for flyspell and flycheck
+- [X] git gutter on left and flycheck gutter on right side
+- [X] make it possible to see git gutter, company errors and visual line arrows all at the same time, without conflicts
+- [X] change frame title without changing bufler workspace name (-- Emacs)
+- [X] add hook to display-line-numbers-mode to also add a 1 unit margin
+- [X] make bufler-list buffer open in full frame size
+- [X] toggles hydra: add toggle for toggle-menu-bar
+- [X] allow jumping between git hunks (git-gutter) or modified buffer areas
+- [X] highlight FIXME, TODO, etc
+- [X] C-l in a side window affects the left window instead
+- [ ] add keybindings tables (or a cheatsheet image) in config file
+- [ ] commenting/indenting inside source block jumps to top of block. happens with just 'emacs -Q' and comment-dwim ([[https://www.reddit.com/r/emacs/comments/ap4s7z/orgmode_weirdness_questions/][reddit thread]])
 - [ ] maybe incorporate previous/next concept from wakib-emacs? (it uses the ';' key)
-- [ ] when opening a treemacs workspace in dashboard, it should ask for a file
-- [ ] use 'C-.' to fix any type of error
+- [ ] use 'C-.' to fix any type of error (flycheck/flyspell)
 - [ ] opening a new file in terminal or explorer should add a new buffer to existing emacs frame (maybe use emacsclient)
 - [ ] allow C-page up/down to cycle when at first/last tab
 - [ ] use C-S-page up/down to move tabs
-- [ ] allow jumping between git hunks (git-gutter) or modified buffer areas
 - [ ] use smerge hydra for better merging conflict resolution (https://github.com/alphapapa/unpackaged.el#hydra)
 - [ ] give every doom modeline segment a mouse-over description and menu (tooltip)
 - [ ] improve appearance of tab-line arrows (they appear when the bar is too full)
 - [ ] for every package, add a quote from their git repo explaining what the package does
 - [ ] allow jumping to a function definition by ctrl-click or f2 or something else (check 'embark' package)
 - [ ] when a region is selected and an arrow key is pressed in the opposite direction, exchange point and cursor (or make jump to prev mark work)
-- [ ] add hydra or M-<key> commands for org-mark-ring-push, pop-global-mark, counsel-mark-ring
+- [ ] add hydra or M-<key> commands for org-mark-ring-push, org-mark-ring-goto, counsel-mark-ring
 - [ ] C-SPC and C-u SPC no longer work because of ryo-modal (C-SPC C-SPC to mark, C-u C-SPC to jump to prev mark)
-- [ ] related to note-taking: checkout deft, notdeft, org-roam, org-ql, org-rifle, org-journal, idutils
-- [ ] add snippets to hydra-insert, if yasnippet starts being used
+- [ ] related to note-taking: check out deft, notdeft, org-roam, org-ql, org-rifle, org-journal, idutils
 - [ ] use M-S-left/right to indent by 1 space (already works like that in org tables and lists)
 - [ ] hydra toggle for golden-ratio-mode
 - [ ] golden-ratio seems to be interfering with which-key
 - [ ] try out =calfw= package
-- [ ] make treemacs change directory when doing bufler focus workspace
-- [ ] change treemacs project root faces (remove underline)
 - [ ] magit diffs use blue and pink for additions and deletions
-- [ ] highlight whitespace on active selection
 - [ ] make startup time under 1 second with use-package defer features
-- [ ] bufler - make scratch buffer accessible to all projectile groups
 - [ ] reduce font size for hydra menus (should see menus even at 60% window width)
-- [ ] highlight FIXME, TODO, etc
 - [ ] crux has a lot of useful commands. I could replace my functions with their package.
-- [ ] pg-up pg-down should return cursor to same place in document
-- [ ] bufler frame title
-- [ ] C-c doesn't work in llncsorg-master Makefile
 - [ ] rainbow-mode gets overshadowed by current line highlighting
-- [ ] electric-indent-mode in gitconfig-mode adds unnecessary tab
+- [ ] electric-indent-mode in gitconfig-mode adds unnecessary tab after RET
 - [ ] divide org-agenda NEXT section into sections based on different projects, and show warning if no NEXT action exists for a project
-- [ ] bufler file list (Menu-b-b): reorganize /special/ and /help/ so that one has things that I can delete at any time and the other is essential
-- [ ] can't customize variables because of =wakib-keys= package
+- [ ] can't customize emacs variables because of =wakib-keys= package
 - [ ] open function help buffer -> click link to go to definition -> opens with cursor on top of function, at bottom of screen (org-link-frame-setup / find-file-other-window). Should open on top of screen instead.
-- [ ] add keybindings tables (or a cheatsheet image) in config file
-- [ ] make the bufler focus function also change the sidebar directory
+- [ ] make 'my/indent-region-custom' function (M-arrows) work even in a blank line (could try 'indent-to' function)
+- [ ] select region and press '(' to surround in parens; doesnt work in YAML mode
+- [ ] diff-hl activation - global mode vs prog-mode hook
 
 
 # NOTE: use org-sort and select 'X' to sort this list by what items are checked
@@ -349,20 +359,20 @@ add documentation:
 from sublime:
 
 - [X] use vertical lines to signal indentation
-- [ ] highlight vertical indentation of current scope / show bracket symbol in gutter (start and end of scope)
-- [ ] diff files
-- [ ] show git untracked/unstaged/staged number in the modeline segment (also N of commits ahead/behind)
 - [X] markdown preview (in browser) asks you what flavour to use
+- [X] diff files
+- [X] file - reveal in sidebar
+- [X] convert unicode to escaped string back and forth
+- [X] open external terminal in current directory
+- [ ] highlight vertical indentation of current scope / show bracket symbol in gutter (start and end of scope)
+- [ ] show git untracked/unstaged/staged number in the modeline segment (also N of commits ahead/behind)
 - [ ] bookmarks (C-F2 toggle, F2 next, S-F2 prev, C-S-F2 clear all, M-F2 select all)
-- [ ] file - reveal in sidebar
 - [ ] using git - compare file against commit
 - [ ] C-- comment, C-S-- block comment
 - [ ] snippet shows in autocomplete menu. just type and use tab for autocomplete. then use tab to jump in next snippet position
 - [ ] notifications plugin
-- [ ] convert unicode to escaped string back and forth
 - [ ] C-F6 for spellcheck, F6 for next error
 - [ ] jumping to start/end and PG-up/down all use scrolling
-- [ ] open external terminal in current directory
 
 
 and also:
@@ -1031,32 +1041,33 @@ This command does not push text to `kill-ring'."
 
 (defun my/backward-delete-word-no-clipboard (arg)
   "If the next character is whitespace, delete all until the first character.
-Otherwise, delete characters forward until encountering the end of a word.
-With ARG, repeat that many times.
-This command does not push text to `kill-ring'."
+      Otherwise, delete characters forward until encountering the end of a word.
+      With ARG, repeat that many times.
+      This command does not push text to `kill-ring'."
   (interactive "p")
   (my/delete-word-no-clipboard (- arg)))
 
-(defun my/indent-region-custom(numSpaces)
+(defun my/indent-region-custom (numSpaces)
   "Indent current line or active region, if one is selected, by NUMSPACES.
-For every line with a selected character, indent from the beggining of the line.
-This means that the first and last line don't need to be completly selected."
+      For every line with a selected character, indent from the beggining of the line.
+      This means that the first and last line don't need to be completly selected."
   (progn
     ;; default to start and end of current line
-    (setq regionStart (line-beginning-position))
-    (setq regionEnd (line-end-position))
+    (setq start (line-beginning-position))
+    (setq end (line-end-position))
     ;; if there's a selection, use that instead of the current line
     (when (use-region-p)
       (setq regionStart (region-beginning))
-      (setq regionEnd (region-end)))
-    (save-excursion                          ; restore the position afterwards
-      (goto-char regionStart)                ; go to the start of region
-      (setq start (line-beginning-position)) ; save the start of the line
-      (goto-char regionEnd)                  ; go to the end of region
-      (setq end (line-end-position))         ; save the end of the line
-      (indent-rigidly start end numSpaces)   ; indent between start and end
-      (setq deactivate-mark nil)             ; restore the selected region
-      )))
+      (setq regionEnd (region-end))
+      (save-excursion                       ; restore the position afterwards
+        (goto-char regionStart)                ; go to the start of region
+        (setq start (line-beginning-position)) ; save the start of the line
+        (goto-char regionEnd)                  ; go to the end of region
+        (setq end (line-end-position))         ; save the end of the line
+        (setq deactivate-mark nil)             ; restore the selected region
+        ))
+    (indent-rigidly start end numSpaces)   ; indent between start and end
+    ))
 
 (defun my/untab-region (N)
   "Unindent all lines in region by N spaces."
@@ -1087,8 +1098,8 @@ This means that the first and last line don't need to be completly selected."
   (interactive)
   ;; (local-set-key (kbd "TAB") 'tab-to-tab-stop)
   (setq-default tab-width
-        (string-to-number
-         (completing-read "Chose tab width: " '("2" "4" "8")))))
+                (string-to-number
+                 (completing-read "Chose tab width: " '("2" "4" "8")))))
 
 #+end_src
 
@@ -1439,7 +1450,7 @@ C-M-k     kill-sexp      Kill balanced expression forward
 (bind-key "<C-iso-lefttab>" 'switch-to-next-buffer wakib-keys-overriding-map)  ; equivalent to C-S-tab
 
 
-(bind-key "C-l" 'swiper-recenter-top-bottom wakib-keys-overriding-map)
+(bind-key "C-l" 'recenter-top-bottom wakib-keys-overriding-map)
 ;; (bind-key "C-l" 'my/select-current-line wakib-keys-overriding-map)
 
 
@@ -1627,14 +1638,19 @@ Some nice-to have things and general settings.
 
 ;; automatically add a pair to braces and quotes
 (electric-pair-mode 1)
+;; (setq electric-pair-skip-self t)
+(setq electric-pair-preserve-balance t)
+(setq electric-pair-inhibit-predicate 'electric-pair-conservative-inhibit)
+;; (setq electric-pair-inhibit-predicate 'ignore)
 
 (setq-default cursor-type 'bar)
 (set-cursor-color "#ffffff")
 
 ;; define values for split-sensibly
 ;; Note: the thresholds need to be twice as big as the smallest window allowed, because the new windows each use half of former window size.
-;; (setq split-width-threshold 100
-;;       split-height-threshold 40)
+(setq split-width-threshold 100
+      split-height-threshold 40)
+;; 160/80
 
 ;; new buffers are opened in org-mode by default
 (setq-default major-mode 'org-mode)
@@ -1662,7 +1678,7 @@ Some nice-to have things and general settings.
  '(whitespace-trailing    ((t (:underline (:style wave :color "yellow2")))))
  )
 
-;; set tab character.
+;; set tab character
 ;; 8614 is the unicode number of a double right arrow
 ;; 124 is the unicode number of a pipe
 (setq whitespace-display-mappings
@@ -1687,6 +1703,14 @@ Some nice-to have things and general settings.
   "Define format of tab names."
   (format "  %s  " (buffer-name buffer)))
 
+;; TODO how to make this a global change?
+(defun my/tab-line-toggle-content-visibility ()
+  "Toggle visibility of tab-line content."
+  (interactive)
+  (if (equal (type-of tab-line-format) 'string)
+      (setq tab-line-format '(:eval (tab-line-format)))
+    (setq tab-line-format "")))
+
 (setq tab-line-tab-name-function #'my/tab-line-tab-name-buffer)
 
 (setq tab-line-exclude-modes '(dashboard-mode
@@ -1706,7 +1730,7 @@ Some nice-to have things and general settings.
 (setq scroll-conservatively              101       ;; this value shoul not be higher than 100, or else swiper has issues (text behind modeline)
       mouse-wheel-scroll-amount          '(1)
       scroll-margin                      3
-      scroll-preserve-screen-position    nil
+      scroll-preserve-screen-position    t
       mouse-wheel-progressive-speed      nil
       fast-but-imprecise-scrolling       t)
 
@@ -1714,7 +1738,7 @@ Some nice-to have things and general settings.
 
 #+end_src
 
-*** Fringe and line numbers
+*** Fringe, Margin and line numbers
 
 #+begin_src emacs-lisp
 
@@ -1802,6 +1826,48 @@ For more information about syntax, check the [[https://www.gnu.org/software/emac
 
 #+end_src
 
+*** Window Splits
+
+Patch =split-window-sensibly= function so that it prefers vertical splits over horizontal ones.
+
+#+begin_src emacs-lisp
+
+(with-eval-after-load "window"
+  (defcustom split-window-below nil
+    "If non-nil, vertical splits produce new windows below."
+    :group 'windows
+    :type 'boolean)
+
+  (defcustom split-window-right nil
+    "If non-nil, horizontal splits produce new windows to the right."
+    :group 'windows
+    :type 'boolean)
+
+  (fmakunbound #'split-window-sensibly)
+
+  (defun split-window-sensibly
+      (&optional window)
+    (setq window (or window (selected-window)))
+    (or (and (window-splittable-p window t)
+             ;; Split window horizontally.
+             (split-window window nil (if split-window-right 'left  'right)))
+        (and (window-splittable-p window)
+             ;; Split window vertically.
+             (split-window window nil (if split-window-below 'above 'below)))
+        (and (eq window (frame-root-window (window-frame window)))
+             (not (window-minibuffer-p window))
+             ;; If WINDOW is the only window on its frame and is not the
+             ;; minibuffer window, try to split it horizontally disregarding the
+             ;; value of `split-width-threshold'.
+             (let ((split-width-threshold 0))
+               (when (window-splittable-p window t)
+                 (split-window window nil (if split-window-right
+                                              'left
+                                            'right))))))))
+
+
+#+end_src
+
 ** Additional Features
 
 Add more features by installing emacs packages.
@@ -1833,11 +1899,10 @@ Important: The first time this package is installed, you need to run 'all-the-ic
   (projectile-mode 1)
   :pretty-hydra
   ((:title "Project" :color teal :quit-key "q")
-   ("Find file"
+   ("Current project"
     (("f" counsel-fzf "find file")
-     ("r" projectile-recentf "recent file"))
-    "Switch Buffer"
-    (("b" projectile-switch-to-buffer "switch buffer (in project)"))
+     ("r" projectile-recentf "recent file")
+     ("b" projectile-switch-to-buffer "switch buffer"))
     "Manage Projects"
     (("p" counsel-projectile-switch-project "switch to project")
      ("a" projectile-add-known-project "add a new project")
@@ -1937,11 +2002,11 @@ When dealing with the =org-directory= variable, it is important to pay attention
   ;; always switch workspace when switching buffers with bufler
   (setq bufler-workspace-switch-buffer-sets-workspace nil)
 
-  ;; redefine lighter function
-  (defun my/bufler-workspace-mode-lighter ()
-    "Return lighter string for mode line."
-    (frame-parameter nil 'bufler-workspace-path-formatted))
+  ;; (defun my/bufler-workspace-mode-lighter ()
+  ;;   "Return lighter string for mode line."
+  ;;   (frame-parameter nil 'bufler-workspace-path-formatted))
 
+  ;; redefine lighter function
   (defun my/bufler-workspace-mode-lighter-shorter ()
     "Return lighter string for mode line.
 Only the last element of the path is displayed."
@@ -1949,24 +2014,18 @@ Only the last element of the path is displayed."
                               (replace-regexp-in-string "Projectile:" ""
                                                         (frame-parameter nil 'bufler-workspace-path-formatted))))
 
-  ;; ;; redefine core bufler function (frame title)
-  ;; (defun bufler-workspace-set-frame-name (path)
-  ;;   "Set current frame's name according to PATH."
-  ;;   (set-frame-name (when path
-  ;;                     (format "Emacs / Workspace: %s" (my/bufler-workspace-mode-lighter-shorter)))))
-
-
   (defun my/bufler-format-path (path)
     "Return PATH formatted as a string."
-    (replace-regexp-in-string ".*» " ""
-                              (replace-regexp-in-string "Projectile:" ""
-                                                        (bufler-format-path path))))
+    (concat (replace-regexp-in-string ".*» " ""
+                                      (replace-regexp-in-string "Projectile:" ""
+                                                                (bufler-format-path path)))))
 
   (setq bufler-workspace-format-path-fn 'my/bufler-format-path)
 
   :config
   (bufler-tabs-mode 1)
   (tab-bar-mode 0)
+  (global-tab-line-mode 0)
   ;; show files first and special buffers last
   (setq bufler-reverse t)
   ;; add newline at end of top-level each group
@@ -2001,42 +2060,39 @@ Only the last element of the path is displayed."
     (let ((current-prefix-arg 4)) ;; emulate C-u
       (call-interactively 'bufler-switch-buffer)))
 
+  (defun my/bufler-list-full-frame ()
+    "Same as bufler-list, but takes up the entire frame."
+    (interactive)
+    (call-interactively 'bufler-list)
+    ;; for some reason, using a hook doesnt work
+    (delete-other-windows))
+
   (setf bufler-groups
         (bufler-defgroups
           (group
            ;; Subgroup collecting all named workspaces.
            (auto-workspace))
+
           (group
-           ;; Subgroup collecting all `help-mode' and `info-mode' buffers.
-           (group-or "*Help/Info*"
-                     (mode-match "*Help*" (rx bos "help-"))
-                     (mode-match "*Info*" (rx bos "info-"))))
-          (group
-           ;; Subgroup collecting all special buffers (i.e. ones that are not
-           ;; file-backed), except `magit-status-mode' buffers (which are allowed to fall
-           ;; through to other groups, so they end up grouped with their project buffers).
+           ;; Subgroup collecting all special buffers (i.e. ones that are not file-backed)
            (group-and "*Special*"
                       (lambda (buffer)
-                        (unless (or (funcall (mode-match "Scratch" (rx bos "lisp-interaction"))
-                                             buffer)
-                                    (funcall (name-match "Untitled" (rx bos "untitled"))
-                                             buffer)
+                        (unless (or (funcall (mode-match "Scratch" (rx bos "lisp-interaction")) buffer)
+                                    (funcall (name-match "Untitled" (rx bos "untitled")) buffer)
                                     (funcall (auto-file) buffer))
                           "*Special*")))
            (group
             ;; Subgroup collecting these "special special" buffers
             ;; separately for convenience.
-            (name-match "**Special**"
-                        (rx bos "*" (or "Messages" "Warnings" "Backtrace") "*")))
-           (group
-            ;; Subgroup collecting all other Magit buffers, grouped by directory.
-            (mode-match "*Magit* (non-status)" (rx bos (or "magit" "forge") "-"))
-            (auto-directory))
+            (name-match "Essential"
+                        (rx bos "*" (or "Messages" "Warnings" "Backtrace" "dashboard" "Bufler") "*")))
 
-           ;; Subgroup for Helm buffers.
-           (mode-match "*Helm*" (rx bos "helm-"))
-           ;; Remaining special buffers are grouped automatically by mode.
-           (auto-mode))
+           (group
+            (group-not "Non-Essential"
+                       ;; match all remaining special buffers
+                       ;; none of them will match because they do not have associated files and filenames
+                       (filename-match "files" (rx bol (zero-or-more anything))))
+            (auto-mode)))
 
           (group
            (group-or "Agenda and Notes"
@@ -2055,19 +2111,23 @@ Only the last element of the path is displayed."
                      (name-match "Untitled" (rx bos "untitled")))
            (group
             ;; Subgroup collecting buffers in a projectile project.
-            (auto-projectile))
-           ;; (auto-directory)
-           )
+            (auto-projectile)))
           ))
 
-  :bind (:map wakib-keys-overriding-map
-              ("C-b" . bufler-switch-buffer)
-              ("C-<prior>" . tab-line-switch-to-prev-tab)
-              ("C-<next>" . tab-line-switch-to-next-tab))
+  :bind
+  (:map wakib-keys-overriding-map
+        ("C-b" . bufler-switch-buffer)
+        ("C-<prior>" . tab-line-switch-to-prev-tab)
+        ("C-<next>" . tab-line-switch-to-next-tab))
 
   :hook (;; focus current buffer workspace everytime a file is opened
          ;; (find-file . (lambda () (call-interactively #'bufler-workspace-focus-buffer)))
          (bufler-list-mode . my/set-buffer-large-fringe)
+         ;; modify frame name without modfying workspace name. this function definition doesnt work if used in a init or config block
+         (dashboard-mode . (lambda() (defun bufler-workspace-set-frame-name (path)
+                                       "Set current frame's name according to PATH."
+                                       (set-frame-name (when path
+                                                         (format "Workspace: %s -- Emacs" (funcall bufler-workspace-format-path-fn path)))))))
          ;; focus the workspace of the "scratch" buffer at startup, which is the "All Files" workspace
          (dashboard-mode . (lambda() (my/bufler-workspace-set-from-buffer-name "*scratch*")))
          ))
@@ -2169,6 +2229,15 @@ The sidebar only changes when bufler focuses a new workspace.
              (lambda ()
                (unless (file-remote-p default-directory)
                  (auto-revert-mode))))
+  (setq dired-sidebar-mode-line-format '("test" major-mode " "))
+  (setq dired-sidebar-mode-line-format '("%e" mode-line-front-space major-mode " " mode-line-end-spaces))
+  ;; ("%e" mode-line-front-space mode-line-buffer-identification " " mode-line-end-spaces)
+
+  :config
+  (setq dired-sidebar-theme                   'ascii
+        dired-sidebar-one-instance-p          t
+        dired-sidebar-no-delete-other-windows t
+        dired-sidebar-width                   30)
 
   (defun my/dired-sidebar-focus-bufler (a)
     "Make dired-sidebar focus current bufler workspace."
@@ -2176,15 +2245,12 @@ The sidebar only changes when bufler focuses a new workspace.
       (let ((root (dired-sidebar-get-dir-to-show)))
         (dired-sidebar-switch-to-dir root))))
 
-  :config
-  (setq dired-sidebar-theme 'ascii)
-  (setq dired-sidebar-one-instance-p t)
-  (setq dired-sidebar-no-delete-other-windows t)
-
   :hook
   (dired-sidebar-mode . (lambda() (display-line-numbers-mode -1)))
-  (dired-sidebar-mode . hide-mode-line-mode)
-  (bufler-workspace-set . my/dired-sidebar-focus-bufler))
+  ;; (dired-sidebar-mode . hide-mode-line-mode)
+  (dired-sidebar-mode . dired-sidebar-set-mode-line)
+  (bufler-workspace-set . my/dired-sidebar-focus-bufler)
+  (bufler-workspace-set . bufler-workspace-set-frame-name))
 
 #+end_src
 
@@ -2245,8 +2311,9 @@ The sidebar only changes when bufler focuses a new workspace.
 
 
   :hook (treemacs-mode . (lambda() (display-line-numbers-mode -1)))  ;; dont show line numbers in the sidebar
-  :bind (:map treemacs-mode-map
-              ("<mouse-1>" . treemacs-single-click-expand-action))  ;; single mouse click to open files and folders
+  :bind
+  (:map treemacs-mode-map
+        ("<mouse-1>" . treemacs-single-click-expand-action))  ;; single mouse click to open files and folders
   )
 
 
@@ -2747,17 +2814,19 @@ Other options are:
 
 (use-package rg
   :ensure-system-package (rg)
+
+  :config
+  (rg-define-search search-everything-regexp
+    "Like normal rg command, but skips asking for file type"
+    :query ask
+    :format regexp
+    :files "everything"
+    :dir ask
+    :flags ("--hidden"))
+
   :bind
   (:map wakib-keys-overriding-map
-        ("C-S-f" . rg-search-current-dir))  ;; replace 'occur' with rg
-  :config
-  (rg-define-search rg-search-current-dir
-    "Search in the directory of the currently open file or buffer"
-    :query ask
-    :format literal
-    :files "everything"
-    :dir "current"
-    :flags ("--hidden")))
+        ("C-S-f" . search-everything-regexp--transient)))
 
 #+end_src
 
@@ -3441,8 +3510,10 @@ Solution: load this package after the org section.
    ("8" "M-8")
    ("9" "M-9"))
 
-  ;; :bind ("C-SPC" . ryo-modal-mode)
-  ;; :hook ((after-init . ryo-modal-mode))
+  ;; :bind
+  ;; ("C-SPC" . ryo-modal-mode)
+  ;; :hook
+  ;; ((after-init . ryo-modal-mode))
   )
 
 #+end_src
@@ -3462,11 +3533,14 @@ Between aspell and hunspell, aspell seems to have much better performance.
   ;; set backend and default language
   (setq ispell-program-name    "aspell"
         ispell-dictionary      "en_US")
+
   :bind
   (:map wakib-keys-overriding-map
         ("C-." . flyspell-correct-at-point))
-  :hook ((org-mode . flyspell-mode)            ;; automatically enable spellchecker for org files (doesn't affect source blocks)
-         (prog-mode . flyspell-prog-mode)))    ;; only for comments and strings
+
+  :hook
+  ((org-mode . flyspell-mode)            ;; automatically enable spellchecker for org files (doesn't affect source blocks)
+   (prog-mode . flyspell-prog-mode)))    ;; only for comments and strings
 
 #+end_src
 
@@ -3776,9 +3850,12 @@ Emacs package for highlighting uncommitted changes
   :config
   (global-diff-hl-mode)
   (diff-hl-flydiff-mode)  ;; see changes in real time
+
   :hook ((magit-pre-refresh . diff-hl-magit-pre-refresh)
          (magit-post-refresh . diff-hl-magit-post-refresh)
-         (org-mode . (lambda () (diff-hl-mode -1)))))         ;; disable git gutter for org mode
+         (prog-mode . diff-hl-mode)
+         (org-mode . (lambda () (diff-hl-mode -1)))      ;; disable git gutter for org mode
+  ))
 
 #+end_src
 
@@ -3983,7 +4060,7 @@ Otherwise, just execute the normal behaviour"
   :hook (after-init . hydra-posframe-mode)
   :custom
   ;; copy the border values from 'ivy-posframe-parameters'
-  (hydra-posframe-parameters'((min-height            . 12)
+  (hydra-posframe-parameters'((min-height            . 14)
                               (min-width             . 50)
                               (left-fringe           . 2)
                               (right-fringe          . 2)
@@ -4059,14 +4136,19 @@ show a different main hydra, depending on major mode
 #+begin_src emacs-lisp
 
 (pretty-hydra-define hydra-buffer
-  (:color teal :quit-key "q" :title "Buffer Hydra")
+  (:color teal :quit-key "q" :title "Buffer/Workspace Hydra")
   ("Save"
    (("s" save-some-buffers "Save all buffers"))
-   "Switch"
-   (("b" bufler "Show all buffers and workspaces")
-    ("B" bufler-switch-buffer "Switch buffer (in workspace)"))
+   "Switch buffer"
+   (("b" my/bufler-list-full-frame "Show all buffers and workspaces")
+    ("B" bufler-switch-buffer "Switch buffer (current workspace)")
+    ("uB" my/bufler-switch-buffer-C-u "Switch buffer (all workspaces)"))
    "Line Endings"
    (("l" my/set-buffer-line-ending-style "Set line endings for current buffer"))
+   "Todo"
+   (("tp" hl-todo-previous "jump to previous TODO or similar keyword")
+    ("tn" hl-todo-next "jump to next TODO or similar keyword")
+    ("to" hl-todo-occur "find all TODO or similar keywords"))
    ))
 
 #+end_src
@@ -4118,25 +4200,25 @@ show a different main hydra, depending on major mode
 
 (pretty-hydra-define hydra-file
   (:color teal :quit-key "q" :title "Files Hydra")
-  ("New File"
-   (("f" counsel-find-file "Open a File")
-    ("r" counsel-recentf "Open recent file")
-    ("p" my/open-init-file "Open private Emacs config")
-    ("D" delete-file "Delete a file")
-    ("U" sudo-edit-find-file "Sudo open a file")
-    ("z" fzf-directory "Open fzf on a directory"))
-   "Current File"
+  ("Current File"
    (("s" save-buffer "Save")
     ("S" write-file "Copy/Save as...")
     ("R" my/rename-current-buffer-file "Rename/Move")
     ("d" my/delete-file-and-buffer "Delete")
     ("u" sudo-edit "Sudo open")
     ("x" executable-make-buffer-file-executable-if-script-p "Make .sh executable"))
+   "Other Files"
+   (("f" counsel-find-file "Open a File")
+    ("r" counsel-recentf "Open recent file")
+    ("p" my/open-init-file "Open private Emacs config")
+    ("D" delete-file "Delete a file")
+    ("U" sudo-edit-find-file "Sudo open a file")
+    ("z" fzf-directory "Open fzf on a directory"))
    "Filename"
    (("y" my/show-buffer-name "Yank filename")
     ("Y" my/show-buffer-file-name "Yank filename with full path"))
-   "Comparison"
-   (("e" ediff "Ediff two files"))
+   "Diff"
+   (("e" ediff "Compare two files with ediff"))
    ))
 
 #+end_src
@@ -4155,6 +4237,8 @@ show a different main hydra, depending on major mode
    (("o" counsel-describe-symbol "Describe Symbol"))
    "Keyindings"
    (("k" describe-key "Describe Key"))
+   "Customize"
+   (("g" customize-group "Customize Group"))
    ))
 
 #+end_src
@@ -4191,6 +4275,8 @@ show a different main hydra, depending on major mode
    (("y" counsel-yank-pop "select from clipboard history"))
    "Snippet"
    (("s" ivy-yasnippet "insert snippet"))
+   "Todo"
+   (("t" hl-todo-insert "insert comment with TODO or similar keyword"))
    ))
 
 #+end_src
@@ -4214,10 +4300,10 @@ show a different main hydra, depending on major mode
 (pretty-hydra-define hydra-open
   (:color teal :quit-key "q"  :title "Open/Utilities Hydra")
   ("Special Buffer"
-   (("d" my/open-dashboard "open dashboard buffer")
-    ("s" my/open-scratch-buffer "open scratch buffer"))
-   "Agenda"
-   (("a" org-agenda "open agenda menu"))
+   (("D" my/open-dashboard "open dashboard buffer")
+    ("s" my/open-scratch-buffer "open scratch buffer")
+    ("a" org-agenda "open agenda menu")
+    ("d" browse-url-xdg-open "open directory with dired"))
    "Org Directory"
    (("o" my/open-file-from-org-dir "open file from org directory"))
    "URL"
@@ -4297,8 +4383,7 @@ show a different main hydra, depending on major mode
   (:color teal :quit-key "q" :title "Search Hydra")
   ("String in buffer (regex)"
    (("b" swiper "search in current buffer")
-    ("d" rg-search-current-dir "search in current directory")
-    ("D" rg "search and choose directory"))
+    ("d" search-everything-regexp--transient "search in directory files"))
    "String in filenames (glob)"
    (("f" fd-dired "locate files"))
    "Project"
@@ -4326,30 +4411,32 @@ show a different main hydra, depending on major mode
 
 (pretty-hydra-define hydra-toggles
   (:color amaranth :quit-key "q" :title "Toggles Hydra")
-  ("Basic"
-   (("n" display-line-numbers-mode "line numbers" :toggle t)
-    ("N" global-display-line-numbers-mode "line numbers (global)" :toggle t)
-    ("r" rainbow-mode "rainbow" :toggle t)
-    ("b" page-break-lines-mode "page break lines" :toggle t)
-    ("g" diff-hl-mode "git gutter" :toggle t)
-    ("o" my/org-toggle-emphasis "org-mode emphasis markers" :toggle t))
-   "Highlight"
-   (;;("s" symbol-overlay-mode "symbol" :toggle t)
-    ("l" global-hl-line-mode "current line (global)" :toggle t)
-    ;;("t" hl-todo-mode "todo" :toggle t)
+  ("Highlight"
+   (("l" global-hl-line-mode "current line (global)" :toggle t)
+    ("h" hl-todo-mode "hl-todo" :toggle t)
+    ;;("s" symbol-overlay-mode "symbol" :toggle t)
     ;;("x" highlight-sexp-mode "sexp" :toggle t)
     ("p" show-paren-mode "matching parens" :toggle t)
-    ("h" global-highlight-changes-mode "highlight changes (global)" :toggle t))
+    ("r" rainbow-mode "color codes (rainbow-mode)" :toggle t)
+    ("H" global-highlight-changes-mode "buffer changes (global)" :toggle t))
    "Coding"
    (("f" flycheck-mode "flycheck" :toggle t)
     ("s" flyspell-mode "spellcheck" :toggle t)
     ("c" company-mode "company" :toggle t)
     ("P" electric-pair-mode "automatic parens pairing" :toggle t))
-   "UI"
+   "UI Elements"
    (("e" dired-sidebar-toggle-sidebar "file explorer sidebar" :toggle t)
     ("t" tab-line-mode "tab-line" :toggle t)
-    ("m" hide-mode-line-mode "modeline" :toggle t))
-   "Emacs"
+    ("T" my/tab-line-toggle-content-visibility "tab-line content visibility" :toggle t)
+    ("m" hide-mode-line-mode "modeline" :toggle t)
+    ("M" toggle-menu-bar "menu bar" :toggle t)
+    ("n" display-line-numbers-mode "line numbers" :toggle t)
+    ("N" global-display-line-numbers-mode "line numbers (global)" :toggle t))
+   "Misc"
+   (("b" page-break-lines-mode "page break lines" :toggle t)
+    ("g" diff-hl-mode "git gutter" :toggle t)
+    ("o" my/org-toggle-emphasis "org-mode emphasis markers" :toggle t))
+   "Debug"
    (("D" toggle-debug-on-error "debug on error" :toggle (default-value 'debug-on-error))
     ("X" toggle-debug-on-quit "debug on quit" :toggle (default-value 'debug-on-quit)))
    ))
@@ -4363,7 +4450,13 @@ show a different main hydra, depending on major mode
 (pretty-hydra-define hydra-git
   (:color teal :quit-key "q" :title "Git Hydra")
   ("Magit"
-   (("g" magit-status "show git status"))
+   (("g" magit-status "show git status")
+    ("l" magit-log "show git log"))
+   "Hunk"
+   (("p" diff-hl-previous-hunk "previous")
+    ("n" diff-hl-next-hunk "next")
+    ("r" diff-hl-revert-hunk "revert")
+    ("d" diff-hl-diff-goto-hunk "diff and goto"))
    ))
 
 #+end_src
@@ -4522,8 +4615,20 @@ Not sure, but this might have to load after flyspell package.
 #+begin_src emacs-lisp
 
 (use-package flycheck
+  :config
+  (defun my/flycheck-use-margin-toggle ()
+    (if flycheck-mode
+        (progn
+          (setq flycheck-indication-mode 'left-margin
+                left-margin-width 1)
+          (flycheck-refresh-fringes-and-margins))
+      (progn
+        (setq left-margin-width 0)
+        (flycheck-refresh-fringes-and-margins))))
+
   :hook
-  ((prog-mode . flycheck-mode)))
+  ((prog-mode . flycheck-mode)
+   (flycheck-mode . my/flycheck-use-margin-toggle)))
 
 #+end_src
 
@@ -4660,7 +4765,8 @@ Expand region in logical increments.
 #+begin_src emacs-lisp
 
 (use-package expand-region
-  :bind ("M-A" . er/expand-region))
+  :bind
+  ("M-A" . er/expand-region))
 
 #+end_src
 
@@ -4683,7 +4789,8 @@ Can also be used to jump to word, line, symbol, etc.
 #+begin_src emacs-lisp
 
 (use-package avy
-  :bind ("M-m" . avy-goto-char))
+  :bind
+  ("M-m" . avy-goto-char))
 
 #+end_src
 
@@ -4751,10 +4858,14 @@ default behaviour is to do the operation between the cursor and the mark, which 
         (my/extend-region-to-whole-lines))
     (whole-line-or-region-delete-region prefix))
 
-  :bind (:map wakib-keys-overriding-map
-              ("C-c" . whole-line-or-region-kill-ring-save)
-              ("C-x" . whole-line-or-region-kill-region)
-              ("C-k" . my/whole-line-or-region-delete-region)))
+  :bind
+  (:map wakib-keys-overriding-map
+        ("C-c" . whole-line-or-region-kill-ring-save)
+        ("C-x" . whole-line-or-region-kill-region)
+        ("C-k" . my/whole-line-or-region-delete-region))
+
+  :hook
+  (makefile-mode . (lambda() (bind-key "C-c" 'whole-line-or-region-kill-ring-save makefile-mode-map))))
 
 ;; Comment code lines, command reacts based on the major mode.
 ;; (bind-key "C-«" 'whole-line-or-region-comment-dwim wakib-keys-overriding-map)
@@ -4882,7 +4993,7 @@ rules for popup windows
 (use-package shackle
   :init
   (setq shackle-default-alignment    'right
-        shackle-rules                '(("*Bufler*" :regexp t :align below)
+        shackle-rules                '(("*Bufler*" :regexp t :align below :size 0.6)
                                        (help-mode :select t)))
   :config
   (shackle-mode 1))
@@ -4965,6 +5076,22 @@ face used is from term-mode
              :host github
              :repo "czipperz/highlight-quoted-vars.el"
              :local-repo "highlight-quoted-vars"))
+
+#+end_src
+
+**** Package: hl-todo
+
+It is possible to highlight with background colour instead, but the face used has to be a color, and not a face.
+
+#+begin_src emacs-lisp
+
+(use-package hl-todo
+  :hook (prog-mode . hl-todo-mode)
+  :config
+  (setq hl-todo-keyword-faces
+        `(("TODO"       warning bold)
+          ("REVIEW"     font-lock-keyword-face bold)
+          ("FIXME"      error bold))))
 
 #+end_src
 
@@ -5221,7 +5348,7 @@ Remember to add this file to =.gitignore=.
 
 #+end_src
 
-** Experimentation Area
+** Experimental Snippets
 
 This section has random code snippets and unfinished ideas.
 None of these is exported to the config file. Eventually, these ideas should be finished and implemented or deleted.
@@ -5263,7 +5390,7 @@ They are in the end of the config file to allow most of the config to be loaded 
   ;; https://emacs.stackexchange.com/questions/28736/emacs-pointcursor-movement-lag
   (redisplay-dont-pause            t) ;; Fully redraw the display before it processes queued input events.
   (next-screen-context-lines       2) ;; Number of lines of continuity to retain when scrolling by full screens
-  (scroll-conservatively       10000) ;; only 'jump' when moving this far off the screen
+  (scroll-conservatively         101) ;; only 'jump' when moving this far off the screen
   (scroll-step                     1) ;; Keyboard scroll one line at a time
   (mouse-wheel-progressive-speed nil) ;; Don't accelerate scrolling
   (mouse-wheel-follow-mouse        t) ;; Scroll window under mouse
@@ -5424,7 +5551,7 @@ Detect existing emacs server and switch to it if possible
 
 #+end_src
 
-*** dired-sidebar
+*** dired-sidebar test
 
 #+begin_src emacs-lisp :tangle no
 
