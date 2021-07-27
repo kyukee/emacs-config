@@ -1,6 +1,6 @@
 #+TITLE: Emacs Configuration
 #+PROPERTY: header-args :tangle config.el
-#+STARTUP: inlineimages
+#+STARTUP: inlineimages show2levels
 
 * Table of contents                                                   :TOC_3:
 - [[#introduction][Introduction]]
@@ -30,6 +30,7 @@
     - [[#organize-configuration-directory][Organize configuration directory]]
     - [[#system-path][System Path]]
     - [[#startup-profiler][Startup Profiler]]
+    - [[#use-emacs-with-server-client-configuration][Use Emacs with server-client configuration]]
   - [[#appearance][Appearance]]
     - [[#font][Font]]
     - [[#theme][Theme]]
@@ -75,7 +76,7 @@
     - [[#code-linter][Code Linter]]
     - [[#spacemacs-esque-menu][Spacemacs-esque menu]]
     - [[#other-additions][Other additions]]
-  - [[#language-support][Language Support]]
+  - [[#language-modes][Language Modes]]
     - [[#c][C#]]
     - [[#csv][CSV]]
     - [[#dockerfile][Dockerfile]]
@@ -85,6 +86,7 @@
     - [[#json][JSON]]
     - [[#review-latex][REVIEW Latex]]
     - [[#markdown][Markdown]]
+    - [[#php][PHP]]
     - [[#python][Python]]
     - [[#terraform-hcl][Terraform (HCL)]]
     - [[#yaml][YAML]]
@@ -101,8 +103,12 @@
     - [[#agenda-todo-list---ignore-scheduled-and-deadline][agenda todo list - ignore scheduled and deadline]]
     - [[#export-org-agenda-to-ics-file-for-google-calendar][export org agenda to .ics file for Google calendar]]
     - [[#change-terminal-face-to-alter-fzf-prompt][change terminal face to alter fzf prompt]]
-    - [[#bufler-list-newline-between-groups][bufler-list newline between groups]]
     - [[#dired-sidebar-test][dired-sidebar test]]
+    - [[#indent-guides][indent guides]]
+    - [[#company-flyspelel][company-flyspel.el]]
+    - [[#dired-sort-menu][dired-sort-menu]]
+    - [[#check-host-os][check host OS]]
+    - [[#format-org-files---move-planning-to-top-of-heading][format org files - move planning to top of heading]]
   - [[#file-footer-2][File Footer]]
 
 * Introduction
@@ -110,41 +116,51 @@
 
 Just as Spacemacs and Doom Emacs are a combination of Emacs + Vim, this is my attempt at a configuration that combines Emacs + VSCode.
 
-This emacs configuration allows you to use Org mode and still have access to "modern" keybindings.
+This Emacs configuration allows you to use Org mode and still have access to "modern" keybindings.
 
 Many of the keybindings are replaced with what I consider "standard" keybinds, like those you would find in Sublime Text, Atom and VSCode. Likewise, many of the features you would expect from some of these editors are also implemented here.
 
 The goal of this configuration is to provide a comfortable experience editing Org mode files to programmers that are accustomed to modern text editors.
 
+Also, my Emacs is not a window manager. I will only use Emacs to edit text and nothing more.
+I don't plan on installing any package that is not meant to edit text.
+
 ** Dependencies
 
 In order for everything to work correctly, you should have the following installed on your system:
-
-- ripgrep
-- fd
-- fzf
-- aspell (or hunspell)
-- git
-- pandoc (or some other markdown parser)
-- python
-- vmd (node.js package)
-- decktape (node.js package)
-- some icon fonts
+  - ripgrep
+  - fd
+  - fzf
+  - aspell (or hunspell)
+  - git
+  - pandoc (or some other markdown parser)
+  - python
+  - vmd (node.js package)
+  - decktape (node.js package)
+  - some icon fonts
 
 Some things like markdown and spellchecking have multiple alternatives available.
 
+If a dependency is missing, Emacs should be able to detect that and show a warning.
+
 ** Installation
 
-Eventually, this config will work on windows but, for now, only unix is supported.
+Eventually, this config will work on Windows but, for now, only Linux is supported.
 
-optional backup:
+Optional backup:
+
+#+begin_src shell :tangle no
 cp ~/.emacs.d ~/.emacs.d_backup
+#+end_src
 
-installation:
+Installation:
+
+#+begin_src shell :tangle no
 cd ~/.emacs.d/
 git clone https://github.com/kyukee/emacs-config.git
+#+end_src
 
-then, inside emacs, open the command menu with M-x and run 'all-the-icons-install-fonts'
+Then, inside Emacs, open the command menu with M-x and run 'all-the-icons-install-fonts'
 
 ** Custom Keybindings
 
@@ -161,7 +177,7 @@ The following image shows all the keys you need to know to get started:
 #+ATTR_ORG: :width 1200
 [[./config-resources/keyboard-layout-ctrl.png]]
 
-The wakib-keys package defines a lot more bindings that are more oriented towars speed and productivity.
+The wakib-keys package defines a lot more bindings that are more oriented towards speed and productivity.
 If you're interested, go check it out.
 
 # How to modify layout images:
@@ -170,7 +186,7 @@ If you're interested, go check it out.
 #  - make changes
 #  - zoom in and take screenshot
 #    - firefox screenshot tool can easily select correct area
-#    - website export function exists but doesnt work verl well
+#    - website export function exists but doesn't work very well
 
 ** Fixes and improvements
 
@@ -178,7 +194,7 @@ Todo:
 
 - [X] workspaces in dashboard
 - [X] org mode: when pressing enter at the end of line that starts with '-', it adds two spaces
-- [X] setting scroll margin messes up org indent mode. the first/last line sometimes appears unindented
+- [X] setting scroll margin messes up org indent mode. the first/last line sometimes appears un-indented
 - [X] change project name in the modeline (the name itself + its appearance)
 - [X] change org source block header highlight color
 - [X] home key should toggle between row 0 and first character in line (beginning and indentation, in emacs terms)
@@ -312,38 +328,54 @@ Todo:
 - [X] allow jumping between git hunks (git-gutter) or modified buffer areas
 - [X] highlight FIXME, TODO, etc
 - [X] C-l in a side window affects the left window instead
+- [X] opening a new file in terminal or explorer should add a new buffer to existing emacs frame (maybe use emacsclient)
+- [X] M-left/right quits selection after moving only once when there is a region selected
+- [X] diff-hl activation - global mode vs prog-mode hook
+- [X] add diff section to magit hydra
+- [X] change how org mode treats comments. /comment-line/ should not comment the current heading
+- [X] org-toggle-comment is not the desired behaviour for C-/
+- [X] give every doom modeline segment a mouse-over description and menu (tooltip)
+- [X] some buffers (like rg search, shell-process) show indicators on left fringe
+- [X] org-mode - when commenting inside a heading, the heading receives a 'COMMENT' todo item instead
+- [X] modeline gets off-screen when filename is too large
+- [X] left-fringe-width conflict with visual-line-mode indicators
 - [ ] add keybindings tables (or a cheatsheet image) in config file
 - [ ] commenting/indenting inside source block jumps to top of block. happens with just 'emacs -Q' and comment-dwim ([[https://www.reddit.com/r/emacs/comments/ap4s7z/orgmode_weirdness_questions/][reddit thread]])
 - [ ] maybe incorporate previous/next concept from wakib-emacs? (it uses the ';' key)
 - [ ] use 'C-.' to fix any type of error (flycheck/flyspell)
-- [ ] opening a new file in terminal or explorer should add a new buffer to existing emacs frame (maybe use emacsclient)
 - [ ] allow C-page up/down to cycle when at first/last tab
 - [ ] use C-S-page up/down to move tabs
 - [ ] use smerge hydra for better merging conflict resolution (https://github.com/alphapapa/unpackaged.el#hydra)
-- [ ] give every doom modeline segment a mouse-over description and menu (tooltip)
 - [ ] improve appearance of tab-line arrows (they appear when the bar is too full)
 - [ ] for every package, add a quote from their git repo explaining what the package does
 - [ ] allow jumping to a function definition by ctrl-click or f2 or something else (check 'embark' package)
 - [ ] when a region is selected and an arrow key is pressed in the opposite direction, exchange point and cursor (or make jump to prev mark work)
 - [ ] add hydra or M-<key> commands for org-mark-ring-push, org-mark-ring-goto, counsel-mark-ring
-- [ ] C-SPC and C-u SPC no longer work because of ryo-modal (C-SPC C-SPC to mark, C-u C-SPC to jump to prev mark)
-- [ ] related to note-taking: check out deft, notdeft, org-roam, org-ql, org-rifle, org-journal, idutils
-- [ ] use M-S-left/right to indent by 1 space (already works like that in org tables and lists)
+- [ ] C-SPC and C-u SPC don't work with ryo-modal (C-SPC C-SPC to mark, C-u C-SPC to jump to prev mark)
 - [ ] hydra toggle for golden-ratio-mode
 - [ ] golden-ratio seems to be interfering with which-key
 - [ ] try out =calfw= package
 - [ ] magit diffs use blue and pink for additions and deletions
 - [ ] make startup time under 1 second with use-package defer features
 - [ ] reduce font size for hydra menus (should see menus even at 60% window width)
-- [ ] crux has a lot of useful commands. I could replace my functions with their package.
+- [ ] crux has a lot of useful commands. I could replace my custom functions with their package.
 - [ ] rainbow-mode gets overshadowed by current line highlighting
 - [ ] electric-indent-mode in gitconfig-mode adds unnecessary tab after RET
 - [ ] divide org-agenda NEXT section into sections based on different projects, and show warning if no NEXT action exists for a project
 - [ ] can't customize emacs variables because of =wakib-keys= package
-- [ ] open function help buffer -> click link to go to definition -> opens with cursor on top of function, at bottom of screen (org-link-frame-setup / find-file-other-window). Should open on top of screen instead.
+- [ ] open function help buffer -> click link to go to definition -> opens with cursor on top of function, at bottom of window (org-link-frame-setup / find-file-other-window). Should open on top of window instead.
 - [ ] make 'my/indent-region-custom' function (M-arrows) work even in a blank line (could try 'indent-to' function)
 - [ ] select region and press '(' to surround in parens; doesnt work in YAML mode
-- [ ] diff-hl activation - global mode vs prog-mode hook
+- [ ] add a keybinding for 'counsel-company'
+- [ ] convert my colour options into a standard Emacs color theme
+- [ ] make auto-correct work like in google docs (suggestion appears automatically; press tab to open menu; use tab to move in menu; menu has these buttons: most likely correction, cancel, save, more options)
+- [ ] there's some sort of problem with fonts (Cartograph not detected; M-x menu font size)
+- [ ] hydra toggle menu - add a toggle for a side panel (in the right), that allows jumping to functions
+- [ ] add support for /.editorconfig/
+- [ ] replace dired keybindings with a better version (and also dired-sidebar)
+- [ ] "my/open-file-from-org-dir" has a different menu the first time it's called. it changes after selecting an option once.
+- [ ] after opening bufler with ~M-SPC b b~, the previous window layout is deleted and only a single window is visible
+- [ ] when opening a new buffer, it should always open in the current window,  and not take up the whole frame
 
 
 # NOTE: use org-sort and select 'X' to sort this list by what items are checked
@@ -364,11 +396,11 @@ from sublime:
 - [X] file - reveal in sidebar
 - [X] convert unicode to escaped string back and forth
 - [X] open external terminal in current directory
+- [X] using git - compare file against commit
+- [X] C-- comment, C-S-- block comment
 - [ ] highlight vertical indentation of current scope / show bracket symbol in gutter (start and end of scope)
 - [ ] show git untracked/unstaged/staged number in the modeline segment (also N of commits ahead/behind)
 - [ ] bookmarks (C-F2 toggle, F2 next, S-F2 prev, C-S-F2 clear all, M-F2 select all)
-- [ ] using git - compare file against commit
-- [ ] C-- comment, C-S-- block comment
 - [ ] snippet shows in autocomplete menu. just type and use tab for autocomplete. then use tab to jump in next snippet position
 - [ ] notifications plugin
 - [ ] C-F6 for spellcheck, F6 for next error
@@ -408,9 +440,9 @@ Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before p
 
 ;; Restore values after startup
 (add-hook 'after-init-hook
-  (lambda ()
-    (setq gc-cons-threshold (* 16 8 1024 1024) ; 16MB
-          file-name-handler-alist file-name-handler-alist-original)))
+           (lambda ()
+             (setq gc-cons-threshold (* 16 8 1024 1024) ; 16MB
+                   file-name-handler-alist file-name-handler-alist-original)))
 
 #+end_src
 
@@ -425,7 +457,7 @@ For the GUI changes that deserve to be in early-init. It is more efficient to di
 
 ;;Default frame position
 (setq default-frame-alist
-  `((height . 60) (width . 100)))
+      `((height . 60) (width . 100)))
 
 ;; Prevent the glimpse of un-styled Emacs by disabling these UI elements early.
 (push '(menu-bar-lines . 0) default-frame-alist)
@@ -476,7 +508,7 @@ For the GUI changes that deserve to be in early-init. It is more efficient to di
 #+begin_src emacs-lisp :tangle init.el
 
 (defvar *config-file* (expand-file-name "README.org" user-emacs-directory)
-    "The configuration file.")
+  "The configuration file.")
 
 #+end_src
 
@@ -486,7 +518,7 @@ For the GUI changes that deserve to be in early-init. It is more efficient to di
 After the first time that config.el is created, this will no longer tangle the config file.
 This method is slightly faster than just using org-babel-load-file.
 
-This is very effective when you have a hook to tangle the config file everytime you save it.
+This is very effective when you have a hook to tangle the config file every time you save it.
 
 #+begin_src emacs-lisp :tangle init.el
 
@@ -554,7 +586,7 @@ It only stays active while the config is loading.
 
 ;; disable debugging after startup
 (add-hook 'after-init-hook
-  (lambda () (setq debug-on-error nil)))
+           (lambda () (setq debug-on-error nil)))
 
 #+end_src
 
@@ -564,6 +596,9 @@ It only stays active while the config is loading.
 straight.el is used to make the init-file the sole source of truth for package operations.
 
 #+begin_src emacs-lisp
+
+(setq straight-use-package-by-default         t
+      straight-check-for-modifications        '(find-when-checking))
 
 (defvar bootstrap-version)
 (let ((bootstrap-file
@@ -577,9 +612,6 @@ straight.el is used to make the init-file the sole source of truth for package o
       (goto-char (point-max))
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
-
-(setq straight-use-package-by-default         t
-      straight-check-for-modifications        '(find-when-checking))
 
 #+end_src
 
@@ -618,17 +650,17 @@ nicer syntax for declaring hydras with use-package
 **** Basic usage
 
 To install a package temporarily (until you restart Emacs):
-  - M-x straight-use-package
+- M-x straight-use-package
 
 To install a package permanently, place a call to straight-use-package in your init-file, like:
-  - (straight-use-package 'el-patch)
+- (straight-use-package 'el-patch)
 
 To update all packages to their most recent version:
-  - M-x straight-pull-all
+- M-x straight-pull-all
 
 A note about ":init" and ":config".
-  - init is executed before a package is loaded (even if deferred)
-  - config is executed after a package is loaded
+- init is executed before a package is loaded (even if deferred)
+- config is executed after a package is loaded
 
 *** Organize configuration directory
 **** Package: no-littering
@@ -681,35 +713,60 @@ One small issue is that it doesn't seem to load the early init file.
 
 **** Basic usage
 
-When using the profiler, just uncoment the line that disables the package.
-Comment and uncoment that line to enable/disable the feature.
+When using the profiler, just un-comment the line that disables the package.
+Comment and un-comment that line to enable/disable the feature.
 
 To see the results, run:
-  - benchmark-init/show-durations-tabulated
-  - benchmark-init/show-durations-tree
+- benchmark-init/show-durations-tabulated
+- benchmark-init/show-durations-tree
+
+*** Use Emacs with server-client configuration
+**** Package: server
+
+Set emacs as a client
+
+#+begin_src emacs-lisp
+
+(use-package server
+  :config
+  (unless (server-running-p) (server-start)))
+
+#+end_src
 
 ** Appearance
 *** Font
 
 Some of my font options:
-  - IBM Plex Mono
-  - Cartograph CF
+- IBM Plex Mono
+- Cartograph CF
 
 The unit for the 'height' attribute is 1/10pt, which means a height of 100 is 10pt.
 
 #+begin_src emacs-lisp
 
-(set-face-attribute 'default nil :font "Cartograph CF-12")
+;; (set-face-attribute 'default nil
+;;                      :family "Cartograph CF"
+;;                      :height 120)
 
+;; (set-face-attribute 'default nil
+;;                      :font "Cartograph CF-12")
+
+
+;; Set default font
+(set-frame-font "-UKWN-Cartograph CF-normal-normal-normal-*-*-*-*-*-m-0-iso10646-1")
+
+
+;; make font smaller, where necessary
 (custom-set-faces
-  '(mode-line                  ((t (:family "Cartograph CF" :height 100))))
-  '(mode-line-inactive         ((t (:family "Cartograph CF" :height 100))))
-  '(tab-line-tab               ((t (:family "Cartograph CF" :height 100))))
-  '(line-number                ((t (:family "Cartograph CF" :height 110))))
-  '(line-number-current-line   ((t (:family "Cartograph CF" :height 110))))
-  '(treemacs-file-face         ((t (:family "Cartograph CF" :height 100))))
-  '(hydra-posframe-face        ((t (:family "Cartograph CF" :height 100))))
-  '(ivy-posframe               ((t (:family "Cartograph CF" :height 100)))))
+ '(default                    ((t (:height 120))))
+ '(line-number                ((t (:height 110))))
+ '(line-number-current-line   ((t (:height 110))))
+ '(mode-line                  ((t (:height 100))))
+ '(mode-line-inactive         ((t (:height 100))))
+ '(tab-line-tab               ((t (:height 100))))
+ '(treemacs-file-face         ((t (:height 100))))
+ '(hydra-posframe-face        ((t (:height 100))))
+ '(ivy-posframe               ((t (:height 100)))))
 
 #+end_src
 
@@ -719,7 +776,7 @@ The unit for the 'height' attribute is 1/10pt, which means a height of 100 is 10
 
 (use-package cyberpunk-theme
   :config
-    (load-theme 'cyberpunk t))
+  (load-theme 'cyberpunk t))
 
 #+end_src
 
@@ -727,19 +784,19 @@ The unit for the 'height' attribute is 1/10pt, which means a height of 100 is 10
 **** Color theme examples
 
 Resources:
-  - https://vimcolorschemes.com/
-  - https://github.com/pineapplegiant/spaceduck#emacs
-  - https://ciembor.github.io/4bit/
+- https://vimcolorschemes.com/
+- https://github.com/pineapplegiant/spaceduck#emacs
+- https://ciembor.github.io/4bit/
 
 Finish later:
-  - https://vimcolorschemes.com/artanikin/vim-synthwave84
-  - https://vimcolorschemes.com/ghifarit53/tokyonight-vim
-  - https://vimcolorschemes.com/wadackel/vim-dogrun
-  - https://vimcolorschemes.com/pineapplegiant/spaceduck
-  - https://vimcolorschemes.com/glepnir/oceanic-material
-  - https://vimcolorschemes.com/dracula/vim
-  - https://vimcolorschemes.com/reedes/vim-colors-pencil
-  - https://packagecontrol.io/packages/DinkDonk%20Color%20Scheme
+- https://vimcolorschemes.com/artanikin/vim-synthwave84
+- https://vimcolorschemes.com/ghifarit53/tokyonight-vim
+- https://vimcolorschemes.com/wadackel/vim-dogrun
+- https://vimcolorschemes.com/pineapplegiant/spaceduck
+- https://vimcolorschemes.com/glepnir/oceanic-material
+- https://vimcolorschemes.com/dracula/vim
+- https://vimcolorschemes.com/reedes/vim-colors-pencil
+- https://packagecontrol.io/packages/DinkDonk%20Color%20Scheme
 
 
 | Theme             | bg      | red     | green   | yellow  | blue    | magenta | cyan    | fg      |
@@ -796,7 +853,7 @@ Finish later:
      '(whitespace-tab                ((t (:background nil))))
      '(whitespace-trailing           ((t (:background nil))))
 
-      ;; programming
+     ;; programming
      `(font-lock-keyword-face        ((t (:foreground "#21D7D7"))))
      '(font-lock-variable-name-face  ((t (:foreground "#ff1493"))))  ; #f54dce, #f461c6, #f7658d
      '(font-lock-string-face         ((t (:foreground "#fdca00"))))  ; #89E2A1, #CCE8D3
@@ -819,14 +876,14 @@ Finish later:
 
      ;; modeline
      '(mode-line                     ((t (:background "#251F33" :foreground "gray60" :box (:line-width -1 :color "#14141D")))))
-     '(mode-line-inactive            ((t (:background "#1A1A1A" :foreground "gray40" :box (:line-width -1 :color "#14141D")))))
+     '(mode-line-inactive            ((t (:background "#221d2b" :foreground "gray40" :box (:line-width -1 :color "#14141D")))))
      '(mode-line-highlight           ((t (:box (:line-width 2 :color "gray70")))))
      '(mode-line-buffer-id           ((t (:foreground "gray70"))))
      `(mode-line-emphasis            ((t (:foreground ,green_1 :weight bold))))
 
      ;; doom-modeline
      '(doom-modeline-bar             ((t (:background "#251F33"))))
-     '(doom-modeline-bar-inactive    ((t (:background "#1A1A1A"))))
+     '(doom-modeline-bar-inactive    ((t (:background "#221d2b"))))
      '(doom-modeline-persp-buffer-not-in-persp ((t (:inherit (font-lock-comment-face italic)))))
      '(doom-modeline-persp-name      ((t (:inherit (font-lock-doc-face italic bold)))))
      `(doom-modeline-project-dir     ((t (:foreground ,green_1 :weight bold))))
@@ -836,7 +893,7 @@ Finish later:
      ;; ivy
      `(minibuffer-prompt             ((t (:background ,bg_2 :foreground ,green_1))))
      '(highlight                     ((t (:background "gray20"))))
-     '(ivy-current-match             ((t (:box nil :underline "#dc8cc3" :weight extra-bold))))
+     '(ivy-current-match             ((t (:box nil :weight extra-bold :background "#17162a"))))
      '(ivy-minibuffer-match-face-1   ((t (:background "gray27"))))
      '(ivy-minibuffer-match-face-2   ((t (:background "gray40" :weight bold))))
      '(ivy-minibuffer-match-face-3   ((t (:background "#5654ca" :weight bold))))
@@ -844,7 +901,7 @@ Finish later:
      `(ivy-posframe                  ((t (:background ,bg_2))))
      '(ivy-posframe-border           ((t (:background "#A13878"))))
 
-      ;; hydra-posframe
+     ;; hydra-posframe
      `(hydra-posframe-face           ((t (:background ,bg_2))))
      '(hydra-posframe-border-face    ((t (:background "#A13878"))))
 
@@ -870,7 +927,7 @@ Finish later:
      `(org-document-info             ((t (:foreground ,blue_1 :weight bold))))
      '(org-document-info-keyword     ((t (:foreground "gray55"))))
 
-      ;; customize face for 'DONE' headings
+     ;; customize face for 'DONE' headings
      '(org-headline-done             ((((class color) (min-colors 16) (background dark)) (:foreground "gray40"))))
 
      ;; other packages
@@ -895,7 +952,7 @@ Finish later:
      '(match                         ((t (:background "#8b4887" :foreground "white"))))
 
      ;; '(header-line                   ((t (:box (:line-width -1 :color "#4e4e00" :style nil) :foreground "#ffff00" :background "gray15"))))
-     '(header-line                   ((t (:foreground "#ffff00" :background "#3e466f"))))
+     '(header-line                   ((t (:foreground "#94bff3" :background "#2d3352"))))
      `(bufler-group                  ((t (:foreground ,cyan_1))))
 
      `(company-tooltip               ((t (:background ,bg_2))))
@@ -1055,6 +1112,10 @@ This command does not push text to `kill-ring'."
     ;; default to start and end of current line
     (setq start (line-beginning-position))
     (setq end (line-end-position))
+
+    ;; (if (equal start end)
+    ;;     )
+
     ;; if there's a selection, use that instead of the current line
     (when (use-region-p)
       (setq regionStart (region-beginning))
@@ -1064,10 +1125,10 @@ This command does not push text to `kill-ring'."
         (setq start (line-beginning-position)) ; save the start of the line
         (goto-char regionEnd)                  ; go to the end of region
         (setq end (line-end-position))         ; save the end of the line
-        (setq deactivate-mark nil)             ; restore the selected region
+        (setq deactivate-mark nil)             ; re-select the region
         ))
     (indent-rigidly start end numSpaces)   ; indent between start and end
-    ))
+    (setq deactivate-mark nil)))
 
 (defun my/untab-region (N)
   "Unindent all lines in region by N spaces."
@@ -1079,8 +1140,7 @@ This command does not push text to `kill-ring'."
   (interactive "p")
   (if (active-minibuffer-window)
       (minibuffer-complete)     ; tab is pressed in minibuffer window -> do completion
-    (my/indent-region-custom N) ; call my/indent-region-custom
-    ))
+    (my/indent-region-custom N)))
 
 (defun my/switch-indentation-use-spaces ()
   "Use spaces for indentation."
@@ -1093,13 +1153,37 @@ This command does not push text to `kill-ring'."
   ;; (local-set-key (kbd "TAB") 'tab-to-tab-stop)
   (setq indent-tabs-mode t))
 
-(defun my/switch-indentation-width ()
-  "Change indentation tab width."
+;; depends on doom-modeline-indent-alist
+(defun my/set-buffer-indentation-size ()
+  "Set indentation width for current buffer."
   (interactive)
-  ;; (local-set-key (kbd "TAB") 'tab-to-tab-stop)
-  (setq-default tab-width
-                (string-to-number
-                 (completing-read "Chose tab width: " '("2" "4" "8")))))
+  (let ((lookup-var
+         (seq-find (lambda (var)
+                     (and var (boundp var) (symbol-value var)))
+                   (cdr (assoc major-mode doom-modeline-indent-alist)) nil))
+        (new-width
+         (string-to-number
+          (completing-read "Chose tab width: " '("2" "4" "8")))))
+    (if lookup-var
+        (set lookup-var new-width))
+    (setq tab-width new-width)))
+
+;; taken from doom-modeline indentation segment
+;; depends on doom-modeline-indent-alist
+(defun my/get-buffer-indentation-size ()
+  "Get the indentation width for the current buffer."
+  (let ((lookup-var
+         (seq-find (lambda (var)
+                     (and var (boundp var) (symbol-value var)))
+                   (cdr (assoc major-mode doom-modeline-indent-alist)) nil)))
+    (if lookup-var
+        (symbol-value lookup-var)
+      tab-width)))
+
+(defun my/check-indentation-type ()
+  (if indent-tabs-mode
+      "Tabs"
+    "Spaces"))
 
 #+end_src
 
@@ -1130,17 +1214,6 @@ If STRING length is smaller than SIZE, do nothing."
          (lformat (format "%%%ds" lpad))
          (rformat (format "%%%ds" (- size))))
     (format rformat (format lformat string))))
-
-;; taken from doom-modeline indentation segment
-(defun my/get-buffer-indentation-size ()
-  "Get the indentation width for the current buffer."
-  (let ((lookup-var
-         (seq-find (lambda (var)
-                     (and var (boundp var) (symbol-value var)))
-                   (cdr (assoc major-mode doom-modeline-indent-alist)) nil)))
-    (if lookup-var
-        (symbol-value lookup-var)
-      tab-width)))
 
 (defun my/org-latex-compile-and-open-pdf ()
   "Compile an org document into a Latex pdf and open it.
@@ -1276,7 +1349,7 @@ This will delete the old version."
 (defun my/open-file-from-org-dir ()
   "Open one of the files belonging to the main org directory."
   (interactive)
-  (counsel-fzf "" org-directory))
+  (counsel-file-jump "" org-directory))
 
 (defun my/org-content-with-argument ()
   "Change line endings in current buffer."
@@ -1288,8 +1361,8 @@ This will delete the old version."
   "Open external terminal"
   (interactive "@")
   (shell-command (concat "kitty --directory \'"
-            (file-name-directory (or load-file-name buffer-file-name))
-              "\' > /dev/null 2>&1 & disown") nil nil))
+                         (file-name-directory (or load-file-name buffer-file-name))
+                         "\' > /dev/null 2>&1 & disown") nil nil))
 
 (defun my/org-toggle-emphasis ()
   "Toggle hiding/showing of org emphasize markers."
@@ -1297,6 +1370,145 @@ This will delete the old version."
   (if org-hide-emphasis-markers
       (set-variable 'org-hide-emphasis-markers nil)
     (set-variable 'org-hide-emphasis-markers t)))
+
+(defun my/anime-info-at-point (start end)
+  "Search for an anime title and display its details.
+Use text in selected region as input."
+  (interactive "r")
+  (let* ((search-term (buffer-substring start end)))
+    (async-shell-command
+     (concat "anime-spy '"
+             (completing-read "Search for anime: "
+                              (if (region-active-p)
+                                  (list search-term)
+                                (list "")))
+             "'"))))
+
+(defun my/anime-search-at-point (start end)
+  "Display a list of anime titles with a matching name.
+Use text in selected region as input."
+  (interactive "r")
+  (let* ((search-term (buffer-substring start end)))
+    (shell-command
+     (concat "anime-cli '"
+             (completing-read "Search for anime: "
+                              (if (region-active-p)
+                                  (list search-term)
+                                (list "")))
+             "'")))
+  (let* ((wind (get-buffer-window "*Shell Command Output*")))
+    (with-selected-window wind
+      (progn
+        (beginning-of-buffer)))))
+
+(defun my/org-agenda ()
+  (interactive)
+  "Show custom agenda view, with a normal weekly view plus all NEXT items."
+  (org-agenda nil "a"))
+
+(defun my/make-file-executable ()
+  (interactive)
+  "Make file open in current buffer executable."
+  (executable-make-buffer-file-executable-if-script-p))
+
+;; 'my/uniq' Helper functions
+(defun my/case-fold-string= (a b)
+  (eq t (compare-strings a nil nil b nil nil t)))
+(defun my/case-fold-string-hash (a)
+  (sxhash (upcase a)))
+(define-hash-table-test 'my/case-fold
+  'my/case-fold-string= 'my/case-fold-string-hash)
+
+;; Equivalent to unix command "uniq -c"
+(defun my/uniq (beg end)
+  "Print counts of strings in region."
+  (interactive "r")
+  (let ((h (make-hash-table :test 'my/case-fold))
+        (lst (split-string (buffer-substring-no-properties beg end) "\n"
+                           'omit-nulls " ")))
+    (dolist (str lst)
+      (puthash str (1+ (gethash str h 0)) h))
+    (setq results (list))
+    (maphash (lambda (key val)
+               (push (list val key) results))
+             h)
+    (setq results (sort results (lambda (a b) (> (car a) (car b)))))
+    (with-output-to-temp-buffer "*my/uniq*"
+      (cl-dolist (val results)
+        (princ (format "%s: %s\n" (car val) (car (cdr val))))))
+    ))
+
+#+end_src
+
+**** Functions: Org - format org files
+
+Function to format Org file.
+Use to format current tree. Add C-u to format whole file.
+
+Useful resource: https://github.com/alphapapa/unpackaged.el#ensure-blank-lines-between-headings-and-before-contents
+
+Notes:
+  - There can be more than one empty line before or after a heading's content.
+  - Without a prefix, operate on tree. With a prefix, operate on whole buffer.
+  - This isn't enforced, but planning lines should appear before any drawers.
+  - Think about adding to ~after-save-hook~.
+
+#+begin_src emacs-lisp
+
+;; Disable blank line on new heading
+(setq org-blank-before-new-entry '((heading . nil) (plain-list-item . auto)))
+
+(defun my/org-format-fix-blank-lines (&optional prefix)
+  "Ensure that blank lines exist between headings and their contents.
+Ensures that blank lines exist after each headings's drawers.
+Removes blank lines in empty headings.
+With prefix, operate on whole buffer."
+  (interactive "P")
+  (org-map-entries (lambda ()
+                     ;; `org-map-entries' narrows the buffer, which prevents us from seeing
+                     ;; newlines before the current heading, so we do this part widened.
+                     (org-with-wide-buffer
+
+                      ;; Insert blank line before heading. (Only when previous line isn't another heading)
+                      (forward-line -1)
+                      (when (not (org-at-heading-p))
+                        (goto-char (org-entry-end-position))
+                        (while (not (looking-back "\n\n" nil))
+                          (insert "\n")))
+
+                      ;; Delete blank lines in empty headings
+                      (save-excursion
+                        (forward-line -1)
+                        (when (not (org-at-heading-p))
+                          (while (looking-back "\n" nil)
+                            (forward-char -1))
+                          (when (org-at-heading-p)
+                            (delete-blank-lines)))))
+
+                     ;; Insert blank lines before heading content
+                     (let ((end (org-entry-end-position)))
+                       (forward-line)
+
+                       ;; Skip planning lines (Scheduled, Deadline, etc.)
+                       (while (and (org-at-planning-p)
+                                   (< (point) (point-max)))
+                         (forward-line))
+
+                       ;; Skip drawers. You might think that `org-at-drawer-p' would suffice, but
+                       ;; for some reason it doesn't work correctly when operating on hidden text.
+                       ;; This works, taken from `org-agenda-get-some-entry-text'.
+                       (while (re-search-forward org-drawer-regexp end t)
+                         (re-search-forward "^[ \t]*:END:.*\n?" end t)
+                         (goto-char (match-end 0)))
+
+                       (unless (or (= (point) (point-max))
+                                   (org-at-heading-p)
+                                   (looking-at-p "\n"))
+                         (insert "\n"))))
+
+                   t (if prefix
+                         nil
+                       'tree)))
 
 #+end_src
 
@@ -1354,7 +1566,7 @@ I tried standard Emacs keybinds for a short amount of time and I wasn't impresse
 Here's my history with trying to use "standard" keybinds packages in emacs:
 
 - ergoemacs-mode
-	At first I tried using ergoemacs-mode, but that created a lot of conflicts when my config grew in size as I added more functinality.
+	At first I tried using ergoemacs-mode, but that created a lot of conflicts when my config grew in size as I added more functionality.
 	I also had issues with reloading my config file.
 
 - cua-mode
@@ -1428,8 +1640,8 @@ C-M-k     kill-sexp      Kill balanced expression forward
 ;; add a fullscreen toggle
 (bind-key "<f11>" 'my/toggle-fullscreen wakib-keys-overriding-map)
 
-(bind-key "C-'" 'text-scale-decrease wakib-keys-overriding-map)
-(bind-key "C-«" 'text-scale-increase wakib-keys-overriding-map)
+(bind-key "C--" 'text-scale-decrease wakib-keys-overriding-map)
+(bind-key "C-=" 'text-scale-increase wakib-keys-overriding-map)
 
 (bind-key "<escape>" 'keyboard-escape-quit wakib-keys-overriding-map)
 
@@ -1482,6 +1694,9 @@ C-M-k     kill-sexp      Kill balanced expression forward
 
 (bind-key "C-<up>" 'backward-paragraph wakib-keys-overriding-map)
 (bind-key "C-<down>" 'forward-paragraph wakib-keys-overriding-map)
+
+
+(bind-key "M-j" 'avy-goto-char wakib-keys-overriding-map)
 
 
 ;;     on Linux, the menu/apps key syntax is <menu>
@@ -1605,11 +1820,13 @@ Some nice-to have things and general settings.
 ;; Only require to type 'y' or 'n' instead of 'yes' or 'no' when prompted
 (fset 'yes-or-no-p 'y-or-n-p)
 
-;; Try to always use utf8
+;; Everything utf-8
 (set-language-environment "UTF-8")
+(prefer-coding-system 'utf-8)
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
-(prefer-coding-system 'utf-8)
+(set-buffer-file-coding-system 'utf-8)
+(set-default-coding-systems 'utf-8)
 
 ;; load file with 'Customize' settings
 (when (file-exists-p custom-file)
@@ -1656,7 +1873,10 @@ Some nice-to have things and general settings.
 (setq-default major-mode 'org-mode)
 
 ;; default value is (middle top bottom)
-(setq recenter-positions '(top bottom))
+(setq recenter-positions '(top bottom middle))
+
+;; change sorting of folders in dired (these are ls flags)
+(setq dired-listing-switches "-laGh1v --group-directories-first")
 
 #+end_src
 
@@ -1674,21 +1894,31 @@ Some nice-to have things and general settings.
 (global-whitespace-mode)                                ; make all whitespace visible
 (setq whitespace-style '(face tabs tab-mark trailing))  ; only show tabs and trailing whitespace
 (custom-set-faces
- '(whitespace-tab         ((t (:foreground "#636363"))))   ; set tab character color
+ ;; '(whitespace-tab         ((t (:foreground "#636363"))))   ; set tab character color
+ '(whitespace-tab         ((t (:foreground "#290929093b7a"))))   ; set tab character color
  '(whitespace-trailing    ((t (:underline (:style wave :color "yellow2")))))
  )
 
 ;; set tab character
-;; 8614 is the unicode number of a double right arrow
-;; 124 is the unicode number of a pipe
+;; U+00BB -> double right arrow
+;; U+23D0 -> vertical line
+;; U+007C -> pipe
+
+;; copy character from highlight-indent-guides
+;; ?\x2502 / 9474
+
 (setq whitespace-display-mappings
-      '((tab-mark 9 [124 9] [92 9])))
+      ;; '((tab-mark 9 [124 9] [92 9]))
+      '((tab-mark ?\t [?\x2502 ?\t])))
+
 
 (setq backward-delete-char-untabify-method 'untabify)
 
 #+end_src
 
 *** Tabs
+
+~Tabs~ as in the ones found at the top of a browser window.
 
 #+begin_src emacs-lisp
 
@@ -1745,6 +1975,18 @@ Some nice-to have things and general settings.
 ;; only show an indicator on the right fringe and not the left fringe
 (setq-default visual-line-fringe-indicators '(nil right-curly-arrow))
 
+(setq-default fringe-indicator-alist '(
+  (truncation left-arrow right-arrow)
+  (continuation nil right-curly-arrow) ;; left-curly-arrow (only line changed)
+  (overlay-arrow . right-triangle)
+  (up . up-arrow)
+  (down . down-arrow)
+  (top top-left-angle top-right-angle)
+  (bottom bottom-left-angle bottom-right-angle top-right-angle top-left-angle)
+  (top-bottom left-bracket right-bracket top-right-angle top-left-angle)
+  (empty-line . empty-line)
+  (unknown . question-mark)))
+
 ;; make numbers column width a little bigger so it never changes size and moves the buffer. (refering to line numbers)
 ;; with a value of 3 digits, the buffer only moves when the line number is 1000 or hifher
 (setq-default display-line-numbers-width 4)
@@ -1755,6 +1997,7 @@ Some nice-to have things and general settings.
 
 ;; set size in pixels of left and right fringes (default is 8)
 (fringe-mode '(4 . 8))
+;; (set-fringe-mode '(0 . 0))
 
 #+end_src
 
@@ -1791,20 +2034,14 @@ It is also possible set functions to evaluate at startup, for those directories.
 
 For more information about syntax, check the [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Directory-Variables.html][documentation]].
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 
 ;; Here, we make the config file show 2 heading levels at startup, to make navigation easier.
 (dir-locals-set-class-variables 'dir-local--emacs-config
     '((org-mode . ((eval org-content 2)))))
 
-(dir-locals-set-class-variables 'dir-local--org-files
-    '((org-mode . ((eval org-content 2)))))
-
 (dir-locals-set-directory-class
     "~/.emacs.d/" 'dir-local--emacs-config)
-
-(dir-locals-set-directory-class
-    "~/Cloud/Work - Google Cloud/Org/" 'dir-local--org-files)
 
 #+end_src
 
@@ -2010,9 +2247,11 @@ When dealing with the =org-directory= variable, it is important to pay attention
   (defun my/bufler-workspace-mode-lighter-shorter ()
     "Return lighter string for mode line.
 Only the last element of the path is displayed."
-    (replace-regexp-in-string ".*» " ""
-                              (replace-regexp-in-string "Projectile:" ""
-                                                        (frame-parameter nil 'bufler-workspace-path-formatted))))
+    (frame-parameter nil 'bufler-workspace-path-formatted))
+
+  (defun my/bufler-workspace-mode-lighter-full ()
+    "Return full lighter string for mode line help menu."
+    (mapconcat 'identity (frame-parameter nil 'bufler-workspace-path) " » "))
 
   (defun my/bufler-format-path (path)
     "Return PATH formatted as a string."
@@ -2052,20 +2291,13 @@ Only the last element of the path is displayed."
     "Focus workspace of buffer BUFFER-NAME."
     (let ((selected-buffer (get-buffer buffer-name)))
       (bufler-workspace-frame-set
-       (butlast (bufler-group-tree-leaf-path (bufler-buffers) selected-buffer)))))
+       (butlast (butlast (bufler-group-tree-leaf-path (bufler-buffers) selected-buffer))))))
 
   (defun my/bufler-switch-buffer-C-u ()
     "Use `bufler-switch-buffer', but as if C-u was pressed before it."
     (interactive)
     (let ((current-prefix-arg 4)) ;; emulate C-u
       (call-interactively 'bufler-switch-buffer)))
-
-  (defun my/bufler-list-full-frame ()
-    "Same as bufler-list, but takes up the entire frame."
-    (interactive)
-    (call-interactively 'bufler-list)
-    ;; for some reason, using a hook doesnt work
-    (delete-other-windows))
 
   (setf bufler-groups
         (bufler-defgroups
@@ -2109,9 +2341,19 @@ Only the last element of the path is displayed."
                      ;; (mode-match "Dashboard" (rx bos "dashboard"))
                      (mode-match "Scratch" (rx bos "lisp-interaction"))
                      (name-match "Untitled" (rx bos "untitled")))
+
            (group
-            ;; Subgroup collecting buffers in a projectile project.
-            (auto-projectile)))
+            (auto-projectile))
+
+           (group
+            (auto-directory))
+
+           ;; (group
+           ;;  (dir "~"))
+           ;; (group
+           ;;  (dir "/"))
+
+           )
           ))
 
   :bind
@@ -2124,12 +2366,12 @@ Only the last element of the path is displayed."
          ;; (find-file . (lambda () (call-interactively #'bufler-workspace-focus-buffer)))
          (bufler-list-mode . my/set-buffer-large-fringe)
          ;; modify frame name without modfying workspace name. this function definition doesnt work if used in a init or config block
-         (dashboard-mode . (lambda() (defun bufler-workspace-set-frame-name (path)
-                                       "Set current frame's name according to PATH."
-                                       (set-frame-name (when path
-                                                         (format "Workspace: %s -- Emacs" (funcall bufler-workspace-format-path-fn path)))))))
+         (emacs-startup . (lambda() (defun bufler-workspace-set-frame-name (path)
+                                      "Set current frame's name according to PATH."
+                                      (set-frame-name (when path
+                                                        (format "Workspace: %s -- Emacs" (funcall bufler-workspace-format-path-fn path)))))))
          ;; focus the workspace of the "scratch" buffer at startup, which is the "All Files" workspace
-         (dashboard-mode . (lambda() (my/bufler-workspace-set-from-buffer-name "*scratch*")))
+         (emacs-startup . (lambda() (my/bufler-workspace-set-from-buffer-name "*scratch*")))
          ))
 
 #+end_src
@@ -2428,6 +2670,10 @@ The sidebar only changes when bufler focuses a new workspace.
                                            "Restore session"
                                            "Restore last saved session"
                                            (lambda (&rest _) (my/desktop-enable)))
+                                          (,(all-the-icons-octicon "globe" :height 1.1 :v-adjust 0.0)
+                                           "Browse Packages"
+                                           "Search for packages on MELPA"
+                                           (lambda (&rest _) (browse-url "https://melpa.org")))
                                           )))
 
   :hook ((dashboard-mode . hide-mode-line-mode)
@@ -2448,24 +2694,38 @@ The sidebar only changes when bufler focuses a new workspace.
         doom-modeline-indent-info                 t
         doom-modeline-buffer-state-icon           t
         doom-modeline-buffer-modification-icon    t
-        doom-modeline-buffer-file-name-style      'truncate-upto-project)
+        doom-modeline-buffer-file-name-style      'truncate-upto-project
+        doom-modeline-window-width-limit          120)
 
   :config
-  ;; ------ Segment - Bufler ------
+
+  ;;
+  ;; Segment - Workspaces
+  ;;
+
   (doom-modeline-def-segment my/bufler-workspace
     "Display current bufler workspace name"
     (if (and (boundp 'bufler-workspace-tabs-mode) bufler-workspace-tabs-mode)
         (let ((active (doom-modeline--active)))
           (when-let (text
                      (propertize (format " %s" (my/bufler-workspace-mode-lighter-shorter))
-                                 'face '(:foreground "gray60")))
+                                 'face '(:foreground "gray60")
+                                 'mouse-face 'mode-line-highlight
+                                 'help-echo (format "Full workspace name: %s\nmouse-1: Choose workspace"
+                                                    (my/bufler-workspace-mode-lighter-full))
+                                 'local-map (let ((map (make-sparse-keymap)))
+                                              (define-key map [mode-line mouse-1] 'bufler-workspace-frame-set)
+                                              map)
+                                 ))
             (if active
                 text
               (propertize text 'face 'mode-line-inactive))))
       ""))
 
+  ;;
+  ;; Segment - Buffer Position
+  ;;
 
-  ;; ------ Segment - Buffer Position ------
   ;; Provides information to the buffer position segment
   (setq-default mode-line-position
                 '((line-number-mode
@@ -2477,10 +2737,15 @@ The sidebar only changes when bufler focuses a new workspace.
                   (:eval (when (or line-number-mode mode-line-percent-position column-number-mode) "  "))))
 
   (doom-modeline-def-segment my/buffer-position
-    '("" mode-line-position))
+    (concat
+     (propertize (replace-regexp-in-string "%" "%%" (format-mode-line '("" mode-line-position)))
+                 'mouse-face 'mode-line-highlight
+                 'help-echo (format "Current Line, Column and Buffer percentage"))))
 
+  ;;
+  ;; Segment - VCS
+  ;;
 
-  ;; ------ Segment - VCS ------
   (doom-modeline-def-segment my/vcs
     "Displays the current branch, colored based on its state."
     (let ((active (doom-modeline--active)))
@@ -2502,8 +2767,10 @@ The sidebar only changes when bufler focuses a new workspace.
              text
            (propertize text 'face 'mode-line-inactive))))))
 
+  ;;
+  ;; Segment - Buffer Name
+  ;;
 
-  ;; ------ Segment - Buffer Name ------
   ;; when the buffer is modified only show icon with 'modified' font, not the file name
   (defsubst doom-modeline--buffer-name-custom ()
     "The current buffer name."
@@ -2516,7 +2783,8 @@ The sidebar only changes when bufler focuses a new workspace.
                                 (t 'mode-line-inactive))
                     'mouse-face 'mode-line-highlight
                     'help-echo "Buffer name
-mouse-1: Previous buffer\nmouse-3: Next buffer"
+mouse-1: Previous buffer
+mouse-3: Next buffer"
                     'local-map mode-line-buffer-identification-keymap)
       (when-let ((name (or doom-modeline--buffer-file-name
                            (doom-modeline-update-buffer-file-name))))
@@ -2524,7 +2792,18 @@ mouse-1: Previous buffer\nmouse-3: Next buffer"
             name
           (propertize name 'face 'mode-line-inactive)))))
 
-  (doom-modeline-def-segment buffer-info
+  ;; (defsubst doom-modeline--buffer-name-custom ()
+  ;;   "The current buffer name."
+  ;;   (if doom-modeline--limited-width-p
+  ;;       (s-truncate 10 (format "%s" (propertize "%b")))
+  ;;     "ab"))
+
+  ;; (defvar my/buffer-name-max-char 10
+  ;;   "The maximal length of the buffer name in modeline.")
+  ;; (setq my/buffer-name-max-char 10)
+  ;; ;; (s-truncate)
+
+  (doom-modeline-def-segment my/buffer-info
     "Combined information about the current buffer, including the current working
 directory, the file name, and its state (modified, read-only or non-existent)."
     (concat
@@ -2533,10 +2812,11 @@ directory, the file name, and its state (modified, read-only or non-existent)."
      (doom-modeline--buffer-mode-icon)
      (doom-modeline--buffer-name-custom)))
 
+  ;;
+  ;; Segment - Buffer line endings
+  ;;
 
-  ;; ------ Segment - Buffer encoding and line endings ------
-  ;; this is modified to add or remove spaces, to make it look nicer
-  (doom-modeline-def-segment my/buffer-encoding
+  (doom-modeline-def-segment my/buffer-eol
     "Displays the eol and the encoding style of the buffer the same way Atom does."
     (when doom-modeline-buffer-encoding
       (let ((face (if (doom-modeline--active) 'mode-line 'mode-line-inactive))
@@ -2562,6 +2842,18 @@ directory, the file name, and its state (modified, read-only or non-existent)."
             'local-map (let ((map (make-sparse-keymap)))
                          (define-key map [mode-line mouse-1] 'mode-line-change-eol)
                          map)))
+         ))))
+
+  ;;
+  ;; Segment - Buffer encoding
+  ;;
+
+  (doom-modeline-def-segment my/buffer-encoding
+    "Displays the eol and the encoding style of the buffer the same way Atom does."
+    (when doom-modeline-buffer-encoding
+      (let ((face (if (doom-modeline--active) 'mode-line 'mode-line-inactive))
+            (mouse-face 'mode-line-highlight))
+        (concat
          ;; coding system
          (propertize
           (let ((sys (coding-system-plist buffer-file-coding-system)))
@@ -2573,10 +2865,13 @@ directory, the file name, and its state (modified, read-only or non-existent)."
           'mouse-face mouse-face
           'help-echo 'mode-line-mule-info-help-echo
           'local-map mode-line-coding-system-map)
+         (doom-modeline-spc)
          ))))
 
+  ;;
+  ;; Segment - Selection
+  ;;
 
-  ;; ------ Segment - Selection ------
   ;; this is modified to not appear when the number of selected characters is equal to 0
   (doom-modeline-def-segment selection-info
     "Information about the current selection, such as how many characters and
@@ -2613,28 +2908,73 @@ lines are selected, or the NxM dimensions of a block selection."
                      (doom-modeline-spc)))
            'face 'doom-modeline-highlight)))))
 
+  ;;
+  ;; Segment - Spellcheck
+  ;;
 
-  ;; ------ Segment - Spellcheck ------
   (doom-modeline-def-segment my/spellcheck
     "Display current dictionary language"
     (if flyspell-mode
         (let ((active (doom-modeline--active)))
           (when-let (text
                      (propertize (format " %s " ispell-current-dictionary)  ;
-                                 'face '(:foreground "gray60")))
+                                 'face '(:foreground "gray60")
+                                 'mouse-face 'mode-line-highlight
+                                 'help-echo (format "Spellcheck dictionary language: %s\nmouse-1: Change dictionary"
+                                                    ispell-current-dictionary)
+                                 'local-map (let ((map (make-sparse-keymap)))
+                                              (define-key map [mode-line mouse-1] 'ispell-change-dictionary)
+                                              map)))
             (if active
                 text
               (propertize text 'face 'mode-line-inactive))))
       ""))
 
+  ;;
+  ;; Segment - Indentation
+  ;;
 
-  ;; ------ Modeline Segments ------
+  (doom-modeline-def-segment my/indent-info
+    "Displays the indentation information."
+    (when doom-modeline-indent-info
+      (let ((do-propertize
+             (lambda (mode size)
+               (propertize
+                (format " %s %d " mode size)
+                'face (if (doom-modeline--active) 'mode-line 'mode-line-inactive)
+                'mouse-face 'mode-line-highlight
+                'help-echo (format "Current indentation type: %s\nCurrent indentation size: %s
+mouse-1: Set indentation size
+mouse-3: Open indentation menu"
+                                   (my/check-indentation-type)
+                                   (my/get-buffer-indentation-size))
+                'local-map (let ((map (make-sparse-keymap)))
+                             (define-key map [mode-line mouse-1] 'my/set-buffer-indentation-size)
+                             (define-key map [mode-line mouse-3] 'hydra-indentation/body)
+                             map)))))
+        (if indent-tabs-mode
+            (funcall do-propertize "TAB" tab-width)
+          (let ((lookup-var
+                 (seq-find (lambda (var)
+                             (and var (boundp var) (symbol-value var)))
+                           (cdr (assoc major-mode doom-modeline-indent-alist)) nil)))
+            (funcall do-propertize "SPC"
+                     (if lookup-var
+                         (symbol-value lookup-var)
+                       tab-width)))))))
+
+  ;;
+  ;; Modeline Segments
+  ;;
+
   (doom-modeline-def-modeline 'my/main
-    '(" " my/bufler-workspace my/vcs bar window-number matches buffer-info remote-host parrot " " selection-info)
-    '(objed-state grip irc mu4e gnus github debug repl lsp minor-modes my/spellcheck process checker input-method indent-info my/buffer-encoding major-mode my/buffer-position " "))
+    '(" " my/bufler-workspace my/vcs bar window-number matches my/buffer-info remote-host parrot " " selection-info)
+    '(objed-state grip irc mu4e gnus github debug repl lsp minor-modes my/spellcheck process checker input-method my/indent-info my/buffer-eol my/buffer-encoding major-mode my/buffer-position " "))
 
+  ;;
+  ;; Setup Modeline
+  ;;
 
-  ;; ------ Setup Modeline ------
   (defun setup-initial-doom-modeline ()
     (interactive)
     (doom-modeline-set-modeline 'my/main 'default))
@@ -3219,11 +3559,11 @@ The code below executes org-babel-tangle asynchronously when the config file is 
 #+begin_src emacs-lisp
 
 (use-package org
-  :straight org-plus-contrib
+  :ensure org-plus-contrib
   :demand t
   :config
   (setq org-startup-indented                 t             ;; indent text to heading level
-        org-startup-folded                   'content      ;; set initial view to 'content' (show all headlines)
+        org-startup-folded                   'overview     ;; set initial view to 'content' (show all headlines)
         org-indent-indentation-per-level     2
         org-export-exclude-tags              '("NOEXPORT")
         org-descriptive-links                t             ;; highlight links
@@ -3244,25 +3584,6 @@ The code below executes org-babel-tangle asynchronously when the config file is 
         org-ellipsis                         " ⤵"          ;; Changing the org-mode ellipsis
         ;; setq org-ellipsis                 " ▼"
         org-image-actual-width               nil           ;; if there is something like #+ATTR_ORG: width="200", resize to 200, otherwise don't resize
-        org-directory                        "~/Cloud/Work - Google Cloud/Org/"    ;; where to look for org files
-        my/org-inbox-file                    (expand-file-name "inbox.org" org-directory)
-        org-default-notes-file               (expand-file-name "notes/notes.org" org-directory)
-        org-agenda-files                     `(,org-directory
-                                               ,(expand-file-name "agenda/private" org-directory)
-                                               ,(expand-file-name "agenda/projects" org-directory)
-                                               ,(expand-file-name "agenda/projects/IST/year 5" org-directory))
-        org-agenda-dim-blocked-tasks         t             ;; dim blocked tasks
-        org-agenda-skip-deadline-if-done     t             ;; avoid showing unecessary tasks
-        org-agenda-skip-scheduled-if-done    t
-        org-agenda-skip-archived-trees       t
-        org-agenda-skip-deadline-prewarning-if-scheduled t
-        ;; org-agenda-span                      30            ;; amount of days in the agenda
-        org-agenda-start-on-weekday          nil           ;; start the agenda in the current day
-        org-agenda-prefix-format             '((agenda . " %i %-23:c%?-23t% s")    ;; make the first column in agenda wider (default is 12 characters)
-                                               (todo . " %i %-23:c")
-                                               (tags . " %i %-23:c")
-                                               (search . " %i %-23:c"))
-        org-agenda-window-setup              'only-window
         org-confirm-babel-evaluate           nil
         org-show-context-detail              '((agenda . local)
                                                (default . lineage)))
@@ -3275,15 +3596,16 @@ The code below executes org-babel-tangle asynchronously when the config file is 
 
   :bind
   (:map org-mode-map
-        ("C-d C-<left>" . org-backward-element)
-        ("C-d C-<right>" . org-forward-element)
-        ("C-d C-<up>" . org-up-element)
-        ("C-d C-<down>" . org-down-element)
+        ("C-d <C-left>" . org-backward-element)
+        ("C-d <C-right>" . org-forward-element)
+        ("C-d <C-up>" . org-up-element)
+        ("C-d <C-down>" . org-down-element)
         ;; allow C-S-<arrow> selection of text
         ("<C-S-left>" .  nil)
         ("<C-S-right>" .  nil)
         ("<C-S-up>" .  nil)
-        ("<C-S-down>" .  nil))
+        ("<C-S-down>" .  nil)
+        ("<end>" . end-of-visual-line))  ;; When in heading, put cursor after ellipsis
 
   :hook ((after-save . my/config-tangle)
          (org-mode . (lambda ()
@@ -3402,6 +3724,51 @@ Inline tasks behave as you would expect them to, for the most part. They have tw
 #+begin_src emacs-lisp
 
 (use-package org-ql)
+
+#+end_src
+
+**** Org - notes
+
+# Note: org-directory needs to be defined before the org-agenda block
+
+#+begin_src emacs-lisp
+
+(setq org-directory                        "~/Cloud/Work - Google Cloud/Org/"    ;; where to look for org files
+      org-default-notes-file               (expand-file-name "notes/notes.org" org-directory))
+
+#+end_src
+
+**** Org - inbox
+
+#+begin_src emacs-lisp
+
+(setq my/org-inbox-file                    (expand-file-name "inbox.org" org-directory))
+
+#+end_src
+
+**** Package: org-agenda
+
+#+begin_src emacs-lisp
+
+(use-package org-agenda
+  :straight org
+  :config
+  (setq org-agenda-files                     `(,org-directory
+                                               ,(expand-file-name "agenda/private" org-directory)
+                                               ,(expand-file-name "agenda/projects" org-directory)
+                                               ,(expand-file-name "agenda/projects/IST/year 5" org-directory))
+        org-agenda-dim-blocked-tasks         t             ;; dim blocked tasks
+        org-agenda-skip-deadline-if-done     t             ;; avoid showing unecessary tasks
+        org-agenda-skip-scheduled-if-done    t
+        org-agenda-skip-archived-trees       t
+        org-agenda-skip-deadline-prewarning-if-scheduled t
+        ;; org-agenda-span                      30            ;; amount of days in the agenda
+        org-agenda-start-on-weekday          nil           ;; start the agenda in the current day
+        org-agenda-prefix-format             '((agenda . " %i %-25:c%?-25t% s")    ;; make the first column in agenda wider (default is 12 characters)
+                                               (todo . " %i %-25:c")
+                                               (tags . " %i %-25:c")
+                                               (search . " %i %-25:c"))
+        org-agenda-window-setup              'only-window))
 
 #+end_src
 
@@ -3753,7 +4120,7 @@ Ivy sorts large lists using flx's scoring mechanism, if it's installed.
   :custom
   (ivy-prescient-sort-commands
    ;; things that shouldnt be sorted go in this list
-   '(:not swiper swiper-isearch ivy-switch-buffer counsel-switch-buffer flyspell-correct-ivy counsel-find-file find-file bufler-workspace-switch-buffer bufler-switch-buffer counsel-fzf counsel-imenu))
+   '(:not swiper swiper-isearch ivy-switch-buffer counsel-switch-buffer flyspell-correct-ivy counsel-find-file find-file bufler-workspace-switch-buffer bufler-switch-buffer counsel-fzf counsel-imenu counsel-file-jump))
   (ivy-prescient-excluded-commands '(counsel-find-file find-file))
   (ivy-prescient-retain-classic-highlighting t)
   (ivy-prescient-enable-filtering nil)
@@ -3844,17 +4211,17 @@ Magit is a complete text-based user interface to Git. It fills the glaring gap b
 Emacs package for highlighting uncommitted changes
 #+end_quote
 
+By default, changes are displayed in the fringe.
+
 #+begin_src emacs-lisp
 
 (use-package diff-hl
   :config
-  (global-diff-hl-mode)
   (diff-hl-flydiff-mode)  ;; see changes in real time
 
   :hook ((magit-pre-refresh . diff-hl-magit-pre-refresh)
          (magit-post-refresh . diff-hl-magit-post-refresh)
          (prog-mode . diff-hl-mode)
-         (org-mode . (lambda () (diff-hl-mode -1)))      ;; disable git gutter for org mode
   ))
 
 #+end_src
@@ -3994,30 +4361,14 @@ decktape reveal <my-file.html> <output>
 Moving text both horizontally and vertically.
 I use the M + arrow keys for this. Since this interferes with org-mode, we use the default org-mode keybinds when the cursor is in an org-heading.
 
+This package is only used to move lines up and down. Moving left and right is implemented with default emacs functionality.
+
 #+begin_src emacs-lisp
 
-;; alt+up/down to move line or region
 (use-package drag-stuff
   :config
 
-  ;; alt + left/right to indent blocks of text
-  ;; moving text left and right doesn't actually use this package
-  (defun my/meta-right-org-heading-detect ()
-    "Executes a different function if the cursor is in a org heading.
-Otherwise, just execute the normal behaviour"
-    (interactive)
-    (if (and (equal major-mode 'org-mode) (org-at-heading-p))
-        (org-do-demote)
-      (my/tab-region (my/get-buffer-indentation-size))))
-
-  (defun my/meta-left-org-heading-detect ()
-    "Executes a different function if the cursor is in a org heading.
-Otherwise, just execute the normal behaviour"
-    (interactive)
-    (if (and (equal major-mode 'org-mode) (org-at-heading-p))
-        (org-do-promote)
-      (my/untab-region (my/get-buffer-indentation-size))))
-
+  ;; Move up and down
   (defun my/meta-up-org-heading-detect ()
     "Executes a different function if the cursor is in a org heading.
 Otherwise, just execute the normal behaviour"
@@ -4033,6 +4384,23 @@ Otherwise, just execute the normal behaviour"
     (if (and (equal major-mode 'org-mode) (org-at-heading-p))
         (org-move-subtree-down)
       (call-interactively 'drag-stuff-down)))
+
+  ;; Move left and right
+  (defun my/meta-right-org-heading-detect ()
+    "Executes a different function if the cursor is in a org heading.
+Otherwise, just execute the normal behaviour"
+    (interactive)
+    (if (and (equal major-mode 'org-mode) (org-at-heading-p))
+        (org-do-demote)
+      (my/tab-region (my/get-buffer-indentation-size))))
+
+  (defun my/meta-left-org-heading-detect ()
+    "Executes a different function if the cursor is in a org heading.
+Otherwise, just execute the normal behaviour"
+    (interactive)
+    (if (and (equal major-mode 'org-mode) (org-at-heading-p))
+        (org-do-promote)
+      (my/untab-region (my/get-buffer-indentation-size))))
 
   :bind
   (:map wakib-keys-overriding-map
@@ -4140,7 +4508,7 @@ show a different main hydra, depending on major mode
   ("Save"
    (("s" save-some-buffers "Save all buffers"))
    "Switch buffer"
-   (("b" my/bufler-list-full-frame "Show all buffers and workspaces")
+   (("b" bufler-list "Show all buffers and workspaces")
     ("B" bufler-switch-buffer "Switch buffer (current workspace)")
     ("uB" my/bufler-switch-buffer-C-u "Switch buffer (all workspaces)"))
    "Line Endings"
@@ -4161,8 +4529,22 @@ show a different main hydra, depending on major mode
   (:color teal :quit-key "q" :title "Code Hydra")
   ("Function"
    (("c" compile "Compile current buffer program")
-    ("d" find-function-at-point "Go to Declaration (symbol at point)")
-    ("r" xref-find-references "Show References (symbol at point)"))
+    ("d" find-function-at-point "Jump to Declaration (symbol at point)")
+    ("r" xref-find-references "Show Reference List (symbol at point)"))
+   "Syntax Checker"
+   (("x" flycheck-list-errors "List errors"))
+   ))
+
+#+end_src
+
+**** Hydra: compilation-mode
+
+#+begin_src emacs-lisp
+
+(major-mode-hydra-define compilation-mode
+  (:color teal :quit-key "q" :title "Compilation hydra" :separator "-")
+  ("Kill"
+   (("k" kill-compilation "kill compilation process"))
    ))
 
 #+end_src
@@ -4194,6 +4576,18 @@ show a different main hydra, depending on major mode
 
 #+end_src
 
+**** Hydra: eval
+
+#+begin_src emacs-lisp :tangle no
+
+(pretty-hydra-define hydra-eval
+  (:color teal :quit-key "q" :title "Eval Hydra")
+  ("Evaluate "
+   (("e" eval-expression "Expression"))
+   ))
+
+#+end_src
+
 **** Hydra: file
 
 #+begin_src emacs-lisp
@@ -4206,14 +4600,12 @@ show a different main hydra, depending on major mode
     ("R" my/rename-current-buffer-file "Rename/Move")
     ("d" my/delete-file-and-buffer "Delete")
     ("u" sudo-edit "Sudo open")
-    ("x" executable-make-buffer-file-executable-if-script-p "Make .sh executable"))
+    ("x" my/make-file-executable "Make .sh executable"))
    "Other Files"
    (("f" counsel-find-file "Open a File")
     ("r" counsel-recentf "Open recent file")
-    ("p" my/open-init-file "Open private Emacs config")
     ("D" delete-file "Delete a file")
-    ("U" sudo-edit-find-file "Sudo open a file")
-    ("z" fzf-directory "Open fzf on a directory"))
+    ("U" sudo-edit-find-file "Sudo open a file"))
    "Filename"
    (("y" my/show-buffer-name "Yank filename")
     ("Y" my/show-buffer-file-name "Yank filename with full path"))
@@ -4258,7 +4650,7 @@ show a different main hydra, depending on major mode
     ("ct" tabify "convert indentation (in active region) to tabs")
     ("cs" untabify "convert indentation (in active region) to spaces"))
    "Resize"
-   (("w" my/switch-indentation-width-buffer "set indentation width"))
+   (("w" my/set-buffer-indentation-size "set indentation width"))
    ))
 
 #+end_src
@@ -4302,8 +4694,11 @@ show a different main hydra, depending on major mode
   ("Special Buffer"
    (("D" my/open-dashboard "open dashboard buffer")
     ("s" my/open-scratch-buffer "open scratch buffer")
-    ("a" org-agenda "open agenda menu")
-    ("d" browse-url-xdg-open "open directory with dired"))
+    ("a" my/org-agenda "open agenda")
+    ("A" org-agenda "open agenda menu")
+    ("d" dired "open directory with dired"))
+   "Special File"
+   (("p" my/open-init-file "open private Emacs config"))
    "Org Directory"
    (("o" my/open-file-from-org-dir "open file from org directory"))
    "URL"
@@ -4381,7 +4776,7 @@ show a different main hydra, depending on major mode
 
 (pretty-hydra-define hydra-search
   (:color teal :quit-key "q" :title "Search Hydra")
-  ("String in buffer (regex)"
+  ("String in buffer contents (regex)"
    (("b" swiper "search in current buffer")
     ("d" search-everything-regexp--transient "search in directory files"))
    "String in filenames (glob)"
@@ -4451,12 +4846,13 @@ show a different main hydra, depending on major mode
   (:color teal :quit-key "q" :title "Git Hydra")
   ("Magit"
    (("g" magit-status "show git status")
-    ("l" magit-log "show git log"))
+    ("l" magit-log "show git log")
+    ("D" magit-diff "show git diff"))
    "Hunk"
    (("p" diff-hl-previous-hunk "previous")
     ("n" diff-hl-next-hunk "next")
     ("r" diff-hl-revert-hunk "revert")
-    ("d" diff-hl-diff-goto-hunk "diff and goto"))
+    ("d" diff-hl-diff-goto-hunk "show hunk diff"))
    ))
 
 #+end_src
@@ -4467,19 +4863,19 @@ show a different main hydra, depending on major mode
 
 (pretty-hydra-define hydra-window
   (:color teal :quit-key "q" :title "Window Hydra")
-  ("Create Split"
-   (("h" split-window-horizontally "new horizontal split")
-    ("v" split-window-vertically "new vertical split"))
-   "Delete Split"
-   (("d" delete-window "Close current window")
-    ("D" delete-other-windows "Close all other windows"))
+  ("Create"
+   (("h" split-window-horizontally "New horizontal split")
+    ("v" split-window-vertically "New vertical split"))
+   "Delete"
+   (("d" delete-window "Current window")
+    ("f" delete-other-windows "Focus current window. Delete all other windows"))
    "Window Size"
    (("M" maximize-window "Maximize")
     ("m" minimize-window "Minimize")
     ("b" balance-windows "Balance"))
    "Window Selection"
    (("s" other-window "Select other window")
-    ("c" switch-window "Cycle windows"))
+    ("c" switch-window "Cycle open windows"))
    ))
 
 #+end_src
@@ -4529,6 +4925,7 @@ For Arch, the respective necessary packages are:
 #+begin_src emacs-lisp
 
 (use-package pdf-tools
+  :commands (pdf-occur-global-minor-mode)
   :ensure-system-package
   (("/usr/lib/libpoppler-glib.so" . libpng)
    ("/usr/lib/libz.so"            . zlib)
@@ -4608,9 +5005,10 @@ Not currently being used.
 
 Code syntax checking.
 
-Not sure, but this might have to load after flyspell package.
+# Not sure, but this might have to load after flyspell package.
+# also, see "flycheck-select-checker" function
 
-# see "flycheck-select-checker" function
+This is configured to use the margin, instead of the default fringe.
 
 #+begin_src emacs-lisp
 
@@ -4650,18 +5048,21 @@ The other packages first have to create their hydras and only after that should 
 
 (use-package general
   :config
-  (unbind-key "<menu>")
+  (unbind-key "M-SPC")
 
   (general-define-key
-   :prefix "<menu>"
+   :prefix "M-SPC"
    "\"" '(eshell :which-key "open emacs shell")
-   "\'" '(my/open-external-terminal-here :which-key "open external terminal"))
+   "\'" '(my/open-external-terminal-here :which-key "open external terminal")
+   "," '(ivy-resume :which-key "resume last search")
+   "." '(repeat :which-key "repeat last command"))
 
   (general-define-key
-   :prefix "<menu>"
+   :prefix "M-SPC"
    "b" '(hydra-buffer/body :which-key "+buffer")
    "B" '(hydra-bookmarks/body :which-key "+bookmarks")
    "c" '(hydra-code/body :which-key "+code")
+   ;; "e" '(hydra-eval/body :which-key "+eval")
    "f" '(hydra-file/body :which-key "+file")
    "g" '(hydra-git/body :which-key "+git")
    "h" '(hydra-help/body :which-key "+help")
@@ -4680,6 +5081,22 @@ The other packages first have to create their hydras and only after that should 
 #+end_src
 
 *** Other additions
+**** Package: comment-dwim-2
+
+#+begin_src emacs-lisp
+
+(use-package comment-dwim-2
+  :config
+  (defun my/comment-dwim-2 (arg)
+    (interactive "*P")
+    (if (use-region-p)
+        (my/extend-region-to-whole-lines))
+    (if (and (equal major-mode 'org-mode) (org-at-heading-p))
+        (org-comment-dwim-2 arg)
+      (comment-dwim-2 arg))))
+
+#+end_src
+
 **** Package: undo-tree
 
 Change undo/redo behaviour
@@ -4687,12 +5104,18 @@ Change undo/redo behaviour
 #+begin_src emacs-lisp
 
 (use-package undo-tree
+  :defer 1
+  :after comment-dwim-2
   :config
   (global-undo-tree-mode)
   :bind
   (:map wakib-keys-overriding-map
         ("C-z" . undo-tree-undo)
-        ("C-y" . undo-tree-redo)))
+        ("C-y" . undo-tree-redo))
+  (:map undo-tree-map
+        ("C-/" . my/comment-dwim-2)))
+
+;; C-/ is defined here because it conflicts with an existing bindin in this package
 
 #+end_src
 
@@ -4812,35 +5235,6 @@ Can also be used to jump to word, line, symbol, etc.
 
 #+end_src
 
-**** Package: comment-dwim-2
-
-#+begin_src emacs-lisp
-
-(use-package comment-dwim-2
-  :init
-  (unbind-key "C--")
-  (unbind-key "C--" wakib-keys-overriding-map)
-
-  :config
-  (defun my/comment-dwim-2 (arg)
-    (interactive "*P")
-    (if (use-region-p)
-        (my/extend-region-to-whole-lines))
-    (comment-dwim-2 arg))
-
-  (defun my/org-comment-dwim-2 (arg)
-    (interactive "*P")
-    (if (use-region-p)
-        (my/extend-region-to-whole-lines))
-    (org-comment-dwim-2 arg))
-
-  :bind
-  ("C--" . my/comment-dwim-2)
-  (:map org-mode-map
-        ("C--" . my/org-comment-dwim-2)))
-
-#+end_src
-
 **** Package: whole-line-or-region
 
 cut/copy whole line or region
@@ -4907,7 +5301,7 @@ This should make compilation buffers handle ANSI escape sequences instead of dis
 
 Show a buffer position indicator on the right fringe
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 
 (use-package yascroll
   :config
@@ -5033,11 +5427,10 @@ face used is from term-mode
                                         ))
 
   :config
-  ;; replace ido-read-directory-name with counsel-read-directory-name
-  (defun fzf-directory ()
+  (defun my/fzf-directory ()
     "Starts a fzf session at the specified directory."
     (interactive)
-    (fzf/start (counsel-read-directory-name "Directory: " fzf/directory-start))))
+    (counsel-fzf "" (counsel-read-directory-name "Directory: " fzf/directory-start) "File: ")))
 
 #+end_src
 
@@ -5095,7 +5488,17 @@ It is possible to highlight with background colour instead, but the face used ha
 
 #+end_src
 
-** Language Support
+**** Package: fullframe
+
+#+begin_src emacs-lisp
+
+(use-package fullframe
+  :config
+  (fullframe bufler-list quit-window))
+
+#+end_src
+
+** Language Modes
 
 Add support for programming languages in the form of syntax highlighting, code completion, linters, etc.
 
@@ -5197,6 +5600,15 @@ This variable is declared as safe with the following code, so you aren't asked i
 
 #+end_src
 
+**** Package: gitattributes-mode
+
+#+begin_src emacs-lisp
+
+(use-package gitattributes-mode
+  :mode ("/\\.gitattributes\\'"))
+
+#+end_src
+
 *** Java
 **** Features
 
@@ -5289,6 +5701,20 @@ For markdown, you need to customize the command to run the markdown parser if yo
 ;; Fast GitHub-flavored live preview
 (use-package vmd-mode
   :ensure-system-package (vmd))
+
+#+end_src
+
+*** PHP
+**** Features
+
+  - syntax highlighting
+
+**** Package: php-mode
+
+#+begin_src emacs-lisp
+
+(use-package php-mode
+  :mode "\\.php\\'")
 
 #+end_src
 
@@ -5543,14 +5969,6 @@ Detect existing emacs server and switch to it if possible
 
 #+end_src
 
-*** bufler-list newline between groups
-
-#+begin_src emacs-lisp :tangle no
-
-(setq bufler-list-group-separators '((0 . "\n")))
-
-#+end_src
-
 *** dired-sidebar test
 
 #+begin_src emacs-lisp :tangle no
@@ -5615,6 +6033,210 @@ Detect existing emacs server and switch to it if possible
 
 
 ;; (dired-sidebar-switch-to-dir (dired-sidebar-get-dir-to-show))
+
+#+end_src
+
+*** indent guides
+
+*highlight-indent-guides* with *character* method seems like the best option.
+
+#+begin_src emacs-lisp :tangle no
+
+(use-package highlight-indentation
+  :config
+  (setq highlight-indentation-blank-lines t)
+  (custom-set-faces
+   '(highlight-indentation-current-column-face  ((t (:background "#ffa500"))))
+   '(highlight-indentation-face                 ((t (:background "#17162a"))))))
+
+
+(use-package indent-guide
+  :config
+  (indent-guide-global-mode))
+
+
+(use-package hl-indent
+  :config
+  (setq highlight-indent-guides-method 'bitmap))
+
+
+(use-package highlight-indent-guides
+  :config
+
+  ;; option 1
+  (setq highlight-indent-guides-method 'character)
+
+  ;; option 2
+  (setq highlight-indent-guides-method 'bitmap)
+  (setq highlight-indent-guides-bitmap-function 'highlight-indent-guides--bitmap-line)
+
+  :hook
+  (prog-mode . highlight-indent-guides-mode))
+
+#+end_src
+
+*** company-flyspel.el
+
+#+begin_src emacs-lisp :tangle no
+
+;;; company-flyspell.el --- company-mode flyspell backend -*- lexical-binding: t -*-
+
+;; Copyright (C) 2016 Free Software Foundation, Inc.
+
+;; Author: Henry G. Weller
+
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
+
+
+;;; Commentary:
+;;
+
+;;; Code:
+
+(require 'company)
+(require 'cl-lib)
+(require 'flyspell)
+
+(defgroup company-flyspell nil
+  "Completion backend using flyspell."
+  :group 'company)
+
+(defvar company-flyspell-available 'unknown)
+
+(defun company-flyspell--lookup-words (word)
+  "Return a list of possible corrections for misspelled WORD.
+Based on `flyspell-correct-word-before-point'."
+  ;; use the correct dictionary
+  (flyspell-accept-buffer-local-defs)
+  (let (words ispell-filter)
+    ;; now check spelling of word.
+    (ispell-send-string "%\n")  ; put in verbose mode
+    (ispell-send-string (concat "^" word "\n"))
+    ;; wait until Aspell has processed word
+    (while (progn
+             (accept-process-output ispell-process)
+             (not (string= "" (car ispell-filter)))))
+    ;; Remove leading empty element
+    (setq ispell-filter (cdr ispell-filter))
+    ;; ispell process should return something after word is sent.
+    ;; Tag word as valid (i.e., skip) otherwise
+    (or ispell-filter
+        (setq ispell-filter '(*)))
+    (if (consp ispell-filter)
+        (setq words (ispell-parse-output (car ispell-filter))))
+    (cond
+     ((or (eq words t) (stringp words))
+      ;; don't correct word
+      (list word))
+     ((null words)
+      ;; ispell error
+      (error "Ispell: error in Ispell process")
+      nil)
+     (t
+      ;; The word is incorrect, return list of alternatives
+      (nth 2 words)))))
+
+(defun company-flyspell-available ()
+  (when (eq company-flyspell-available 'unknown)
+    (condition-case _err
+        (progn
+          (company-flyspell--lookup-words "WHATEVER")
+          (setq company-flyspell-available t))
+      (error
+       (message "Company: flyspell-look-command not found")
+       (setq company-flyspell-available nil))))
+  company-flyspell-available)
+
+;;;###autoload
+(defun company-flyspell (command &optional arg &rest ignored)
+  "`company-mode' completion backend using flyspell."
+  (interactive (list 'interactive))
+  (cl-case command
+    (interactive (company-begin-backend 'company-flyspell))
+    (prefix (when (company-flyspell-available)
+              (company-grab-word)))
+    (candidates (company-flyspell--lookup-words arg))
+    (sorted t)
+    (ignore-case nil)))
+
+(provide 'company-flyspell)
+;;; company-flyspell.el ends here
+
+#+end_src
+
+*** dired-sort-menu
+
+#+begin_src emacs-lisp :tangle no
+
+(use-package dired-sort-menu)
+
+
+;; This one seems nicer. Just press "S" to open a hydra menu and select how to sort.
+(use-package dired-quick-sort
+  :config
+  (dired-quick-sort-setup))
+
+#+end_src
+
+*** check host OS
+
+These variable is for handily tangle blocks on different OSes.
+
+#+begin_src emacs-lisp :tangle no
+
+(set 'linuxp (when (eq system-type 'gnu/linux) "yes"))
+(set 'windowp (when (eq system-type 'windows-nt) "yes"))
+
+#+end_src
+
+*** format org files - move planning to top of heading
+
+This doesnt work as it is now because ~(org-at-planning-p)~ only returns true when the text is in the first line of the heading.
+
+Explanation:
+  Usually, org planning lines (Scheduled, Deadline, etc.) should be the first thing in a heading.
+  Any drawers, such as the properties drawer, should only appear afterwards.
+
+#+begin_src emacs-lisp :tangle no
+
+(defun my/org-move-planning-lines-top-of-heading ()
+  "Move any present planning lines to top of current heading.
+Preserves ordering"
+  (interactive)
+  (let ((start (org-entry-beginning-position))
+        (end (org-entry-end-position))
+        (match-list (list)))
+
+    (forward-line)
+    (setq first-line (line-number-at-pos))
+
+    (while (not (org-at-heading-p))
+      (if (org-at-planning-p)
+          (append (line-number-at-pos) match-list))
+      (forward-line))
+
+    (setq original-lst-length (length match-list))
+
+    (while (> (length match-list) 0)
+      (setq iterations (- original-lst-length (length match-list)))
+      (setq match-line (+ (pop match-list) iterations))
+      (goto-line match-line)
+      (drag-stuff-up (- val first-line)))
+
+    ))
 
 #+end_src
 

@@ -14,16 +14,16 @@
 
 ;; Restore values after startup
 (add-hook 'after-init-hook
-  (lambda ()
-    (setq gc-cons-threshold (* 16 8 1024 1024) ; 16MB
-          file-name-handler-alist file-name-handler-alist-original)))
+           (lambda ()
+             (setq gc-cons-threshold (* 16 8 1024 1024) ; 16MB
+                   file-name-handler-alist file-name-handler-alist-original)))
 
 ;; Only show cursor in the active window.
 (setq-default cursor-in-non-selected-windows nil)
 
 ;;Default frame position
 (setq default-frame-alist
-  `((height . 60) (width . 100)))
+      `((height . 60) (width . 100)))
 
 ;; Prevent the glimpse of un-styled Emacs by disabling these UI elements early.
 (push '(menu-bar-lines . 0) default-frame-alist)
