@@ -15,7 +15,7 @@
   - [[#file-footer][File Footer]]
 - [[#file-init][File: Init]]
   - [[#file-header-1][File Header]]
-  - [[#configuration-file-variable][Configuration File variable]]
+  - [[#define-file-names][Define file names]]
   - [[#load-config-file][Load config file]]
     - [[#method-1-tangle-on-save-and-load-pre-parsed-config-file][Method 1: tangle on save and load pre-parsed config file]]
     - [[#method-2-always-parse-config-file-on-load][Method 2: always parse config file on load]]
@@ -30,6 +30,7 @@
     - [[#system-path][System Path]]
     - [[#startup-profiler][Startup Profiler]]
     - [[#use-emacs-with-server-client-configuration][Use Emacs with server-client configuration]]
+    - [[#babel-tangle-patch][Babel tangle patch]]
   - [[#appearance][Appearance]]
     - [[#font][Font]]
     - [[#theme][Theme]]
@@ -92,14 +93,13 @@
   - [[#personal-settings][Personal Settings]]
   - [[#experimental-snippets--work-in-progress][Experimental Snippets + Work in Progress]]
     - [[#org-beautify-symbols][org beautify symbols]]
-    - [[#navigate-words-by-only-moving-to-the-first-character-backward-and-forward][navigate words by only moving to the first character, backward and forward]]
+    - [[#word-navigation][word navigation]]
     - [[#stuff-i-need-to-try-that-might-improve-scrolling][stuff I need to try that might improve scrolling.]]
-    - [[#org-agenda-custom-commands][org agenda custom commands]]
     - [[#make-tab-line-empty][make tab-line empty]]
     - [[#emacs-server][Emacs server]]
     - [[#system-notifications][system notifications]]
     - [[#ledger][ledger]]
-    - [[#org-babel-execute][org babel execute]]
+    - [[#src-babel-execute][src babel execute]]
     - [[#agenda-todo-list---ignore-scheduled-and-deadline][agenda todo list - ignore scheduled and deadline]]
     - [[#export-org-agenda-to-ics-file-for-google-calendar][export org agenda to .ics file for Google calendar]]
     - [[#change-terminal-face-to-alter-fzf-prompt][change terminal face to alter fzf prompt]]
@@ -111,6 +111,7 @@
     - [[#format-org-files---move-planning-to-top-of-heading][format org files - move planning to top of heading]]
     - [[#color-theme-examples-and-research][Color theme examples and research]]
     - [[#vim-and-ryo-modal-keybindings][Vim and Ryo-modal keybindings]]
+    - [[#org-babel-tangle-ignore-notangle-tag][org-babel-tangle ignore =notangle= tag]]
   - [[#file-footer-2][File Footer]]
 - [[#fixes-improvements-and-todos][Fixes, Improvements and TODOs]]
 
@@ -177,14 +178,13 @@ Then, after opening Emacs for the first time, open the command menu with =M-x= a
 Most of the keybinds are missing or out of date...
 I'll do something about it eventually...
 
-
 The conversion to use "modern" keybinds is mostly dealt with by [[https://github.com/darkstego/wakib-keys][wakib-keys]].
 I customized the commands and changed a few keys but it's still similar to the default package.
 
 The following image shows all the keys you need to know to get started:
 
 #+ATTR_ORG: :width 1200
-[[./config-resources/keyboard-layout-ctrl.png]]
+[[./resources/keyboard-layout-ctrl.png]]
 
 The wakib-keys package defines a lot more bindings that are more oriented towards speed and productivity.
 If you're interested, go check it out.
@@ -289,12 +289,15 @@ For the GUI changes that deserve to be in early-init. It is more efficient to di
 
 #+end_src
 
-** Configuration File variable
+** Define file names
 
 #+begin_src emacs-lisp :tangle init.el
 
 (defvar *config-file* (expand-file-name "README.org" user-emacs-directory)
   "The configuration file.")
+
+(defvar *config-file-tangled* (expand-file-name "config.el" user-emacs-directory)
+  "The configuration file, after being tangled.")
 
 #+end_src
 
@@ -308,9 +311,11 @@ This is very effective when you have a hook to tangle the config file every time
 
 #+begin_src emacs-lisp :tangle init.el
 
-;; If config.el exists then load it, otherwise tangle README.org
-(if (file-exists-p (expand-file-name "config.el" user-emacs-directory))
-    (load-file (expand-file-name "config.el" user-emacs-directory))
+(load-file (expand-file-name "resources/tangle-patch.el" user-emacs-directory))
+
+;; If tangled elisp exists then load it, otherwise tangle the Org file and load it
+(if (file-exists-p *config-file-tangled*)
+    (load-file *config-file-tangled*)
   (org-babel-load-file *config-file*))
 
 #+end_src
@@ -485,9 +490,9 @@ One small issue is that it doesn't seem to load the early init file.
 
 #+end_src
 
-**** Package: benchmark-init
+**** Package: benchmark-init                                    :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package benchmark-init
   :defer nil
@@ -516,6 +521,53 @@ Use emacs with a server/client model.
 (use-package server
   :config
   (unless (server-running-p) (server-start)))
+
+#+end_src
+
+*** Babel tangle patch
+
+Allow excluding org headings and trees from tangle by using the =notangle= tag.
+
+#+begin_src emacs-lisp :tangle etc/tangle-patch.el
+
+(require 'ob-tangle)
+(load-file "/home/kyukee/.emacs.d/straight/repos/org/lisp/ob-tangle.el")
+
+(defun *org-babel-tangle-collect-blocks (&optional lang-re tangle-file)
+  "Like `org-babel-tangle-collect-blocks', but will ignore blocks that are in trees with the :notangle: tag."
+  (let ((counter 0) last-heading-pos blocks)
+    (org-babel-map-src-blocks (buffer-file-name)
+      (let ((current-heading-pos
+	           (org-with-wide-buffer
+	            (org-with-limited-levels (outline-previous-heading)))))
+	      (if (eq last-heading-pos current-heading-pos) (cl-incf counter)
+	        (setq counter 1)
+	        (setq last-heading-pos current-heading-pos)))
+      (unless (or (org-in-commented-heading-p)
+		              (org-in-archived-heading-p))
+	      (let* ((tags (org-get-tags-at))
+               (info (org-babel-get-src-block-info 'light))
+	             (src-lang (nth 0 info))
+	             (src-tfile (cdr (assq :tangle (nth 2 info)))))
+	        (unless (or (member "notangle" tags)
+                      (string= src-tfile "no")
+		                  (and tangle-file (not (equal tangle-file src-tfile)))
+		                  (and lang-re (not (string-match-p lang-re src-lang))))
+	          ;; Add the spec for this block to blocks under its tangled
+	          ;; file name.
+	          (let* ((block (org-babel-tangle-single-block counter))
+                   (src-tfile (cdr (assq :tangle (nth 4 block))))
+		               (file-name (org-babel-effective-tangled-filename
+                               (nth 1 block) src-lang src-tfile))
+		               (by-fn (assoc file-name blocks)))
+	            (if by-fn (setcdr by-fn (cons (cons src-lang block) (cdr by-fn)))
+		            (push (cons file-name (list (cons src-lang block))) blocks)))))))
+    ;; Ensure blocks are in the correct order.
+    (mapcar (lambda (b) (cons (car b) (nreverse (cdr b))))
+	          (nreverse blocks))))
+
+(advice-add 'org-babel-tangle-collect-blocks :override
+             #'*org-babel-tangle-collect-blocks)
 
 #+end_src
 
@@ -1521,8 +1573,9 @@ Some nice-to have things and general settings.
 ;; On save, automatically remove trailling whitespace
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
-;; For all text modes, use visual-line-mode
-(add-hook 'text-mode-hook 'visual-line-mode)
+;; Use line wrap for Text modes, and disable it for Programming modes
+(add-hook 'text-mode-hook (lambda () (visual-line-mode 1)))
+(add-hook 'prog-mode-hook (lambda () (setq truncate-lines t)))
 
 ;; auto refresh dired when file changes
 (add-hook 'dired-mode-hook 'auto-revert-mode)
@@ -1548,12 +1601,6 @@ Some nice-to have things and general settings.
 
 (setq-default cursor-type 'bar)
 (set-cursor-color "#ffffff")
-
-;; define values for split-sensibly
-;; Note: the thresholds need to be twice as big as the smallest window allowed, because the new windows each use half of former window size.
-(setq split-width-threshold 100
-      split-height-threshold 40)
-;; 160/80
 
 ;; new buffers are opened in org-mode by default
 (setq-default major-mode 'org-mode)
@@ -1680,6 +1727,7 @@ Some nice-to have things and general settings.
 (add-hook 'doc-view-mode-hook (lambda () (display-line-numbers-mode -1)))
 (add-hook 'pdf-view-mode-hook (lambda () (display-line-numbers-mode -1)))
 (add-hook 'eshell-mode-hook (lambda () (display-line-numbers-mode -1)))
+(add-hook 'ediff-mode-hook (lambda () (display-line-numbers-mode -1)))
 
 ;; set size in pixels of left and right fringes (default is 8)
 (fringe-mode '(4 . 8))
@@ -1710,7 +1758,7 @@ Some nice-to have things and general settings.
 
 #+end_src
 
-*** Directory local variables
+*** Directory local variables                                    :notangle:
 
 It is possible to create directory-local settings without using a .dir-locals.el file or modifying the original file.
 I prefer this approach because it is centralized and has less clutter.
@@ -1720,7 +1768,7 @@ It is also possible set functions to evaluate at startup, for those directories.
 
 For more information about syntax, check the [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Directory-Variables.html][documentation]].
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 ;; Here, we make the config file show 2 heading levels at startup, to make navigation easier.
 (dir-locals-set-class-variables 'dir-local--emacs-config
@@ -1755,7 +1803,15 @@ Note: this is a package that is installed by default, so that's why it's in this
 
 Patch =split-window-sensibly= function so that it prefers vertical splits over horizontal ones.
 
+=split-window-sensibly=, =split-window-horizontally= and =split-window-vertically= have all been changed to switch to the new window after a split.
+
 #+begin_src emacs-lisp
+
+;; define values for split-sensibly
+;; Note: the thresholds need to be twice as big as the smallest window allowed, because the new windows each use half of former window size.
+(setq split-width-threshold 100
+      split-height-threshold 40)
+;; 160/80
 
 (with-eval-after-load "window"
   (defcustom split-window-below nil
@@ -1770,15 +1826,14 @@ Patch =split-window-sensibly= function so that it prefers vertical splits over h
 
   (fmakunbound #'split-window-sensibly)
 
-  (defun split-window-sensibly
-      (&optional window)
+  (defun split-window-sensibly (&optional window)
     (setq window (or window (selected-window)))
     (or (and (window-splittable-p window t)
              ;; Split window horizontally.
-             (split-window window nil (if split-window-right 'left  'right)))
+             (select-window (split-window window nil (if split-window-right 'left  'right))))
         (and (window-splittable-p window)
              ;; Split window vertically.
-             (split-window window nil (if split-window-below 'above 'below)))
+             (select-window (split-window window nil (if split-window-below 'above 'below))))
         (and (eq window (frame-root-window (window-frame window)))
              (not (window-minibuffer-p window))
              ;; If WINDOW is the only window on its frame and is not the
@@ -1786,10 +1841,19 @@ Patch =split-window-sensibly= function so that it prefers vertical splits over h
              ;; value of `split-width-threshold'.
              (let ((split-width-threshold 0))
                (when (window-splittable-p window t)
-                 (split-window window nil (if split-window-right
+                 (select-window (split-window window nil (if split-window-right
                                               'left
-                                            'right))))))))
+                                            'right)))))))))
 
+(defun my/split-window-horizontally-and-follow ()
+  (interactive)
+  "Like `split-window-horizontally’, but focuses the newly created window."
+  (select-window (split-window-horizontally)))
+
+(defun my/split-window-vertically-and-follow ()
+  (interactive)
+  "Like `split-window-vertically’, but focuses the newly created window."
+  (select-window (split-window-vertically)))
 
 #+end_src
 
@@ -1873,9 +1937,9 @@ Another idea I've had is the following:
 
 Currently using: bufler with optional bufler-tabs-mode
 
-**** Package: persp-mode
+**** Package: persp-mode                                        :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package persp-mode
   :config
@@ -1895,7 +1959,7 @@ Currently using: bufler with optional bufler-tabs-mode
 #+end_src
 
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package perspective
   :config
@@ -2343,7 +2407,7 @@ The sidebar only changes when bufler focuses a new workspace.
         dashboard-set-init-info        t
         dashboard-set-footer           nil
         dashboard-set-navigator        t
-        dashboard-startup-banner       (expand-file-name "config-resources/Emacs-logo.svg" user-emacs-directory)
+        dashboard-startup-banner       (expand-file-name "resources/Emacs-logo.svg" user-emacs-directory)
         dashboard-banner-logo-title    (format "GNU Emacs version %d.%d" emacs-major-version emacs-minor-version)
         dashboard-init-info            (format "%d packages loaded with straight. finished in %s"
                                                (length (hash-table-keys straight--success-cache)) (emacs-init-time))
@@ -2689,9 +2753,9 @@ The default doom modeline, for reference:
 
 #+end_example
 
-**** Package: spaceline
+**** Package: spaceline                                         :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package spaceline)
 
@@ -2745,9 +2809,9 @@ The default doom modeline, for reference:
 
 #+end_src
 
-**** Package: telephone-line
+**** Package: telephone-line                                    :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package telephone-line)
 
@@ -2803,9 +2867,9 @@ The default doom modeline, for reference:
 
 #+end_src
 
-**** Package: mood-line
+**** Package: mood-line                                         :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package mood-line)
 (setq mood-line-show-encoding-information t)
@@ -2814,12 +2878,12 @@ The default doom modeline, for reference:
 
 #+end_src
 
-**** bufler segment example
+**** bufler segment example                                     :notangle:
 
 This part is the bufler modeline segment, without the doom-modeline specific stuff.
 This can be used to define a segment for any modeline.
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (doom-modeline-def-segment my/bufler-workspace
   "Display current bufler workspace name"
@@ -3032,13 +3096,13 @@ This is how the author of the package suggests implementing thing-at-point in a 
   (let ((vr-current-thing-at-point (thing-at-point 'symbol t)))
     (call-interactively 'vr/query-replace)))
 
-**** test: display matches in folded org headings
+**** test: display matches in folded org headings               :notangle:
 
 an attempt to replicate anzu and swiper behaviour.
 they open a heading when there's an entry in there and fold it back when moving to the next heading.
 they final view is the same as before the command executed.
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (defun vr--perform-query-replace ()
   ;; This function is a heavily modified version of (perform-replace) from replace.el.
@@ -3233,9 +3297,11 @@ The code below executes org-babel-tangle asynchronously when the config file is 
     (let ((init-tangle-start-time (current-time))
           (file (buffer-file-name))
           (async-quiet-switch "-q"))
+      ;; (org-babel-tangle-file org-file)
       (async-start
        `(lambda ()
-          (require 'org)
+          ;; (require 'org)
+          (load-file (expand-file-name "resources/tangle-patch.el" user-emacs-directory))
           (org-babel-tangle-file ,org-file))
        (unless *show-async-tangle-results*
          `(lambda (result)
@@ -3331,6 +3397,8 @@ The code below executes org-babel-tangle asynchronously when the config file is 
 
 #+end_src
 
+**** org-superstar: Testing extra features                      :notangle:
+
 Here are some symbols that can be used for Org headings:
 
 "✙" "♱" "♰" "☥" "✞" "✟" "✝" "†" "✠" "✚" "✜" "✛" "✢" "✣" "✤" "✥"
@@ -3345,7 +3413,7 @@ And here are some code samples from  the repo, showing some possibilities:
 
 This time we want all of the above but a little more personalized. First off, let’s make bullets a little more chunky. Mind that the height we provide for bullet faces is not the actual height of a bullet, but its height relative to its surroundings. Additionally, let’s hide the leading stars for terminal sessions, as the default leader does not look all that good in my chosen terminal font. I make use of the fact that org-superstar-leading-fallback can be set to the space character. This has the nice advantage over org-hide-leading-stars that it does not just “paint over” the asterisks, but makes them completely indistinguishable from white space, neat!
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (with-eval-after-load 'org-superstar
   (set-face-attribute 'org-superstar-item nil :height 1.2)
@@ -3364,7 +3432,7 @@ This time we want all of the above but a little more personalized. First off, le
 
 Inline tasks behave as you would expect them to, for the most part. They have two bullets instead of one, but are otherwise treated the same as regular headlines by Org Superstar, meaning org-superstar-headline-bullets-list controls the bullet used as if it were a regular headline. If org-inlinetask-show-first-star is non-nil, you can customize the additional marker. Just like with the rest of Superstar’s decorations, you can more or less fully control how it looks, with independent settings for graphical and terminal displays and a dedicated face, should you find the default of using org-warn a little… unsubtle. We again use the LaTeX setup as a base and add a few tweaks.
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (require 'org-inlinetask)
 (setq org-inlinetask-show-first-star t)
@@ -3445,7 +3513,18 @@ Inline tasks behave as you would expect them to, for the most part. They have tw
                                                (todo . " %i %-25:c")
                                                (tags . " %i %-25:c")
                                                (search . " %i %-25:c"))
-        org-agenda-window-setup              'only-window))
+        org-agenda-window-setup              'only-window)
+
+  (setq org-agenda-custom-commands
+        '(("a" "Agenda and all NEXT items"
+           ((agenda "")
+            (todo "NEXT"))
+           ((org-agenda-todo-ignore-with-date t)))
+          ;; ("cm" "Custom: This month"
+          ;;  ((org-ql-block '(ts-active :from today :to (format-time-string "%Y-%m-%d" (org-read-date nil t "+30d")))
+          ;;                  ((org-ql-block-header "This month")))
+          ;;   (agenda)))
+          )))
 
 #+end_src
 
@@ -3484,6 +3563,12 @@ Inline tasks behave as you would expect them to, for the most part. They have tw
   (org-super-agenda-mode))
 
 #+end_src
+
+**** Notes and basic usage
+
+Emphasis: when to use = or ~
+~ is for code, functions, or things that can be executed
+= is for general emphasis
 
 *** REVIEW Modal editing
 **** Package: ryo-modal
@@ -3896,14 +3981,13 @@ By default, changes are displayed in the fringe.
 
   :hook ((magit-pre-refresh . diff-hl-magit-pre-refresh)
          (magit-post-refresh . diff-hl-magit-post-refresh)
-         (prog-mode . diff-hl-mode)
-  ))
+         (prog-mode . diff-hl-mode)))
 
 #+end_src
 
-**** Package: git-gutter
+**** Package: git-gutter                                        :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package git-gutter
   :config
@@ -4560,9 +4644,9 @@ show a different main hydra, depending on major mode
 
 #+end_src
 
-**** Hydra: eval
+**** Hydra: eval                                                :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (pretty-hydra-define hydra-eval
   (:color teal :quit-key "q" :title "Eval Hydra")
@@ -4814,7 +4898,8 @@ show a different main hydra, depending on major mode
    "Misc"
    (("b" page-break-lines-mode "page break lines" :toggle t)
     ("g" diff-hl-mode "git gutter" :toggle t)
-    ("o" my/org-toggle-emphasis "org-mode emphasis markers" :toggle t))
+    ("o" my/org-toggle-emphasis "org-mode emphasis markers" :toggle t)
+    ("w" my/toggle-line-wrap "line wrap" :toggle t))
    "Debug"
    (("D" toggle-debug-on-error "debug on error" :toggle (default-value 'debug-on-error))
     ("X" toggle-debug-on-quit "debug on quit" :toggle (default-value 'debug-on-quit)))
@@ -4848,8 +4933,8 @@ show a different main hydra, depending on major mode
 (pretty-hydra-define hydra-window
   (:color teal :quit-key "q" :title "Window Hydra")
   ("Create"
-   (("h" split-window-horizontally "New horizontal split")
-    ("v" split-window-vertically "New vertical split"))
+   (("h" my/split-window-horizontally-and-follow "New horizontal split")
+    ("v" my/split-window-vertically-and-follow "New vertical split"))
    "Delete"
    (("d" delete-window "Current window")
     ("f" delete-other-windows "Focus current window. Delete all other windows"))
@@ -4926,7 +5011,7 @@ For Arch, the respective necessary packages are:
 
 #+end_src
 
-**** define a minor mode to fix M-<pg up/down> behaviour
+**** define a minor mode to fix M-<pg up/down> behaviour        :notangle:
 
 This needs to be added to the end of any org file that is being used to create a LaTeX pdf.
 
@@ -4938,7 +5023,7 @@ Not currently being used.
 # End:
 #+end_example
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (defun my/scroll-other-window-down ()
   "Scroll other window down, with support for pdf-view-mode."
@@ -4964,7 +5049,7 @@ Not currently being used.
 
 #+end_src
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 ;; my/scroll-other-window-pdf-tools-mode.el
 ;; Temporary minor mode
 ;; Main use is to enable it only in specific buffers to achieve the goal of buffer-specific keymaps
@@ -5014,7 +5099,9 @@ This is configured to use the margin, instead of the default fringe.
 
 #+end_src
 
-#+begin_src emacs-lisp :tangle no
+**** Latex linter                                               :notangle:
+
+#+begin_src emacs-lisp
 
 (use-package flycheck-aspell
   :config
@@ -5201,17 +5288,17 @@ Can also be used to jump to word, line, symbol, etc.
 
 #+end_src
 
-**** Package: ibuffer-vc
+**** Package: ibuffer-vc                                        :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package ibuffer-vc)
 
 #+end_src
 
-**** Package: symbolword-mode
+**** Package: symbolword-mode                                   :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package symbolword-mode
   :init
@@ -5285,7 +5372,7 @@ This should make compilation buffers handle ANSI escape sequences instead of dis
 
 Show a buffer position indicator on the right fringe
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package yascroll
   :config
@@ -5293,9 +5380,9 @@ Show a buffer position indicator on the right fringe
 
 #+end_src
 
-**** Package: annotate
+**** Package: annotate                                          :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package annotate
   :hook
@@ -5316,9 +5403,9 @@ Replace the default fringe icons with more modern looking ones
 
 #+end_src
 
-**** Package: scroll-on-jump
+**** Package: scroll-on-jump                                    :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package scroll-on-jump
   :config
@@ -5348,12 +5435,12 @@ Better formatting for help buffers
 
 #+end_src
 
-**** Package: golden-ratio
+**** Package: golden-ratio                                      :notangle:
 
 This doesnt work well with which-key
 https://github.com/roman/golden-ratio.el/issues/82
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package golden-ratio
   :config
@@ -5439,13 +5526,34 @@ face used is from term-mode
           visual-fill-column-center-text    nil)
     (visual-fill-column-mode 1))
 
+  (defun my/toggle-line-wrap ()
+    "Toggle line wrap in current buffer."
+    (interactive)
+    (if (equal major-mode 'org-mode)
+        (if visual-fill-column-mode
+            (progn
+              (visual-fill-column-mode -1)
+              (visual-line-mode -1)
+              (setq truncate-lines t))
+          (progn
+            (visual-fill-column-mode 1)
+            (visual-line-mode 1)
+            (setq truncate-lines nil)))
+      (if visual-line-mode
+          (progn
+            (visual-line-mode -1)
+            (setq truncate-lines t))
+        (progn
+          (visual-line-mode 1)
+          (setq truncate-lines nil)))))
+
   :hook (org-mode . my/org-mode-visual-fill))
 
 #+end_src
 
-**** Package: highlight-quoted-vars
+**** Package: highlight-quoted-vars                             :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package init-shell-highlighting
   :straight (init-shell-highlighting
@@ -5479,6 +5587,36 @@ It is possible to highlight with background colour instead, but the face used ha
 (use-package fullframe
   :config
   (fullframe bufler-list quit-window))
+
+#+end_src
+
+**** Custom Package: exchange-point-mode
+
+#+begin_src emacs-lisp
+
+(defun my/exchange-point-and-mark-when-cg ()
+  (when (region-active-p)
+    (exchange-point-and-mark)))
+
+(define-minor-mode exchange-point-mode
+  "Mode for restoring point position w/ `keyboard-quit' when
+a region is active."
+  :global t
+  (if exchange-point-mode
+      (advice-add #'keyboard-quit :before #'my/exchange-point-and-mark-when-cg)
+    (advice-remove 'keyboard-quit #'my/exchange-point-and-mark-when-cg)))
+
+(exchange-point-mode 1)
+
+#+end_src
+
+**** Package: rotate
+
+Another alternative is the =transpose-frame= package.
+
+#+begin_src emacs-lisp
+
+(use-package rotate)
 
 #+end_src
 
@@ -5608,9 +5746,9 @@ The features for this language include:
 The features for this language include:
   - language server
 
-**** Package: java-mode+
+**** Package: java-mode+                                        :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package lsp-java
   :ensure nil
@@ -5640,22 +5778,22 @@ The features for this language include:
   - references (deactivated)
   - minted code listings
 
-**** Package: org-ref
+**** Package: org-ref                                           :notangle:
 
 This takes a long time to load. Maybe add :mode or :commands to defer loading.
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package org-ref
   :after org)
 
 #+end_src
 
-**** Latex package: minted
+**** Latex package: minted                                      :notangle:
 
 Add support for =minted= Latex package.
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (setq org-latex-listings          'minted
       org-latex-packages-alist    '(("" "minted"))
@@ -5781,9 +5919,9 @@ This section has random code snippets and unfinished ideas.
 None of these is exported to the config file. Eventually, these ideas should be finished and implemented or deleted.
 They are in the end of the config file to allow most of the config to be loaded even if there's an error.
 
-*** org beautify symbols
+*** org beautify symbols                                         :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package org
   :hook ((org-mode . (lambda ()
@@ -5808,9 +5946,11 @@ They are in the end of the config file to allow most of the config to be loaded 
 
 #+end_src
 
-*** navigate words by only moving to the first character, backward and forward
+*** word navigation                                              :notangle:
 
-#+begin_src emacs-lisp :tangle no
+navigate words by only moving to the first character, backward and forward
+
+#+begin_src emacs-lisp
 
 (progn
   (defun boundary ()
@@ -5831,9 +5971,9 @@ They are in the end of the config file to allow most of the config to be loaded 
 
 #+end_src
 
-*** stuff I need to try that might improve scrolling.
+*** stuff I need to try that might improve scrolling.            :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package emacs
   :custom
@@ -5870,30 +6010,9 @@ They are in the end of the config file to allow most of the config to be loaded 
 
 #+end_src
 
-*** org agenda custom commands
+*** make tab-line empty                                          :notangle:
 
 #+begin_src emacs-lisp
-
-;; (setq org-agenda-custom-commands
-;;       '(("cm" "Custom: This month"
-;;          ((org-ql-block '(ts-active :from today :to (format-time-string "%Y-%m-%d" (org-read-date nil t "+30d")))
-;;                         ((org-ql-block-header "This month")))
-;;           (agenda)))
-
-;;         ))
-
-(setq org-agenda-custom-commands
-      '(("a" "Agenda and all NEXT items"
-         ((agenda "")
-          (todo "NEXT"))
-         ((org-agenda-todo-ignore-with-date t)))
-        ))
-
-#+end_src
-
-*** make tab-line empty
-
-#+begin_src emacs-lisp :tangle no
 
 ;; use this next snippet to add blank space at the top of the window
 ;; note: the background should be set to the same as the buffer
@@ -5903,11 +6022,11 @@ They are in the end of the config file to allow most of the config to be loaded 
 
 #+end_src
 
-*** Emacs server
+*** Emacs server                                                 :notangle:
 
 Detect existing emacs server and switch to it if possible
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (require 'server)
 
@@ -5927,9 +6046,9 @@ Detect existing emacs server and switch to it if possible
 
 #+end_src
 
-*** system notifications
+*** system notifications                                         :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package alert
   :ensure t
@@ -5938,9 +6057,9 @@ Detect existing emacs server and switch to it if possible
 
 #+end_src
 
-*** ledger
+*** ledger                                                       :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package ledger-mode
   :ensure nil
@@ -5949,11 +6068,11 @@ Detect existing emacs server and switch to it if possible
   (use-package flycheck-ledger
     :ensure t))
 
-#+end_src
+#+end_org
 
-*** org babel execute
+*** src babel execute                                            :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 ;; (add-to-list 'dashboard-heading-icons '(treemacs-workspaces . "book"))
 
@@ -5964,9 +6083,9 @@ Detect existing emacs server and switch to it if possible
 
 #+end_src
 
-*** agenda todo list - ignore scheduled and deadline
+*** agenda todo list - ignore scheduled and deadline             :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 ;;don't show tasks that are scheduled or have deadlines in the
 ;;normal todo list
@@ -5975,9 +6094,9 @@ Detect existing emacs server and switch to it if possible
 
 #+end_src
 
-*** export org agenda to .ics file for Google calendar
+*** export org agenda to .ics file for Google calendar           :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (setq org-icalendar-combined-agenda-file "~/tmp/org-agenda-export.ics"
       org-icalendar-use-scheduled        '(event-if-todo-not-done)
@@ -5987,9 +6106,9 @@ Detect existing emacs server and switch to it if possible
 
 #+end_src
 
-*** change terminal face to alter fzf prompt
+*** change terminal face to alter fzf prompt                     :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (custom-set-faces
   '(term         ((t (:background ,bg_1 :foreground ,fg_1))))
@@ -5997,9 +6116,9 @@ Detect existing emacs server and switch to it if possible
 
 #+end_src
 
-*** dired-sidebar test
+*** dired-sidebar test                                           :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package dired-sidebar
   :commands (dired-sidebar-toggle-sidebar)
@@ -6064,11 +6183,11 @@ Detect existing emacs server and switch to it if possible
 
 #+end_src
 
-*** indent guides
+*** indent guides                                                :notangle:
 
 *highlight-indent-guides* with *character* method seems like the best option.
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package highlight-indentation
   :config
@@ -6103,9 +6222,9 @@ Detect existing emacs server and switch to it if possible
 
 #+end_src
 
-*** company-flyspel.el
+*** company-flyspel.el                                           :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 ;;; company-flyspell.el --- company-mode flyspell backend -*- lexical-binding: t -*-
 
@@ -6205,9 +6324,9 @@ Based on `flyspell-correct-word-before-point'."
 
 #+end_src
 
-*** dired-sort-menu
+*** dired-sort-menu                                              :notangle:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (use-package dired-sort-menu)
 
@@ -6218,18 +6337,18 @@ Based on `flyspell-correct-word-before-point'."
 
 #+end_src
 
-*** check host OS
+*** check host OS                                                :notangle:
 
 These variable is for handily tangle blocks on different OSes.
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (set 'linuxp (when (eq system-type 'gnu/linux) "yes"))
 (set 'windowp (when (eq system-type 'windows-nt) "yes"))
 
 #+end_src
 
-*** format org files - move planning to top of heading
+*** format org files - move planning to top of heading           :notangle:
 
 This doesnt work as it is now because ~(org-at-planning-p)~ only returns true when the text is in the first line of the heading.
 
@@ -6237,7 +6356,7 @@ Explanation:
   Usually, org planning lines (Scheduled, Deadline, etc.) should be the first thing in a heading.
   Any drawers, such as the properties drawer, should only appear afterwards.
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 (defun my/org-move-planning-lines-top-of-heading ()
   "Move any present planning lines to top of current heading.
@@ -6267,7 +6386,7 @@ Preserves ordering"
 
 #+end_src
 
-*** Color theme examples and research
+*** Color theme examples and research                            :notangle:
 
 Resources:
 - https://vimcolorschemes.com/
@@ -6303,7 +6422,7 @@ Finish later:
 |                   |         |         |         |         |         |         |         |         |
 | test              |         | #ff1493 | #12F292 | #ffa500 | #4c83ff | #A840F4 | #21D7D7 |         |
 
-*** Vim and Ryo-modal keybindings
+*** Vim and Ryo-modal keybindings                                :notangle:
 **** vim keys
 
 h,j,k,l
@@ -6380,6 +6499,50 @@ drag-stuff-left
 drag-stuff-right
 drag-stuff-up
 drag-stuff-down
+
+*** org-babel-tangle ignore =notangle= tag                       :notangle:
+
+#+begin_src emacs-lisp
+
+(defun *org-babel-tangle-collect-blocks (&optional lang-re tangle-file)
+  "Like `org-babel-tangle-collect-blocks', but will ignore blocks that are in trees with the :notangle: tag."
+  (let ((counter 0) last-heading-pos blocks)
+    (org-babel-map-src-blocks (buffer-file-name)
+      (let ((current-heading-pos
+	           (org-with-wide-buffer
+	            (org-with-limited-levels (outline-previous-heading)))))
+	      (if (eq last-heading-pos current-heading-pos) (cl-incf counter)
+	        (setq counter 1)
+	        (setq last-heading-pos current-heading-pos)))
+      (unless (or (org-in-commented-heading-p)
+		              (org-in-archived-heading-p))
+	      (let* ((tags (org-get-tags-at))
+               (info (org-babel-get-src-block-info 'light))
+	             (src-lang (nth 0 info))
+	             (src-tfile (cdr (assq :tangle (nth 2 info)))))
+	        (unless (or (member "notangle" tags)
+                      (string= src-tfile "no")
+		                  (and tangle-file (not (equal tangle-file src-tfile)))
+		                  (and lang-re (not (string-match-p lang-re src-lang))))
+	          ;; Add the spec for this block to blocks under its tangled
+	          ;; file name.
+	          (let* ((block (org-babel-tangle-single-block counter))
+                   (src-tfile (cdr (assq :tangle (nth 4 block))))
+		               (file-name (org-babel-effective-tangled-filename
+                               (nth 1 block) src-lang src-tfile))
+		               (by-fn (assoc file-name blocks)))
+	            (if by-fn (setcdr by-fn (cons (cons src-lang block) (cdr by-fn)))
+		            (push (cons file-name (list (cons src-lang block))) blocks)))))))
+    ;; Ensure blocks are in the correct order.
+    (mapcar (lambda (b) (cons (car b) (nreverse (cdr b))))
+	          (nreverse blocks))))
+
+(advice-add 'org-babel-tangle-collect-blocks :override
+             #'*org-babel-tangle-collect-blocks)
+
+;; (org-babel-tangle-file (expand-file-name "README.org" user-emacs-directory))
+
+#+end_src
 
 ** File Footer
 
@@ -6540,6 +6703,10 @@ Todo:
   - [X] modeline gets off-screen when filename is too large
   - [X] left-fringe-width conflict with visual-line-mode indicators
   - [X] "my/open-file-from-org-dir" has a different menu the first time it's called. it changes after selecting an option once.
+  - [X] when a region is selected and an arrow key is pressed in the opposite direction, exchange point and cursor (or make jump to prev mark work)
+  - [X] disable line wrap for coding and enable for org mode
+  - [X] add line wrap to toggles hydra
+  - [X] jump to new window when a window is created
   - [ ] add keybindings tables (or a cheatsheet image) in config file
   - [ ] commenting/indenting inside source block jumps to top of block. happens with just 'emacs -Q' and comment-dwim ([[https://www.reddit.com/r/emacs/comments/ap4s7z/orgmode_weirdness_questions/][reddit thread]])
   - [ ] maybe incorporate previous/next concept from wakib-emacs? (it uses the ';' key)
@@ -6550,7 +6717,6 @@ Todo:
   - [ ] improve appearance of tab-line arrows (they appear when the bar is too full)
   - [ ] for every package, add a quote from their git repo explaining what the package does
   - [ ] allow jumping to a function definition by ctrl-click or f2 or something else (check 'embark' package)
-  - [ ] when a region is selected and an arrow key is pressed in the opposite direction, exchange point and cursor (or make jump to prev mark work)
   - [ ] add hydra or M-<key> commands for org-mark-ring-push, org-mark-ring-goto, counsel-mark-ring
   - [ ] C-SPC and C-u SPC don't work with ryo-modal (C-SPC C-SPC to mark, C-u C-SPC to jump to prev mark)
   - [ ] hydra toggle for golden-ratio-mode
@@ -6559,7 +6725,7 @@ Todo:
   - [ ] magit diffs use blue and pink for additions and deletions
   - [ ] make startup time under 1 second with use-package defer features
   - [ ] reduce font size for hydra menus (should see menus even at 60% window width)
-  - [ ] crux has a lot of useful commands. I could replace my custom functions with their package.
+  - [ ] crux has a lot of useful commands. I could replace some of my custom functions with their package.
   - [ ] rainbow-mode gets overshadowed by current line highlighting
   - [ ] electric-indent-mode in gitconfig-mode adds unnecessary tab after RET
   - [ ] divide org-agenda NEXT section into sections based on different projects, and show warning if no NEXT action exists for a project
@@ -6577,9 +6743,14 @@ Todo:
   - [ ] after opening bufler with ~M-SPC b b~, the previous window layout is deleted and only a single window is visible
   - [ ] when opening a new buffer, it should always open in the current window,  and not take up the whole frame
   - [ ] use [[https://github.com/lepisma/org-books][org-books]] to create an org capture template for anime, manga, movies, books, etc.
-  - [ ] jump to new window when a window is created
   - [ ] switch window positions between them
-  - [ ] disable line wrap for coding and enable for org mode
+  - [ ] diff-hl seems to sometimes cause the lines to align to the left, when moving up or down (either by scrolling line by line or with pgUp/pgDown)
+  - [ ] incompatibility between =my/async-babel-tangle= and =org-babel-tangle-collect-blocks=
+  - [ ] =org-babel-tangle-collect-blocks= will not work the first time =init.el= is loaded
+  - [ ] =org-babel-tangle-collect-blocks= will not allow =my/async-babel-tangle= to load if there is an error on the config file
+  - [ ] yascroll was disabled, but I don't remember why. I'll reactivate it and see if anything bad happens.
+  - [ ] create a =diff= hydra
+  - [ ] change colors or org headings to something more neutral
 
 
 # NOTE: use org-sort and select 'X' to sort this list by what items are checked
