@@ -30,14 +30,15 @@
     - [[#system-path][System Path]]
     - [[#startup-profiler][Startup Profiler]]
     - [[#use-emacs-with-server-client-configuration][Use Emacs with server-client configuration]]
-    - [[#babel-tangle-patch][Babel tangle patch]]
+    - [[#patch-org-babel-tangle-to-allow-excluding-with-tags][Patch org-babel-tangle to allow excluding with tags]]
   - [[#appearance][Appearance]]
     - [[#font][Font]]
     - [[#theme][Theme]]
     - [[#theme-faces-and-colours][Theme Faces and Colours]]
-  - [[#functions][Functions]]
+  - [[#functions-and-minor-modes][Functions and Minor modes]]
     - [[#custom-functions][Custom Functions]]
     - [[#function-aliases][Function Aliases]]
+    - [[#minor-modes][Minor modes]]
   - [[#keybindings][Keybindings]]
     - [[#change-default-keybindings-layout][Change default keybindings layout]]
     - [[#global-keybindings][Global Keybindings]]
@@ -52,7 +53,7 @@
     - [[#directory-local-variables][Directory local variables]]
     - [[#searching][Searching]]
     - [[#window-splits][Window Splits]]
-  - [[#additional-features][Additional Features]]
+  - [[#external-features][External Features]]
     - [[#icon-integration][Icon integration]]
     - [[#project-management][Project Management]]
     - [[#workspaces][Workspaces]]
@@ -82,11 +83,14 @@
     - [[#dockerfile][Dockerfile]]
     - [[#dotenv][Dotenv]]
     - [[#git][Git]]
+    - [[#html][HTML]]
     - [[#java][Java]]
     - [[#json][JSON]]
     - [[#review-latex][REVIEW Latex]]
+    - [[#lua][Lua]]
     - [[#markdown][Markdown]]
     - [[#php][PHP]]
+    - [[#shell-script][Shell Script]]
     - [[#python][Python]]
     - [[#terraform-hcl][Terraform (HCL)]]
     - [[#yaml][YAML]]
@@ -99,10 +103,8 @@
     - [[#emacs-server][Emacs server]]
     - [[#system-notifications][system notifications]]
     - [[#ledger][ledger]]
-    - [[#src-babel-execute][src babel execute]]
     - [[#agenda-todo-list---ignore-scheduled-and-deadline][agenda todo list - ignore scheduled and deadline]]
     - [[#export-org-agenda-to-ics-file-for-google-calendar][export org agenda to .ics file for Google calendar]]
-    - [[#change-terminal-face-to-alter-fzf-prompt][change terminal face to alter fzf prompt]]
     - [[#dired-sidebar-test][dired-sidebar test]]
     - [[#indent-guides][indent guides]]
     - [[#company-flyspelel][company-flyspel.el]]
@@ -111,7 +113,9 @@
     - [[#format-org-files---move-planning-to-top-of-heading][format org files - move planning to top of heading]]
     - [[#color-theme-examples-and-research][Color theme examples and research]]
     - [[#vim-and-ryo-modal-keybindings][Vim and Ryo-modal keybindings]]
-    - [[#org-babel-tangle-ignore-notangle-tag][org-babel-tangle ignore =notangle= tag]]
+    - [[#git-graph][Git Graph]]
+    - [[#bookmarks-and-marks][bookmarks and marks]]
+    - [[#experimental-keybind-changes][experimental keybind changes]]
   - [[#file-footer-2][File Footer]]
 - [[#fixes-improvements-and-todos][Fixes, Improvements and TODOs]]
 
@@ -129,7 +133,7 @@ So I only plan on installing packages that either help with programming or add f
 
 ** Dependencies
 
-In order for everything to work correctly, you should have the following installed on your system:
+By default, in order for everything to work correctly, you should have the following installed on your system:
   - ripgrep
   - fd
   - fzf
@@ -183,7 +187,7 @@ I customized the commands and changed a few keys but it's still similar to the d
 
 The following image shows all the keys you need to know to get started:
 
-#+ATTR_ORG: :width 1200
+#+ATTR_ORG: :width 900
 [[./resources/keyboard-layout-ctrl.png]]
 
 The wakib-keys package defines a lot more bindings that are more oriented towards speed and productivity.
@@ -306,8 +310,7 @@ For the GUI changes that deserve to be in early-init. It is more efficient to di
 
 After the first time that config.el is created, this will no longer tangle the config file.
 This method is slightly faster than just using org-babel-load-file.
-
-This is very effective when you have a hook to tangle the config file every time you save it.
+This is most effective when you have a hook to tangle the config file every time you save it.
 
 #+begin_src emacs-lisp :tangle init.el
 
@@ -320,13 +323,13 @@ This is very effective when you have a hook to tangle the config file every time
 
 #+end_src
 
-*** Method 2: always parse config file on load
+*** Method 2: always parse config file on load                   :notangle:
 
 Always parse the config file when starting emacs.
 This can be useful if recovering from errors in the config file is a concern.
 The downside is that =org-babel-tangle= can take several seconds to complete.
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
 ;; load config.el
 (org-babel-load-file *config-file*)
@@ -524,11 +527,11 @@ Use emacs with a server/client model.
 
 #+end_src
 
-*** Babel tangle patch
+*** Patch org-babel-tangle to allow excluding with tags
 
-Allow excluding org headings and trees from tangle by using the =notangle= tag.
+Allow excluding org headings and trees from being tangled, by using the =notangle= tag.
 
-#+begin_src emacs-lisp :tangle etc/tangle-patch.el
+#+begin_src emacs-lisp :tangle resources/tangle-patch.el
 
 (require 'ob-tangle)
 (load-file "/home/kyukee/.emacs.d/straight/repos/org/lisp/ob-tangle.el")
@@ -575,8 +578,8 @@ Allow excluding org headings and trees from tangle by using the =notangle= tag.
 *** Font
 
 Some of my font options:
-- IBM Plex Mono
-- Cartograph CF
+  - IBM Plex Mono
+  - Cartograph CF
 
 The unit for the 'height' attribute is 1/10pt, which means a height of 100 is 10pt.
 
@@ -610,165 +613,62 @@ The unit for the 'height' attribute is 1/10pt, which means a height of 100 is 10
 
 *** Theme
 
+I use a custom theme edited by myself, titled =neon-ocean-sunset=.
+
+Current issues:
+  - colors from =C-u C-b= and =M-SPC b b= are based on =outline= faces -> pick better outline/org level colors
+  - =general= hydra menu colors -> not enough contrast between green and blue -> cant really do much about it besides picking font-lock faces
+  - magit-section-header
+
 #+begin_src emacs-lisp
 
-(use-package cyberpunk-theme
-  :config
-  (load-theme 'cyberpunk t))
+(add-to-list 'custom-theme-load-path "~/.emacs.d/themes/")
+(load-theme 'neon-ocean-sunset t)
 
 #+end_src
 
+These are some themes I used before:
+  - cyberpunk
+  - underwater
+  - darktooth
+  - tangotango
+  - darkburn
+
+To use a theme from an Emacs package:
+
+#+begin_src emacs-lisp :tangle no
+
+(use-package underwater-theme
+  :config
+  (load-theme 'underwater t))
+
+#+end_src
+
+Note:
+  If there are problems with themes conflicting with each other, it may help to use =disable-theme= before switching to another theme.
+
 *** Theme Faces and Colours
 
-#+begin_src emacs-lisp
+How to edit a theme:
+
+#+begin_src emacs-lisp :tangle no
 
 (setq custom--inhibit-theme-enable nil)
 
-(with-eval-after-load "cyberpunk-theme"
-  (let ((bg_1      "#14141D")
-        (bg_2      "#15151f")     ;; #13141A
-        (bg_3      "#151522")     ;; #151424
-        (bg_4      "#17162a")
-        (red_1     "#ff1493")
-        (red_2     "#D92027")
-        (green_1   "#12F292")     ;; #00fa9a, #14FF82, #40e66c
-        (green_2   "#fff")
-        (yellow_1  "#ffa500")
-        (yellow_2  "#fff")
-        (blue_1    "#add8e6")
-        (blue_2    "#fff")
-        (magenta_1 "#9963ff")
-        (magenta_2 "#fff")
-        (cyan_1    "#21D7D7")
-        (cyan_2    "#fff")
-        (fg_1      "#c8c9ad")     ;; #bdbdb3, #ecf0c1
-        (fg_2      "#dedede"))
+(with-eval-after-load "underwater-theme"
+  (let ((bg_1      "#000000")
+        (fg_1      "#ffffff"))
     (custom-theme-set-faces
-     'cyberpunk
-
-     ;; defaults
+     'underwater
+      ;; you can set variables and use them, use the colors directly, or use Emacs default colors
      `(default                       ((t (:background ,bg_1 :foreground ,fg_1))))
-     `(fringe                        ((t (:background ,bg_1 :foreground ,fg_2))))
-     '(region                        ((t (:background "#5e153c" :extend t))))  ; #34294f, #5e153c
-     `(error                         ((t (:foreground ,red_2 :weight bold))))
-     '(whitespace-tab                ((t (:background nil))))
-     '(whitespace-trailing           ((t (:background nil))))
-
-     ;; programming
-     `(font-lock-keyword-face        ((t (:foreground "#21D7D7"))))
-     '(font-lock-variable-name-face  ((t (:foreground "#ff1493"))))  ; #f54dce, #f461c6, #f7658d
-     '(font-lock-string-face         ((t (:foreground "#fdca00"))))  ; #89E2A1, #CCE8D3
-     '(font-lock-type-face           ((t (:foreground "#9963ff"))))
-     '(font-lock-constant-face       ((t (:foreground "#96CBFE"))))
-     '(font-lock-builtin-face        ((t (:foreground "#4c83ff"))))
-     '(font-lock-function-name-face  ((t (:foreground "#12F292"))))
-     '(font-lock-doc-face            ((t (:foreground "#fee47f"))))
-
-     ;; line numbers
-     '(line-number                   ((t (:foreground "gray30"))))
-     `(line-number-current-line      ((t (:background ,bg_1 :foreground ,fg_2))))
-
-     ;; tab-line
-     `(tab-line                      ((t (:background ,bg_1 :foreground "white" :height 1.0))))
-     `(tab-line-tab                  ((t (:inherit tab-line :background ,bg_1 :foreground ,fg_2))))               ; selected but window not in focus
-     `(tab-line-tab-current          ((t (:inherit tab-line-tab :overline ,green_1))))                            ; selected
-     '(tab-line-tab-inactive         ((t (:inherit tab-line-tab :foreground "gray40"))))                          ; not selected
-     `(tab-line-highlight            ((t (:inherit tab-line-tab :background ,yellow_1 :foreground "#222222"))))   ; on mouse-over
-
-     ;; modeline
-     '(mode-line                     ((t (:background "#251F33" :foreground "gray60" :box (:line-width -1 :color "#14141D")))))
-     '(mode-line-inactive            ((t (:background "#221d2b" :foreground "gray40" :box (:line-width -1 :color "#14141D")))))
-     '(mode-line-highlight           ((t (:box (:line-width 2 :color "gray70")))))
-     '(mode-line-buffer-id           ((t (:foreground "gray70"))))
-     `(mode-line-emphasis            ((t (:foreground ,green_1 :weight bold))))
-
-     ;; doom-modeline
-     '(doom-modeline-bar             ((t (:background "#251F33"))))
-     '(doom-modeline-bar-inactive    ((t (:background "#221d2b"))))
-     '(doom-modeline-persp-buffer-not-in-persp ((t (:inherit (font-lock-comment-face italic)))))
-     '(doom-modeline-persp-name      ((t (:inherit (font-lock-doc-face italic bold)))))
-     `(doom-modeline-project-dir     ((t (:foreground ,green_1 :weight bold))))
-     '(doom-modeline-buffer-path     ((t (:foreground "gray60" :weight bold))))
-     '(doom-modeline-info            ((t (:foreground "gray60" ))))
-
-     ;; ivy
-     `(minibuffer-prompt             ((t (:background ,bg_2 :foreground ,green_1))))
-     '(highlight                     ((t (:background "gray20"))))
-     '(ivy-current-match             ((t (:box nil :weight extra-bold :background "#17162a"))))
-     '(ivy-minibuffer-match-face-1   ((t (:background "gray27"))))
-     '(ivy-minibuffer-match-face-2   ((t (:background "gray40" :weight bold))))
-     '(ivy-minibuffer-match-face-3   ((t (:background "#5654ca" :weight bold))))
-     '(ivy-minibuffer-match-face-4   ((t (:background "#8b4887" :weight bold))))
-     `(ivy-posframe                  ((t (:background ,bg_2))))
-     '(ivy-posframe-border           ((t (:background "#A13878"))))
-
-     ;; hydra-posframe
-     `(hydra-posframe-face           ((t (:background ,bg_2))))
-     '(hydra-posframe-border-face    ((t (:background "#A13878"))))
-
-     ;; flyspell
-     `(flyspell-incorrect            ((t (:underline (:style wave :color ,red_2)))))
-     '(flyspell-duplicate            ((nil)))
-
-     ;; org mode
-     `(org-todo                      ((t (:foreground ,yellow_1 :box (:line-width 1 :style none) :weight bold))))
-     '(org-done                      ((t (:foreground "#00ff00" :box (:line-width 1 :style none) :weight bold))))
-     `(org-checkbox-statistics-todo  ((t (:foreground ,yellow_1))))
-     '(org-checkbox-statistics-done  ((t (:foreground "#00ff00"))))
-     `(org-block                     ((t (:background ,bg_3))))
-     `(org-block-begin-line          ((t (:background ,bg_4 :foreground "gray35" :extend t))))
-     `(org-block-end-line            ((t (:background ,bg_4 :foreground "gray35" :extend t))))
-     `(org-ellipsis                  ((t (:foreground ,fg_2))))
-     `(org-level-1                   ((t (:foreground ,red_1 :height 1.15))))
-     '(org-level-2                   ((t (:foreground "#ffff00" :height 1.1))))
-     '(org-level-3                   ((t (:foreground "#A840F4" :height 1.05))))
-     '(org-level-4                   ((t (:foreground "#379ff0"))))
-     `(org-checkbox                  ((t (:background ,bg_1 :foreground ,red_1))))
-     `(org-document-title            ((t (:background ,bg_1 :foreground ,blue_1 :weight bold :height 1.6))))
-     `(org-document-info             ((t (:foreground ,blue_1 :weight bold))))
-     '(org-document-info-keyword     ((t (:foreground "gray55"))))
-     `(org-verbatim                  ((t (:background ,bg_4 :inherit (fixed-pitch shadow)))))
-     `(org-code                      ((t (:background ,bg_4 :inherit (fixed-pitch shadow)))))
-
-     ;; customize face for 'DONE' headings
-     '(org-headline-done             ((((class color) (min-colors 16) (background dark)) (:foreground "gray40"))))
-
-     ;; other packages
-     '(dashboard-banner-logo-title   ((t (:foreground "#A840F4" :height 1.0))))
-
-     '(diff-hl-insert                ((t (:background "#008b00" :foreground "#008b00"))))
-     '(diff-hl-change                ((t (:background "#8b8b00" :foreground "#8b8b00"))))
-     '(diff-hl-delete                ((t (:background "#8b0000" :foreground "#8b0000"))))
-
-     ;; '(anzu-replace-highlight        ((t (:foreground "red"))))
-     ;; '(anzu-replace-to               ((t (:foreground "green"))))
-
-     ;; change face of bullets for all headers
-     ;; '(org-superstar-header-bullet   ((t (:height 1.4 :foreground ,cyan_1))))
-
-     '(vr/match-0                    ((t (:background "#5654ca" :foreground "white"))))
-     '(vr/match-1                    ((t (:background "#8b4887" :foreground "white"))))
-
-     '(lazy-highlight                ((t (:background "#8b8b00" :foreground "white"))))
-     `(isearch                       ((t (:background ,red_1 :foreground "black"))))
-     '(isearch-fail                  ((t (:background "#5654ca" :foreground "white"))))
-     '(match                         ((t (:background "#8b4887" :foreground "white"))))
-
-     ;; '(header-line                   ((t (:box (:line-width -1 :color "#4e4e00" :style nil) :foreground "#ffff00" :background "gray15"))))
-     '(header-line                   ((t (:foreground "#94bff3" :background "#2d3352"))))
-     `(bufler-group                  ((t (:foreground ,cyan_1))))
-
-     `(company-tooltip               ((t (:background ,bg_2))))
-
-     ;; this is mostly for the fzf prompt
-     `(term                          ((t (:background ,bg_3 :foreground ,fg_1))))
-     `(term-bold                     ((t (:background ,bg_3 :foreground ,fg_1 :weight bold))))
-
+     '(region                        ((t (:background "#888888"))))
+     '(region                        ((t (:background "cyan"))))
      )))
 
 #+end_src
 
-** Functions
+** Functions and Minor modes
 *** Custom Functions
 
 General user created functions.
@@ -839,6 +739,10 @@ If point is already there, move to the beginning of the line.
 Effectively toggle between the first non-whitespace character and
 the beginning of the line.
 
+When on a visual line, move to the beginning of the visual line.
+If already on the beginning of the visual line, move to first
+non-whitespace character of the real line.
+
 If ARG is not nil or 1, move forward ARG - 1 lines first.  If
 point reaches the beginning or end of the buffer, stop there."
   (interactive "^p")
@@ -849,10 +753,18 @@ point reaches the beginning or end of the buffer, stop there."
     (let ((line-move-visual nil))
       (forward-line (1- arg))))
 
-  (let ((orig-point (point)))
-    (back-to-indentation)
-    (when (= orig-point (point))
-      (move-beginning-of-line 1))))
+  (let ((orig-point  (point))
+        (indent-pos  (save-excursion (back-to-indentation)
+                                     (point)))
+        (beg-pos     (save-excursion (beginning-of-line)
+                                     (point)))
+        (vis-beg-pos (save-excursion (beginning-of-visual-line)
+                                     (point))))
+    (if (and (not (= beg-pos vis-beg-pos)) (not (= orig-point vis-beg-pos)))
+        (beginning-of-visual-line)
+      (if (= orig-point indent-pos)
+          (beginning-of-line 1)
+        (back-to-indentation)))))
 
 ;; for some reason, this workaround is needed. "M-," doesn't work with shift select by default
 (defun my/forward-sexp-with-shift-select ()
@@ -1032,13 +944,6 @@ the pdf is opened, otherwise the compilation error is shown"
   (interactive)
   (counsel-file-jump "" org-directory))
 
-(defun my/org-toggle-emphasis ()
-  "Toggle hiding/showing of org emphasize markers."
-  (interactive)
-  (if org-hide-emphasis-markers
-      (set-variable 'org-hide-emphasis-markers nil)
-    (set-variable 'org-hide-emphasis-markers t)))
-
 (defun my/anime-info-at-point (start end)
   "Search for an anime title and display its details.
 Use text in selected region as input."
@@ -1091,9 +996,6 @@ Notes:
   - Think about adding to ~after-save-hook~.
 
 #+begin_src emacs-lisp
-
-;; Disable blank line on new heading
-(setq org-blank-before-new-entry '((heading . nil) (plain-list-item . auto)))
 
 (defun my/org-format-fix-blank-lines (&optional prefix)
   "Ensure that blank lines exist between headings and their contents.
@@ -1253,11 +1155,11 @@ This will delete the old version."
 ;; Start emacs without a session and allow manually loading the previous session, if desired.
 ;; Use /desktop-save-in-desktop-dir/ to save the first session, if there aren't any saved sessions yet.
 (defun my/desktop-enable ()
-  "Load the last saved desktop and enable autosaving."
+  "Add the buffers from the last saved session to the current one, and enable autosave on quit."
   (interactive)
   (let ((desktop-load-locked-desktop "ask"))
     (desktop-read)
-    (desktop-save-mode 1))
+    (desktop-save-mode t))
   (message "Previous session loaded"))
 
 (defun my/open-scratch-buffer ()
@@ -1325,6 +1227,15 @@ This will delete the old version."
       (cl-dolist (val results)
         (princ (format "%s: %s\n" (car val) (car (cdr val))))))))
 
+(defun my/buffer-local-set-key (key command)
+  (interactive "KSet key buffer-locally: \nCSet key %s buffer-locally to command: ")
+  (let ((oldmap (current-local-map))
+        (newmap (make-sparse-keymap)))
+    (when oldmap
+      (set-keymap-parent newmap oldmap))
+    (define-key newmap key command)
+    (use-local-map newmap)))
+
 #+end_src
 
 *** Function Aliases
@@ -1359,6 +1270,81 @@ These are the function used for bookmarks:
 #+begin_src emacs-lisp
 
 (defalias 'reload-buffer 'revert-buffer)
+
+#+end_src
+
+*** Minor modes
+
+Just like the functions, these minor modes only depend on default Emacs.
+
+**** Minor mode: unsaved-buffer-changes-mode
+
+#+begin_src emacs-lisp
+
+(defun my/highlight-changes-mode-restart ()
+  (highlight-changes-mode -1)
+  (highlight-changes-mode 1))
+
+(define-minor-mode unsaved-buffer-changes-mode
+  "Mode for highlighting unsaved changes in a buffer.
+Only starts tracking changes after activation.
+Resets after file save."
+  :local t
+  (if unsaved-buffer-changes-mode
+      (progn
+        (add-hook 'after-save-hook #'my/highlight-changes-mode-restart)
+        (highlight-changes-mode 1))
+    (progn
+      (remove-hook 'after-save-hook #'my/highlight-changes-mode-restart)
+      (highlight-changes-mode -1))))
+
+#+end_src
+
+**** Minor mode: exchange-point-mode
+
+#+begin_src emacs-lisp
+
+(defun my/exchange-point-and-mark-when-cg ()
+  (when (region-active-p)
+    (exchange-point-and-mark)))
+
+(define-minor-mode global-exchange-point-mode
+  "Mode for restoring point position w/ `keyboard-quit' when
+a region is active."
+  :global t
+  (if global-exchange-point-mode
+      (advice-add #'keyboard-quit :before #'my/exchange-point-and-mark-when-cg)
+    (advice-remove 'keyboard-quit #'my/exchange-point-and-mark-when-cg)))
+
+(global-exchange-point-mode 1)
+
+#+end_src
+
+**** Minor mode: blank-tab-line-mode
+
+#+begin_src emacs-lisp
+
+(define-minor-mode global-blank-tab-line-mode
+  "Mode for showing a blank line at the top of the Emacs frame."
+  :global t
+  (if (equal (type-of tab-line-format) 'string)
+      (setq tab-line-format '(:eval (tab-line-format)))
+    (setq tab-line-format "")))
+
+#+end_src
+
+**** Minor mode: org-hide-emphasis-mode
+
+#+begin_src emacs-lisp
+
+(define-minor-mode global-org-hide-emphasis-mode
+  "Mode for hiding org emphasis markers."
+  :global t
+  (if global-org-hide-emphasis-mode
+      (set-variable 'org-hide-emphasis-markers t)
+    (set-variable 'org-hide-emphasis-markers nil)))
+
+(global-org-hide-emphasis-mode 1)
 
 #+end_src
 
@@ -1524,7 +1510,9 @@ C-M-b     backward-sexp  Move backward over a balanced expression
 C-M-k     kill-sexp      Kill balanced expression forward
 
 
-Useful resource: [[https://shortcutworld.com/VSCode/win/Visual-Studio-Code_Shortcuts][VSCode shortcuts]]
+Useful resources:
+[[https://shortcutworld.com/VSCode/win/Visual-Studio-Code_Shortcuts][VSCode shortcuts]]
+[[https://developer.android.com/studio/intro/keyboard-shortcuts][Android Studio shortcuts]]
 
 ** Defaults
 
@@ -1572,10 +1560,6 @@ Some nice-to have things and general settings.
 
 ;; On save, automatically remove trailling whitespace
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
-
-;; Use line wrap for Text modes, and disable it for Programming modes
-(add-hook 'text-mode-hook (lambda () (visual-line-mode 1)))
-(add-hook 'prog-mode-hook (lambda () (setq truncate-lines t)))
 
 ;; auto refresh dired when file changes
 (add-hook 'dired-mode-hook 'auto-revert-mode)
@@ -1665,14 +1649,6 @@ Some nice-to have things and general settings.
   "Define format of tab names."
   (format "  %s  " (buffer-name buffer)))
 
-;; TODO how to make this a global change?
-(defun my/tab-line-toggle-content-visibility ()
-  "Toggle visibility of tab-line content."
-  (interactive)
-  (if (equal (type-of tab-line-format) 'string)
-      (setq tab-line-format '(:eval (tab-line-format)))
-    (setq tab-line-format "")))
-
 (setq tab-line-tab-name-function #'my/tab-line-tab-name-buffer)
 
 (setq tab-line-exclude-modes '(dashboard-mode
@@ -1754,7 +1730,7 @@ Some nice-to have things and general settings.
       desktop-restore-eager      nil           ;; number of buffers to restore immediatly
       desktop-dirname            (no-littering-expand-var-file-name "desktop/")
       desktop-base-file-name     "emacs.desktop"
-      desktop-save-mode          0)
+      desktop-save-mode          nil)
 
 #+end_src
 
@@ -1803,7 +1779,8 @@ Note: this is a package that is installed by default, so that's why it's in this
 
 Patch =split-window-sensibly= function so that it prefers vertical splits over horizontal ones.
 
-=split-window-sensibly=, =split-window-horizontally= and =split-window-vertically= have all been changed to switch to the new window after a split.
+=split-window-horizontally= and =split-window-vertically= have been changed to switch to the new window after a split.
+=split-window-sensibly= works as normal, but its behaviour is controlled by the =shackle= package.
 
 #+begin_src emacs-lisp
 
@@ -1830,10 +1807,10 @@ Patch =split-window-sensibly= function so that it prefers vertical splits over h
     (setq window (or window (selected-window)))
     (or (and (window-splittable-p window t)
              ;; Split window horizontally.
-             (select-window (split-window window nil (if split-window-right 'left  'right))))
+             (split-window window nil (if split-window-right 'left  'right)))
         (and (window-splittable-p window)
              ;; Split window vertically.
-             (select-window (split-window window nil (if split-window-below 'above 'below))))
+             (split-window window nil (if split-window-below 'above 'below)))
         (and (eq window (frame-root-window (window-frame window)))
              (not (window-minibuffer-p window))
              ;; If WINDOW is the only window on its frame and is not the
@@ -1841,9 +1818,9 @@ Patch =split-window-sensibly= function so that it prefers vertical splits over h
              ;; value of `split-width-threshold'.
              (let ((split-width-threshold 0))
                (when (window-splittable-p window t)
-                 (select-window (split-window window nil (if split-window-right
-                                              'left
-                                            'right)))))))))
+                 (split-window window nil (if split-window-right
+                                                             'left
+                                                           'right))))))))
 
 (defun my/split-window-horizontally-and-follow ()
   (interactive)
@@ -1857,7 +1834,7 @@ Patch =split-window-sensibly= function so that it prefers vertical splits over h
 
 #+end_src
 
-** Additional Features
+** External Features
 
 Add more features by installing emacs packages.
 
@@ -1889,7 +1866,7 @@ Important reminder: The first time this package is installed, you need to run 'a
   :pretty-hydra
   ((:title "Project" :color teal :quit-key "q")
    ("Current project"
-    (("f" counsel-fzf "find file")
+    (("f" fzf-git-files "find file")
      ("r" projectile-recentf "recent file")
      ("b" projectile-switch-to-buffer "switch buffer"))
     "Manage Projects"
@@ -2107,7 +2084,7 @@ Only the last element of the path is displayed."
 
   :bind
   (:map wakib-keys-overriding-map
-        ("C-b" . bufler-switch-buffer)
+        ("C-p" . bufler-switch-buffer)
         ("C-<prior>" . tab-line-switch-to-prev-tab)
         ("C-<next>" . tab-line-switch-to-next-tab))
 
@@ -2133,9 +2110,9 @@ Default keymap
 
 | Keybind     | Action                                                                 |
 |-------------+------------------------------------------------------------------------|
-| C-b         | switch to buffer in current workspace                                  |
-| C-u C-b     | switch to buffer in any workspace                                      |
-| C-u C-u C-b | switch to buffer in any workspace (and also set the frame's workspace) |
+| C-p         | switch to buffer in current workspace                                  |
+| C-u C-p     | switch to buffer in any workspace                                      |
+| C-u C-u C-p | switch to buffer in any workspace (and also set the frame's workspace) |
 | <hydra> b b | show bufler workspace list                                             |
 
 Inside bufler workspace list
@@ -2147,7 +2124,7 @@ Inside bufler workspace list
 | q       | close bufler window      |
 
 Note: When you use bufler-switch-buffer, the first result is always the last opened buffer.
-So you can use =C-b RET= to quickly return to the previously used buffer.
+So you can use =C-p RET= to quickly return to the previously used buffer.
 
 **** History
 
@@ -2220,8 +2197,9 @@ The sidebar only changes when bufler focuses a new workspace.
              (lambda ()
                (unless (file-remote-p default-directory)
                  (auto-revert-mode))))
-  (setq dired-sidebar-mode-line-format '("test" major-mode " "))
-  (setq dired-sidebar-mode-line-format '("%e" mode-line-front-space major-mode " " mode-line-end-spaces))
+
+  ;; (setq dired-sidebar-mode-line-format '("test" major-mode " "))
+  ;; (setq dired-sidebar-mode-line-format '("%e" mode-line-front-space major-mode " " mode-line-end-spaces))
   ;; ("%e" mode-line-front-space mode-line-buffer-identification " " mode-line-end-spaces)
 
   :config
@@ -2238,8 +2216,8 @@ The sidebar only changes when bufler focuses a new workspace.
 
   :hook
   (dired-sidebar-mode . (lambda() (display-line-numbers-mode -1)))
-  ;; (dired-sidebar-mode . hide-mode-line-mode)
-  (dired-sidebar-mode . dired-sidebar-set-mode-line)
+  (dired-sidebar-mode . hide-mode-line-mode)
+  ;; (dired-sidebar-mode . dired-sidebar-set-mode-line)
   (bufler-workspace-set . my/dired-sidebar-focus-bufler)
   (bufler-workspace-set . bufler-workspace-set-frame-name))
 
@@ -2417,7 +2395,7 @@ The sidebar only changes when bufler focuses a new workspace.
                                            (lambda (&rest _) (my/open-init-file)))
                                           (,(all-the-icons-octicon "gear" :height 1.1 :v-adjust 0.0)
                                            "Restore session"
-                                           "Restore last saved session"
+                                           "Add buffers from last saved session to current session"
                                            (lambda (&rest _) (my/desktop-enable)))
                                           (,(all-the-icons-octicon "globe" :height 1.1 :v-adjust 0.0)
                                            "Browse Packages"
@@ -2922,9 +2900,18 @@ Other options are:
     :dir ask
     :flags ("--hidden"))
 
+  (rg-define-search search-everything-regexp-project
+    "Like normal rg command, but skips asking for file type.
+Searches across current project."
+    :query ask
+    :format regexp
+    :files "everything"
+    :dir project
+    :flags ("--hidden"))
+
   :bind
   (:map wakib-keys-overriding-map
-        ("C-S-f" . search-everything-regexp--transient)))
+        ("C-S-f" . search-everything-regexp)))
 
 #+end_src
 
@@ -3074,7 +3061,8 @@ It assumes the region is active."
 
 ((:map wakib-keys-overriding-map
        ("C-r" . my/visual-replace-with-active-region-support))
- ("C-h" . my/visual-replace-with-active-region-support)))
+ ;; ("C-h" . my/visual-replace-with-active-region-support)
+ ))
 
 ;; using C-7 inside swiper seems better. it does the same thing
 ;; (bind-key "C-S-h" 'vr/mc-mark wakib-keys-overriding-map)
@@ -3345,6 +3333,8 @@ The code below executes org-babel-tangle asynchronously when the config file is 
         ;; setq org-ellipsis                 " ▼"
         org-image-actual-width               nil           ;; if there is something like #+ATTR_ORG: width="200", resize to 200, otherwise don't resize
         org-confirm-babel-evaluate           nil
+        org-blank-before-new-entry           '((heading . auto)              ;; Disable blank line on new heading
+                                               (plain-list-item . auto))
         org-show-context-detail              '((agenda . local)
                                                (default . lineage)))
 
@@ -3353,6 +3343,8 @@ The code below executes org-babel-tangle asynchronously when the config file is 
    '((shell . t)
      (python . t)
      (emacs-lisp . t)))
+
+  ;; (setq org-log-into-drawer "LOGBOOK")
 
   :bind
   (:map org-mode-map
@@ -3368,8 +3360,7 @@ The code below executes org-babel-tangle asynchronously when the config file is 
         ("<end>" . end-of-visual-line))  ;; When in heading, put cursor after ellipsis
 
   :hook ((after-save . my/config-tangle)
-         (org-mode . (lambda ()
-                       (prettify-symbols-mode)))
+         (org-mode . (lambda () (prettify-symbols-mode)))
          (org-agenda-mode . (lambda() (display-line-numbers-mode -1)))))
 
 #+end_src
@@ -3472,7 +3463,7 @@ Inline tasks behave as you would expect them to, for the most part. They have tw
 
 #+end_src
 
-**** Org - notes
+**** Feature: Org notes
 
 # Note: org-directory needs to be defined before the org-agenda block
 
@@ -3483,7 +3474,7 @@ Inline tasks behave as you would expect them to, for the most part. They have tw
 
 #+end_src
 
-**** Org - inbox
+**** Feature: Org inbox
 
 #+begin_src emacs-lisp
 
@@ -3561,6 +3552,38 @@ Inline tasks behave as you would expect them to, for the most part. They have tw
   ;;         (:discard)
   ;;         ))
   (org-super-agenda-mode))
+
+#+end_src
+
+**** Feature: simple headings for special org files (lists)
+
+After choosing a face and a list of org files, any headings in one of those files that has a todo state will have the defined face applied.
+This is useful for org files with lists, like watch lists for Movies, Anime, Books, etc.
+It allows for the list entries to be visually different from normal headings.
+
+I would like to be able to activate this from the file itself, but the problem is that =org-font-lock-set-keywords-hook= is a global value.
+
+#+begin_src emacs-lisp
+
+(defface my/org-simple-headline '((t (:inherit default)))
+  "Simple face for org headings."
+  :group 'org-faces)
+
+(defvar my/org-simple-headlines-files (list "Manga list.org" "Anime list.org")
+  "Files where simple headings are desired.")
+
+(defun my/org-fontify-simple-headlines ()
+  "Fontify any headings with a todo keyword, in selected files."
+  (when (member (my/show-buffer-name) my/org-simple-headlines-files)
+    (push (list (format org-heading-keyword-regexp-format
+                        (concat
+                         "\\(?:"
+                         (mapconcat 'regexp-quote org-todo-keywords-1 "\\|")
+                         "\\)"))
+                '(2 'my/org-simple-headline t))
+          org-font-lock-extra-keywords)))
+
+(add-hook 'org-font-lock-set-keywords-hook #'my/org-fontify-simple-headlines)
 
 #+end_src
 
@@ -3696,7 +3719,6 @@ Use hydra menu to enable/disable.
 
 (use-package company
   :config
-  (global-company-mode 1)
 
   (setq company-global-modes             '(not org-mode)
         company-minimum-prefix-length    3
@@ -3712,7 +3734,9 @@ Use hydra menu to enable/disable.
   :bind
   (:map company-active-map
         ("<escape>" . company-abort)
-        ("SPC" . company-abort-and-insert-space)))
+        ("SPC" . company-abort-and-insert-space))
+  :hook
+  (after-init . global-company-mode))
 
 #+end_src
 
@@ -3775,13 +3799,6 @@ swiper is a tool for performing searches, powered by Ivy, all while
   (ivy-use-virtual-buffers t)
   (ivy-count-format "%d/%d ")
   (ivy-wrap t)
-  ;; completion options: ivy–-regex-plus, ivy–regex-ignore-order, and ivy--regex-fuzzy
-  (ivy-re-builders-alist
-   '((t . ivy--regex-ignore-order)
-     (counsel-M-x . ivy--regex-ignore-order)
-     (swiper-isearch . ivy--regex-plus)
-     (swiper-isearch-backward . ivy--regex-plus)
-     (swiper-isearch-thing-at-point . ivy--regex-plus)))
   (ivy-initial-inputs-alist nil)
   :config
   (ivy-mode)
@@ -3797,10 +3814,17 @@ swiper is a tool for performing searches, powered by Ivy, all while
 
 (use-package counsel
   :after ivy
-  :config (counsel-mode)
+  :config
+  (counsel-mode)
+
+  (defun my/counsel-fzf-directory ()
+    "Starts a fzf session at the specified directory."
+    (interactive)
+    (counsel-fzf "" (counsel-read-directory-name "Directory: " fzf/directory-start) "File: "))
+
   :bind
   (:map wakib-keys-overriding-map
-        ("C-p" . counsel-fzf)
+        ("C-b" . counsel-bookmark)
         ("C-o" . counsel-find-file)))
 
 #+end_src
@@ -3866,9 +3890,12 @@ Ivy sorts large lists using flx's scoring mechanism, if it's installed.
 
 **** Package: ivy-prescient
 
+If ivy-prescient is not being used, then put the =ivy-re-builders-alist= declaration in the =ivy= package.
+
 #+begin_src emacs-lisp
 
 (use-package prescient
+  :after (counsel)
   :custom
   (prescient-history-length 50)
   (prescient-filter-method '(literal regexp))
@@ -3885,6 +3912,12 @@ Ivy sorts large lists using flx's scoring mechanism, if it's installed.
   (ivy-prescient-retain-classic-highlighting t)
   (ivy-prescient-enable-filtering nil)
   (ivy-prescient-enable-sorting t)
+  (ivy-re-builders-alist
+   '((t . ivy--regex-ignore-order)
+     (counsel-M-x . ivy--regex-ignore-order)
+     (swiper-isearch . ivy--regex-plus)
+     (swiper-isearch-backward . ivy--regex-plus)
+     (swiper-isearch-thing-at-point . ivy--regex-plus)))
   :config
   (ivy-prescient-mode 1))
 
@@ -4407,10 +4440,10 @@ to a pdf, with the decktape utility."
 To export to pdf, open the HTML file in a browser and add the query string =print-pdf= to the end of the URL.
 
 As an example, for a URL like this:
-file:///home/user/Documents/presentation.html
+=file:///home/user/Documents/presentation.html=
 
 The desired URL would be:
-file:///home/user/Documents/presentation.html?print-pdf
+=file:///home/user/Documents/presentation.html?print-pdf=
 
 Then use the browser to export the page as a PDF.
 Follow the directions at https://revealjs.com/pdf-export/
@@ -4534,11 +4567,8 @@ n - notes menu
                               (right-fringe          . 2)
                               (internal-border-width . 2)))
   :straight
-  (hydra-posframe
-   :type git
-   :host github
-   :repo "Ladicle/hydra-posframe"
-   :fork (:host github :repo "jerrypnz/hydra-posframe")))
+  (hydra-posframe :type git :host github :repo "Ladicle/hydra-posframe"
+                  :fork (:host github :repo "jerrypnz/hydra-posframe")))
 
 #+end_src
 
@@ -4560,7 +4590,7 @@ show a different main hydra, depending on major mode
   (:color teal :quit-key "q" :title "Bookmarks Hydra")
   ("Bookmarks"
    (("o" counsel-bookmark "open bookmark")
-    ("c" bookmark-set "create bookmark (current file)")
+    ("c" bookmark-set "create bookmark from current buffer")
     ("r" bookmark-rename "rename bookmark")
     ("d" bookmark-remove "delete bookmark"))
    ))
@@ -4617,6 +4647,22 @@ show a different main hydra, depending on major mode
 
 #+end_src
 
+**** Hydra: diff
+
+#+begin_src emacs-lisp
+
+(pretty-hydra-define hydra-diff
+  (:color teal :quit-key "q" :title "Diff Hydra")
+  ("Compare Files"
+   (("c" diff "Simple diff two files")
+    ("C" ediff "Ediff two files"))
+   "Compare Regions"
+   (("r" ediff-regions-wordwise "Ediff wordwise")
+    ("R" ediff-regions-linewise "Ediff linewise"))
+   ))
+
+#+end_src
+
 **** Hydra: dockerfile-mode
 
 #+begin_src emacs-lisp
@@ -4662,23 +4708,23 @@ show a different main hydra, depending on major mode
 
 (pretty-hydra-define hydra-file
   (:color teal :quit-key "q" :title "Files Hydra")
-  ("Current File"
+  ("Filename"
+   (("y" my/show-buffer-name "Yank filename")
+    ("Y" my/show-buffer-file-name "Yank filename with full path"))
+   "Current File"
    (("s" save-buffer "Save")
     ("S" write-file "Copy/Save as...")
     ("R" my/rename-current-buffer-file "Rename/Move")
-    ("d" my/delete-file-and-buffer "Delete")
     ("u" sudo-edit "Sudo open")
+    ("d" my/delete-file-and-buffer "Delete")
     ("x" my/make-file-executable "Make .sh executable"))
    "Other Files"
-   (("f" counsel-find-file "Open a File")
+   (("f" counsel-find-file "Open a file")
     ("r" counsel-recentf "Open recent file")
+    ("U" sudo-edit-find-file "Sudo open a file")
     ("D" delete-file "Delete a file")
-    ("U" sudo-edit-find-file "Sudo open a file"))
-   "Filename"
-   (("y" my/show-buffer-name "Yank filename")
-    ("Y" my/show-buffer-file-name "Yank filename with full path"))
-   "Diff"
-   (("e" ediff "Compare two files with ediff"))
+    ("z" fzf-current-directory "Open a File using fzf")
+    ("Z" fzf-directory "Open a File in another directory using fzf"))
    ))
 
 #+end_src
@@ -4689,14 +4735,15 @@ show a different main hydra, depending on major mode
 
 (pretty-hydra-define hydra-help
   (:color teal :quit-key "q" :title "Help Hydra")
-  ("Specific Symbols"
-   (("f" counsel-describe-function "Describe Function")
-    ("v" counsel-describe-variable "Describe Variable")
-    ("F" counsel-faces "Describe Face"))
-   "All Symbols"
-   (("o" counsel-describe-symbol "Describe Symbol"))
-   "Keyindings"
-   (("k" describe-key "Describe Key"))
+  ("Describe global"
+   (("f" counsel-describe-function "Function")
+    ("v" counsel-describe-variable "Variable")
+    ("F" counsel-faces "Face")
+    ("k" describe-key "Key")
+    ("o" counsel-describe-symbol "Symbol (anything)"))
+   "Current buffer"
+   (("b" counsel-descbinds "Show all Keys and Bindings")
+    ("m" describe-mode "Show Major and Minor modes"))
    "Customize"
    (("g" customize-group "Customize Group"))
    ))
@@ -4830,10 +4877,11 @@ show a different main hydra, depending on major mode
    (("Q" my/kill-emacs "Quit Emacs")
     ("r" restart-emacs "Restart emacs"))
    "Session"
-   (("l" my/desktop-enable "Restore last session")
-    ("L" desktop-read "Restore session from file")
+   (("l" my/desktop-enable "Quick load last session")
+    ;; ("L" desktop-read "Restore session from file")
     ("s" desktop-save-in-desktop-dir "Quick save current session")
-    ("S" desktop-save "Save session to file"))
+    ;; ("S" desktop-save "Save session to file")
+    )
    ))
 
 #+end_src
@@ -4846,11 +4894,12 @@ show a different main hydra, depending on major mode
   (:color teal :quit-key "q" :title "Search Hydra")
   ("String in buffer contents (regex)"
    (("b" swiper "search in current buffer")
-    ("d" search-everything-regexp--transient "search in directory files"))
+    ("d" search-everything-regexp "search in directory files"))
    "String in filenames (glob)"
    (("f" fd-dired "locate files"))
    "Project"
-   (("p" counsel-projectile-rg "search text")
+   (("p" search-everything-regexp-project "search text")
+    ("P" counsel-projectile-rg "search and jump to text")
     ("r" projectile-replace "replace text (literal)"))
    ))
 
@@ -4875,31 +4924,30 @@ show a different main hydra, depending on major mode
 (pretty-hydra-define hydra-toggles
   (:color amaranth :quit-key "q" :title "Toggles Hydra")
   ("Highlight"
-   (("l" global-hl-line-mode "current line (global)" :toggle t)
-    ("h" hl-todo-mode "hl-todo" :toggle t)
+   (("L" global-hl-line-mode "current line (global)" :toggle t)
+    ("h" hl-todo-mode "hl-todo keywords" :toggle t)
     ;;("s" symbol-overlay-mode "symbol" :toggle t)
     ;;("x" highlight-sexp-mode "sexp" :toggle t)
-    ("p" show-paren-mode "matching parens" :toggle t)
-    ("r" rainbow-mode "color codes (rainbow-mode)" :toggle t)
-    ("H" global-highlight-changes-mode "buffer changes (global)" :toggle t))
-   "Coding"
-   (("f" flycheck-mode "flycheck" :toggle t)
-    ("s" flyspell-mode "spellcheck" :toggle t)
-    ("c" company-mode "company" :toggle t)
-    ("P" electric-pair-mode "automatic parens pairing" :toggle t))
+    ("P" show-paren-mode "matching parens" :toggle t)
+    ("r" rainbow-mode "rgb color codes" :toggle t)
+    ("b" unsaved-buffer-changes-mode "unsaved buffer changes" :toggle t))
+   "Code"
+   (("l" flycheck-mode "linter" :toggle t)
+    ("s" flyspell-mode "spell checker" :toggle t)
+    ("c" global-company-mode "code completion" :toggle t)
+    ("p" electric-pair-mode "auto close parens" :toggle t)
+    ("g" diff-hl-mode "git gutter" :toggle t))
    "UI Elements"
-   (("e" dired-sidebar-toggle-sidebar "file explorer sidebar" :toggle t)
-    ("t" tab-line-mode "tab-line" :toggle t)
-    ("T" my/tab-line-toggle-content-visibility "tab-line content visibility" :toggle t)
+   (("e" dired-sidebar-toggle-sidebar "file explorer sidebar")
+    ("t" global-tab-line-mode "tab-line" :toggle t)
+    ("T" global-blank-tab-line-mode "blank tab-line" :toggle t)
     ("m" hide-mode-line-mode "modeline" :toggle t)
-    ("M" toggle-menu-bar "menu bar" :toggle t)
+    ("M" toggle-menu-bar "menu bar")
     ("n" display-line-numbers-mode "line numbers" :toggle t)
     ("N" global-display-line-numbers-mode "line numbers (global)" :toggle t))
    "Misc"
-   (("b" page-break-lines-mode "page break lines" :toggle t)
-    ("g" diff-hl-mode "git gutter" :toggle t)
-    ("o" my/org-toggle-emphasis "org-mode emphasis markers" :toggle t)
-    ("w" my/toggle-line-wrap "line wrap" :toggle t))
+   (("o" global-org-hide-emphasis-mode "hide org emphasis markers" :toggle t)
+    ("w" line-wrap-mode "line wrap" :toggle t))
    "Debug"
    (("D" toggle-debug-on-error "debug on error" :toggle (default-value 'debug-on-error))
     ("X" toggle-debug-on-quit "debug on quit" :toggle (default-value 'debug-on-quit)))
@@ -4915,8 +4963,8 @@ show a different main hydra, depending on major mode
   (:color teal :quit-key "q" :title "Git Hydra")
   ("Magit"
    (("g" magit-status "show git status")
-    ("l" magit-log "show git log")
-    ("D" magit-diff "show git diff"))
+    ("l" magit-log "git log")
+    ("D" magit-diff "git diff"))
    "Hunk"
    (("p" diff-hl-previous-hunk "previous")
     ("n" diff-hl-next-hunk "next")
@@ -4936,8 +4984,11 @@ show a different main hydra, depending on major mode
    (("h" my/split-window-horizontally-and-follow "New horizontal split")
     ("v" my/split-window-vertically-and-follow "New vertical split"))
    "Delete"
-   (("d" delete-window "Current window")
-    ("f" delete-other-windows "Focus current window. Delete all other windows"))
+   (("w" delete-other-windows "Other windows")
+    ("d" delete-window "Current window"))
+   "Layout"
+   (("l" rotate-layout "Cycle layout")
+    ("r" rotate-window "Rotate windows"))
    "Window Size"
    (("M" maximize-window "Maximize")
     ("m" minimize-window "Minimize")
@@ -5011,11 +5062,9 @@ For Arch, the respective necessary packages are:
 
 #+end_src
 
-**** define a minor mode to fix M-<pg up/down> behaviour        :notangle:
+**** Minor mode: fix M-<pg up/down> behaviour                   :notangle:
 
 This needs to be added to the end of any org file that is being used to create a LaTeX pdf.
-
-Not currently being used.
 
 #+begin_example
 # Local Variables:
@@ -5133,6 +5182,7 @@ The other packages first have to create their hydras and only after that should 
    "b" '(hydra-buffer/body :which-key "+buffer")
    "B" '(hydra-bookmarks/body :which-key "+bookmarks")
    "c" '(hydra-code/body :which-key "+code")
+   "d" '(hydra-diff/body :which-key "+diff")
    ;; "e" '(hydra-eval/body :which-key "+eval")
    "f" '(hydra-file/body :which-key "+file")
    "g" '(hydra-git/body :which-key "+git")
@@ -5451,15 +5501,20 @@ https://github.com/roman/golden-ratio.el/issues/82
 
 **** Package: shackle
 
-rules for popup windows
+rules for popup windows and window splits.
+
+By default, always focus new windows.
 
 #+begin_src emacs-lisp
 
 (use-package shackle
   :init
   (setq shackle-default-alignment    'right
-        shackle-rules                '(("*Bufler*" :regexp t :align below :size 0.6)
-                                       (help-mode :select t)))
+        shackle-default-rule         nil    ;; '(:select t)
+        shackle-rules                '((flycheck-error-message-mode :noselect t)
+                                       (magit-diff-mode :noselect t)
+                                       (help-mode :select t)
+                                       (rg-mode :select t)))
   :config
   (shackle-mode 1))
 
@@ -5481,27 +5536,29 @@ note:
 do not hide project files in .gitignore
 use ~/.config/fd/ignore to ignore files
 
-
-face used is from term-mode
+face used in fzf prompt is from term-mode.
 
 #+begin_src emacs-lisp
 
 (use-package fzf
   :ensure-system-package (fd fzf)
   :init
-  (setenv "FZF_DEFAULT_COMMAND" (concat "fd"
-                                        " --type 'file'"
-                                        " --hidden"
-                                        " --ignore-case"
-                                        " --exclude '.git/*'"
-                                        ;; " --no-ignore-vcs"
-                                        ))
-
+  (defvar my/fzf-command-default "fd --type 'file' --hidden --ignore-case --no-ignore-vcs --exclude '.git/*/*'")
+  (setenv "FZF_DEFAULT_COMMAND" my/fzf-command-default)
   :config
-  (defun my/fzf-directory ()
-    "Starts a fzf session at the specified directory."
+  (defun fzf-current-directory ()
+    "Starts an fzf session in the current directory."
     (interactive)
-    (counsel-fzf "" (counsel-read-directory-name "Directory: " fzf/directory-start) "File: ")))
+    (let ((path default-directory))
+      (fzf-with-command my/fzf-command-default #'fzf/action-find-file path))))
+
+
+;; (use-package fzf-posframe
+;;   :straight
+;;   (fzf-posframe
+;;     :type git
+;;     :host github
+;;     :repo "conao3/fzf-posframe.el"))
 
 #+end_src
 
@@ -5519,35 +5576,45 @@ face used is from term-mode
 #+begin_src emacs-lisp
 
 (use-package visual-fill-column
-  :defer t
+  ;; :defer nil
+  :init
+  (setq-default truncate-lines t)
+
   :config
   (defun my/org-mode-visual-fill ()
     (setq visual-fill-column-width          180
           visual-fill-column-center-text    nil)
     (visual-fill-column-mode 1))
 
-  (defun my/toggle-line-wrap ()
-    "Toggle line wrap in current buffer."
-    (interactive)
-    (if (equal major-mode 'org-mode)
-        (if visual-fill-column-mode
+  (define-minor-mode line-wrap-mode
+    "Toggle line wrap in current buffer.
+Org-mode uses visual-fill-column-mode, while every other mode uses the
+standard visual-line-mode."
+    :local t
+    (if line-wrap-mode
+        ;; Enable line wrap
+        (if (equal major-mode 'org-mode)
             (progn
-              (visual-fill-column-mode -1)
-              (visual-line-mode -1)
-              (setq truncate-lines t))
+              (my/org-mode-visual-fill)
+              (visual-line-mode 1)
+              (setq truncate-lines nil))
           (progn
-            (visual-fill-column-mode 1)
             (visual-line-mode 1)
             (setq truncate-lines nil)))
-      (if visual-line-mode
+      ;; Disable line wrap
+      (if (equal major-mode 'org-mode)
           (progn
+            (visual-fill-column-mode -1)
             (visual-line-mode -1)
             (setq truncate-lines t))
         (progn
-          (visual-line-mode 1)
-          (setq truncate-lines nil)))))
+          (visual-line-mode -1)
+          (setq truncate-lines t)))))
 
-  :hook (org-mode . my/org-mode-visual-fill))
+  :hook
+  (org-mode . line-wrap-mode)
+  (text-mode . line-wrap-mode)
+  (help-mode . line-wrap-mode))
 
 #+end_src
 
@@ -5590,26 +5657,6 @@ It is possible to highlight with background colour instead, but the face used ha
 
 #+end_src
 
-**** Custom Package: exchange-point-mode
-
-#+begin_src emacs-lisp
-
-(defun my/exchange-point-and-mark-when-cg ()
-  (when (region-active-p)
-    (exchange-point-and-mark)))
-
-(define-minor-mode exchange-point-mode
-  "Mode for restoring point position w/ `keyboard-quit' when
-a region is active."
-  :global t
-  (if exchange-point-mode
-      (advice-add #'keyboard-quit :before #'my/exchange-point-and-mark-when-cg)
-    (advice-remove 'keyboard-quit #'my/exchange-point-and-mark-when-cg)))
-
-(exchange-point-mode 1)
-
-#+end_src
-
 **** Package: rotate
 
 Another alternative is the =transpose-frame= package.
@@ -5620,15 +5667,32 @@ Another alternative is the =transpose-frame= package.
 
 #+end_src
 
+**** Package: bm
+
+#+begin_src emacs-lisp
+
+(use-package bm
+  :bind
+  ("<C-f2>" . bm-toggle)
+  ("<f2>"  . bm-next)
+  ("<S-f2>" . bm-previous))
+
+;; remove bookmark after jump
+;; (setq temporary-bookmark-p t)
+
+#+end_src
+
 ** Language Modes
 
-Add support for programming languages in the form of syntax highlighting, code completion, linters, etc.
+Add support for programming and markup languages in the form of syntax highlighting, code completion, linters, etc.
 
 *** C#
 **** Features
 
-The features for this language include:
-  - syntax highlighting
+Basics:
+  - [X] syntax highlighting
+  - [ ] linting
+  - [ ] code completion
 
 **** Package: csharp-mode
 
@@ -5643,8 +5707,10 @@ The features for this language include:
 *** CSV
 **** Features
 
-The features for this language include:
-  - syntax highlighting
+Basics:
+  - [X] syntax highlighting
+  - [ ] linting
+  - [ ] code completion
 
 **** Package: csv-mode
 
@@ -5658,8 +5724,12 @@ The features for this language include:
 *** Dockerfile
 **** Features
 
-The features for this language include:
-  - syntax highlighting
+Basics:
+  - [X] syntax highlighting
+  - [X] linting
+  - [ ] code completion
+
+Extra:
   - image building
 
 **** Package: dockerfile-mode
@@ -5694,8 +5764,10 @@ This variable is declared as safe with the following code, so you aren't asked i
 *** Dotenv
 **** Features
 
-The features for this language include:
-  - syntax highlighting
+Basics:
+  - [X] syntax highlighting
+  - [ ] linting
+  - [ ] code completion
 
 **** Package: dotenv-mode
 
@@ -5709,8 +5781,10 @@ The features for this language include:
 *** Git
 **** Features
 
-The features for this language include:
-  - syntax highlighting
+Basics:
+  - [X] syntax highlighting
+  - [ ] linting
+  - [ ] code completion
 
 **** Package: gitconfig-mode
 
@@ -5740,11 +5814,50 @@ The features for this language include:
 
 #+end_src
 
+*** HTML
+**** Features
+
+Basics:
+  - [X] syntax highlighting
+  - [ ] linting
+  - [ ] code completion
+
+**** Package: web-mode
+
+#+begin_src emacs-lisp
+
+(use-package web-mode
+  :mode
+  (
+   "\\.html\\'"
+   "\\.vue\\'"
+   "\\.blade\\.php\\'"
+   )
+  :config
+  (setq
+   web-mode-markup-indent-offset 2
+   web-mode-css-indent-offset 2
+   web-mode-code-indent-offset 2
+   web-mode-style-padding 2
+   web-mode-script-padding 2
+   web-mode-enable-auto-closing t
+   web-mode-enable-auto-opening t
+   web-mode-enable-auto-pairing t
+   web-mode-enable-auto-indentation t
+   web-mode-enable-css-colorization t))
+
+#+end_src
+
 *** Java
 **** Features
 
-The features for this language include:
-  - language server
+Basics:
+  - [ ] syntax highlighting
+  - [ ] linting
+  - [ ] code completion
+
+Extra:
+  - lsp
 
 **** Package: java-mode+                                        :notangle:
 
@@ -5759,14 +5872,17 @@ The features for this language include:
 *** JSON
 **** Features
 
-The features for this language include:
-  - syntax highlighting
+Basics:
+  - [X] syntax highlighting
+  - [ ] linting
+  - [ ] code completion
+
 
 **** Package: json-mode
 
 #+begin_src emacs-lisp
 
-(use-package json-mode
+(use-package js2-mode
   :mode "\\.json\\'")
 
 #+end_src
@@ -5774,7 +5890,12 @@ The features for this language include:
 *** REVIEW Latex
 **** Features
 
-The features for this language include:
+Basics:
+  - [ ] syntax highlighting
+  - [ ] linting
+  - [ ] code completion
+
+Extra:
   - references (deactivated)
   - minted code listings
 
@@ -5810,11 +5931,30 @@ Add support for =minted= Latex package.
 
 #+end_src
 
+*** Lua
+**** Features
+
+Basics:
+  - [X] syntax highlighting
+  - [ ] linting
+  - [ ] code completion
+
+**** Package: lua-mode
+
+#+begin_src emacs-lisp
+
+(use-package lua-mode
+  :mode "\\.lua\\'")
+
+#+end_src
+
 *** Markdown
 **** Features
 
-The features for this language include:
-  - syntax highlighting
+Basics:
+  - [X] syntax highlighting
+  - [ ] linting
+  - [ ] code completion
 
 **** Package: markdown-mode
 
@@ -5842,8 +5982,10 @@ For markdown, you need to customize the command to run the markdown parser if yo
 *** PHP
 **** Features
 
-The features for this language include:
-  - syntax highlighting
+Basics:
+  - [X] syntax highlighting
+  - [ ] linting
+  - [ ] code completion
 
 **** Package: php-mode
 
@@ -5851,6 +5993,25 @@ The features for this language include:
 
 (use-package php-mode
   :mode "\\.php\\'")
+
+#+end_src
+
+*** Shell Script
+**** Features
+
+Basics:
+  - [ ] syntax highlighting
+  - [X] linting
+  - [ ] code completion
+
+**** Package: flymake-shellcheck
+
+#+begin_src emacs-lisp
+
+(use-package flymake-shellcheck
+  :commands flymake-shellcheck-load
+  :init
+  (add-hook 'sh-mode-hook 'flymake-shellcheck-load))
 
 #+end_src
 
@@ -5868,8 +6029,10 @@ Prefer Python 3.
 *** Terraform (HCL)
 **** Features
 
-The features for this language include:
-  - syntax highlighting
+Basics:
+  - [X] syntax highlighting
+  - [ ] linting
+  - [ ] code completion
 
 **** Package: terraform-mode
 
@@ -5887,8 +6050,10 @@ HCL stands for Hashicorp Configuration Language.
 *** YAML
 **** Features
 
-The features for this language include:
-  - syntax highlighting
+Basics:
+  - [X] syntax highlighting
+  - [ ] linting
+  - [ ] code completion
 
 **** Package: yaml-mode
 
@@ -6068,27 +6233,13 @@ Detect existing emacs server and switch to it if possible
   (use-package flycheck-ledger
     :ensure t))
 
-#+end_org
-
-*** src babel execute                                            :notangle:
-
-#+begin_src emacs-lisp
-
-;; (add-to-list 'dashboard-heading-icons '(treemacs-workspaces . "book"))
-
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '((shell . t)
-   (emacs-lisp . t)))
-
 #+end_src
 
 *** agenda todo list - ignore scheduled and deadline             :notangle:
 
 #+begin_src emacs-lisp
 
-;;don't show tasks that are scheduled or have deadlines in the
-;;normal todo list
+;; don't show tasks that are scheduled or have deadlines in the normal todo list
 (setq org-agenda-todo-ignore-deadlines (quote all))
 (setq org-agenda-todo-ignore-scheduled (quote all))
 
@@ -6103,16 +6254,6 @@ Detect existing emacs server and switch to it if possible
       org-icalendar-use-deadline         '(event-if-todo-not-done))
 
 (org-icalendar-combine-agenda-files)
-
-#+end_src
-
-*** change terminal face to alter fzf prompt                     :notangle:
-
-#+begin_src emacs-lisp
-
-(custom-set-faces
-  '(term         ((t (:background ,bg_1 :foreground ,fg_1))))
-  '(term-bold    ((t (:background ,bg_1 :foreground ,fg_1 :weight bold)))))
 
 #+end_src
 
@@ -6185,7 +6326,7 @@ Detect existing emacs server and switch to it if possible
 
 *** indent guides                                                :notangle:
 
-*highlight-indent-guides* with *character* method seems like the best option.
+=highlight-indent-guides= with =character= method seems like the best option.
 
 #+begin_src emacs-lisp
 
@@ -6326,6 +6467,8 @@ Based on `flyspell-correct-word-before-point'."
 
 *** dired-sort-menu                                              :notangle:
 
+Allows sorting of items while in a dired buffer
+
 #+begin_src emacs-lisp
 
 (use-package dired-sort-menu)
@@ -6380,13 +6523,11 @@ Preserves ordering"
       (setq iterations (- original-lst-length (length match-list)))
       (setq match-line (+ (pop match-list) iterations))
       (goto-line match-line)
-      (drag-stuff-up (- val first-line)))
-
-    ))
+      (drag-stuff-up (- val first-line)))))
 
 #+end_src
 
-*** Color theme examples and research                            :notangle:
+*** Color theme examples and research
 
 Resources:
 - https://vimcolorschemes.com/
@@ -6422,7 +6563,24 @@ Finish later:
 |                   |         |         |         |         |         |         |         |         |
 | test              |         | #ff1493 | #12F292 | #ffa500 | #4c83ff | #A840F4 | #21D7D7 |         |
 
-*** Vim and Ryo-modal keybindings                                :notangle:
+
+custom theme ideas:
+  - deep
+  - ocean
+  - dark
+  - neon
+  - space
+  - navy
+  - sun
+
+
+space-navy
+neon-ocean
+neon-waves
+neon-sea
+neon-ocean-sunset
+
+*** Vim and Ryo-modal keybindings
 **** vim keys
 
 h,j,k,l
@@ -6500,49 +6658,37 @@ drag-stuff-right
 drag-stuff-up
 drag-stuff-down
 
-*** org-babel-tangle ignore =notangle= tag                       :notangle:
+*** Git Graph                                                    :notangle:
+
+Provides magit-pg command.
 
 #+begin_src emacs-lisp
 
-(defun *org-babel-tangle-collect-blocks (&optional lang-re tangle-file)
-  "Like `org-babel-tangle-collect-blocks', but will ignore blocks that are in trees with the :notangle: tag."
-  (let ((counter 0) last-heading-pos blocks)
-    (org-babel-map-src-blocks (buffer-file-name)
-      (let ((current-heading-pos
-	           (org-with-wide-buffer
-	            (org-with-limited-levels (outline-previous-heading)))))
-	      (if (eq last-heading-pos current-heading-pos) (cl-incf counter)
-	        (setq counter 1)
-	        (setq last-heading-pos current-heading-pos)))
-      (unless (or (org-in-commented-heading-p)
-		              (org-in-archived-heading-p))
-	      (let* ((tags (org-get-tags-at))
-               (info (org-babel-get-src-block-info 'light))
-	             (src-lang (nth 0 info))
-	             (src-tfile (cdr (assq :tangle (nth 2 info)))))
-	        (unless (or (member "notangle" tags)
-                      (string= src-tfile "no")
-		                  (and tangle-file (not (equal tangle-file src-tfile)))
-		                  (and lang-re (not (string-match-p lang-re src-lang))))
-	          ;; Add the spec for this block to blocks under its tangled
-	          ;; file name.
-	          (let* ((block (org-babel-tangle-single-block counter))
-                   (src-tfile (cdr (assq :tangle (nth 4 block))))
-		               (file-name (org-babel-effective-tangled-filename
-                               (nth 1 block) src-lang src-tfile))
-		               (by-fn (assoc file-name blocks)))
-	            (if by-fn (setcdr by-fn (cons (cons src-lang block) (cdr by-fn)))
-		            (push (cons file-name (list (cons src-lang block))) blocks)))))))
-    ;; Ensure blocks are in the correct order.
-    (mapcar (lambda (b) (cons (car b) (nreverse (cdr b))))
-	          (nreverse blocks))))
-
-(advice-add 'org-babel-tangle-collect-blocks :override
-             #'*org-babel-tangle-collect-blocks)
-
-;; (org-babel-tangle-file (expand-file-name "README.org" user-emacs-directory))
+(use-package magit-pretty-graph
+  :straight
+  (magit-pretty-graph :type git :host github :repo "georgek/magit-pretty-graph"
+                      :fork (:host github :repo "AkibAzmain/magit-pretty-graph"))
+  :config
+  (defun my/magit-pretty-graph-project ()
+    "Calls ~magit-pg-repo~ for current project root."
+    (interactive)
+    (magit-pg-repo (projectile-project-root))))
 
 #+end_src
+
+*** bookmarks and marks
+
+Available packages:
+  - bm
+  - goto-last-change
+  - point-pos
+  - point-stack
+  - back-button
+
+*** experimental keybind changes
+
+emacs mark (pop, push) -> C-', C-" (or Meta key)
+company -> C-SPC
 
 ** File Footer
 
@@ -6707,6 +6853,14 @@ Todo:
   - [X] disable line wrap for coding and enable for org mode
   - [X] add line wrap to toggles hydra
   - [X] jump to new window when a window is created
+  - [X] incompatibility between =my/async-babel-tangle= and =org-babel-tangle-collect-blocks=
+  - [X] =org-babel-tangle-collect-blocks= will not allow =my/async-babel-tangle= to load if there is an error on the config file
+  - [X] switch window positions between them
+  - [X] =org-babel-tangle-collect-blocks= will not work the first time =init.el= is loaded
+  - [X] create a =diff= hydra
+  - [X] some items in the toggles hydra dont change icon when toggled
+  - [X] auto switch to new window is annoying when used with company (first line in file opens full report) or magit (C-d C-c commit opens new commit diff window)
+  - [X] add a =M-SPC f z= command that uses fzf and shows every file, including git ignored ones.
   - [ ] add keybindings tables (or a cheatsheet image) in config file
   - [ ] commenting/indenting inside source block jumps to top of block. happens with just 'emacs -Q' and comment-dwim ([[https://www.reddit.com/r/emacs/comments/ap4s7z/orgmode_weirdness_questions/][reddit thread]])
   - [ ] maybe incorporate previous/next concept from wakib-emacs? (it uses the ';' key)
@@ -6730,27 +6884,22 @@ Todo:
   - [ ] electric-indent-mode in gitconfig-mode adds unnecessary tab after RET
   - [ ] divide org-agenda NEXT section into sections based on different projects, and show warning if no NEXT action exists for a project
   - [ ] can't customize emacs variables because of =wakib-keys= package
-  - [ ] open function help buffer -> click link to go to definition -> opens with cursor on top of function, at bottom of window (org-link-frame-setup / find-file-other-window). Should open on top of window instead.
+  - [ ] open function help buffer -> click link to go to definition -> opens with cursor on top of function, at bottom of window. Should open on top of window instead. (=find-function-search-for-symbol= does not use ~(recenter find-function-recenter-line)~, unlike =find-function=)
   - [ ] make 'my/indent-region-custom' function (M-arrows) work even in a blank line (could try 'indent-to' function)
   - [ ] select region and press '(' to surround in parens; doesnt work in YAML mode
   - [ ] add a keybinding for 'counsel-company'
   - [ ] convert my colour options into a standard Emacs color theme
-  - [ ] make auto-correct work like in google docs (suggestion appears automatically; press tab to open menu; use tab to move in menu; menu has these buttons: most likely correction, cancel, save, more options)
+  - [ ] make auto-correct work like in google docs (suggestion appears automatically; press tab to open menu; use tab to move in menu; menu has these buttons: most likely correction, cancel, save, more options) [[https://gist.github.com/aaronjensen/a46f88dbd1ab9bb3aa22][link1]] [[https://github.com/company-mode/company-mode/wiki/Switching-from-Vim][link2]]
   - [ ] there's some sort of problem with fonts (Cartograph not detected; M-x menu font size)
   - [ ] hydra toggle menu - add a toggle for a side panel (in the right), that allows jumping to functions
   - [ ] add support for /.editorconfig/
   - [ ] replace dired keybindings with a better version (and also dired-sidebar)
-  - [ ] after opening bufler with ~M-SPC b b~, the previous window layout is deleted and only a single window is visible
-  - [ ] when opening a new buffer, it should always open in the current window,  and not take up the whole frame
-  - [ ] use [[https://github.com/lepisma/org-books][org-books]] to create an org capture template for anime, manga, movies, books, etc.
-  - [ ] switch window positions between them
+  - [ ] after opening bufler with =M-SPC b b= (bufler-list), the previous window layout is deleted and only a single window is visible
+  - [ ] use [[https://github.com/lepisma/org-books][org-books]] as template to create an org capture template for anime, manga, movies, books, etc.
   - [ ] diff-hl seems to sometimes cause the lines to align to the left, when moving up or down (either by scrolling line by line or with pgUp/pgDown)
-  - [ ] incompatibility between =my/async-babel-tangle= and =org-babel-tangle-collect-blocks=
-  - [ ] =org-babel-tangle-collect-blocks= will not work the first time =init.el= is loaded
-  - [ ] =org-babel-tangle-collect-blocks= will not allow =my/async-babel-tangle= to load if there is an error on the config file
   - [ ] yascroll was disabled, but I don't remember why. I'll reactivate it and see if anything bad happens.
-  - [ ] create a =diff= hydra
   - [ ] change colors or org headings to something more neutral
+  - [ ] use C-. for spelling and C-spc for completion. Figure out how to replace C-u C-spc (pop-to-mark-command / set-mark-command)
 
 
 # NOTE: use org-sort and select 'X' to sort this list by what items are checked
@@ -6773,9 +6922,9 @@ from sublime:
   - [X] C-- comment, C-S-- block comment
   - [X] highlight vertical indentation of current scope / show bracket symbol in gutter (start and end of scope)
   - [X] show git untracked/unstaged/staged number in the modeline segment (also N of commits ahead/behind)
-  - [ ] bookmarks (C-F2 toggle, F2 next, S-F2 prev, C-S-F2 clear all, M-F2 select all)
+  - [X] bookmarks (C-F2 toggle, F2 next, S-F2 prev, C-S-F2 clear all, M-F2 select all)
+  - [X] notifications plugin
   - [ ] snippet shows in autocomplete menu. just type and use tab for autocomplete. then use tab to jump in next snippet position
-  - [ ] notifications plugin
   - [ ] C-F6 for spellcheck, F6 for next error
   - [ ] jumping to start/end and PG-up/down all use scrolling
 
