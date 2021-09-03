@@ -30,20 +30,18 @@
     - [[#system-path][System Path]]
     - [[#startup-profiler][Startup Profiler]]
     - [[#use-emacs-with-server-client-configuration][Use Emacs with server-client configuration]]
-    - [[#patch-org-babel-tangle-to-allow-excluding-with-tags][Patch org-babel-tangle to allow excluding with tags]]
   - [[#appearance][Appearance]]
     - [[#font][Font]]
     - [[#theme][Theme]]
-    - [[#theme-faces-and-colours][Theme Faces and Colours]]
   - [[#functions-and-minor-modes][Functions and Minor modes]]
     - [[#custom-functions][Custom Functions]]
     - [[#function-aliases][Function Aliases]]
     - [[#minor-modes][Minor modes]]
   - [[#keybindings][Keybindings]]
-    - [[#change-default-keybindings-layout][Change default keybindings layout]]
+    - [[#change-keybindings-scheme][Change keybindings scheme]]
     - [[#global-keybindings][Global Keybindings]]
   - [[#defaults][Defaults]]
-    - [[#preferences][Preferences]]
+    - [[#general-preferences][General Preferences]]
     - [[#indentation][Indentation]]
     - [[#tabs][Tabs]]
     - [[#scrolling][Scrolling]]
@@ -63,7 +61,7 @@
     - [[#search-across-directories][Search Across Directories]]
     - [[#interactive-visual-replace][Interactive Visual Replace]]
     - [[#org-mode][Org mode]]
-    - [[#review-modal-editing][REVIEW Modal editing]]
+    - [[#modal-editing][Modal editing]]
     - [[#spellcheck][Spellcheck]]
     - [[#code-completion][Code Completion]]
     - [[#emacs-completion-framework][Emacs Completion Framework]]
@@ -76,6 +74,7 @@
     - [[#pdf-viewer][PDF Viewer]]
     - [[#code-linter][Code Linter]]
     - [[#spacemacs-esque-menu][Spacemacs-esque menu]]
+    - [[#outline-sidebar][Outline sidebar]]
     - [[#other-additions][Other additions]]
   - [[#language-modes][Language Modes]]
     - [[#c][C#]]
@@ -116,6 +115,7 @@
     - [[#git-graph][Git Graph]]
     - [[#bookmarks-and-marks][bookmarks and marks]]
     - [[#experimental-keybind-changes][experimental keybind changes]]
+    - [[#theme-faces-and-colours][Theme Faces and Colours]]
   - [[#file-footer-2][File Footer]]
 - [[#fixes-improvements-and-todos][Fixes, Improvements and TODOs]]
 
@@ -188,7 +188,7 @@ I customized the commands and changed a few keys but it's still similar to the d
 The following image shows all the keys you need to know to get started:
 
 #+ATTR_ORG: :width 900
-[[./resources/keyboard-layout-ctrl.png]]
+[[./base/docs/keyboard-layout-images/keyboard-layout-ctrl.png]]
 
 The wakib-keys package defines a lot more bindings that are more oriented towards speed and productivity.
 If you're interested, go check it out.
@@ -201,6 +201,11 @@ If you're interested, go check it out.
 # Notes:
 #  - firefox screenshot tool can easily select correct area (by selecting the div)
 #  - website export function exists but doesn't work very well
+
+Notes:
+  - If you know M-x and C-h, you're already halfway there. Even if you forget something, knowing these two bindings allows you to discover anything you need.
+  - The modeline segments can be hovered on to show information and clicked to perform certain actions.
+  - In a lot of modes, you can use =q= to quit and =?= to show help
 
 * File: Early Init
 ** File Header
@@ -314,7 +319,7 @@ This is most effective when you have a hook to tangle the config file every time
 
 #+begin_src emacs-lisp :tangle init.el
 
-(load-file (expand-file-name "resources/tangle-patch.el" user-emacs-directory))
+(load-file (expand-file-name "base/resources/tangle-patch.el" user-emacs-directory))
 
 ;; If tangled elisp exists then load it, otherwise tangle the Org file and load it
 (if (file-exists-p *config-file-tangled*)
@@ -527,53 +532,6 @@ Use emacs with a server/client model.
 
 #+end_src
 
-*** Patch org-babel-tangle to allow excluding with tags
-
-Allow excluding org headings and trees from being tangled, by using the =notangle= tag.
-
-#+begin_src emacs-lisp :tangle resources/tangle-patch.el
-
-(require 'ob-tangle)
-(load-file "/home/kyukee/.emacs.d/straight/repos/org/lisp/ob-tangle.el")
-
-(defun *org-babel-tangle-collect-blocks (&optional lang-re tangle-file)
-  "Like `org-babel-tangle-collect-blocks', but will ignore blocks that are in trees with the :notangle: tag."
-  (let ((counter 0) last-heading-pos blocks)
-    (org-babel-map-src-blocks (buffer-file-name)
-      (let ((current-heading-pos
-	           (org-with-wide-buffer
-	            (org-with-limited-levels (outline-previous-heading)))))
-	      (if (eq last-heading-pos current-heading-pos) (cl-incf counter)
-	        (setq counter 1)
-	        (setq last-heading-pos current-heading-pos)))
-      (unless (or (org-in-commented-heading-p)
-		              (org-in-archived-heading-p))
-	      (let* ((tags (org-get-tags-at))
-               (info (org-babel-get-src-block-info 'light))
-	             (src-lang (nth 0 info))
-	             (src-tfile (cdr (assq :tangle (nth 2 info)))))
-	        (unless (or (member "notangle" tags)
-                      (string= src-tfile "no")
-		                  (and tangle-file (not (equal tangle-file src-tfile)))
-		                  (and lang-re (not (string-match-p lang-re src-lang))))
-	          ;; Add the spec for this block to blocks under its tangled
-	          ;; file name.
-	          (let* ((block (org-babel-tangle-single-block counter))
-                   (src-tfile (cdr (assq :tangle (nth 4 block))))
-		               (file-name (org-babel-effective-tangled-filename
-                               (nth 1 block) src-lang src-tfile))
-		               (by-fn (assoc file-name blocks)))
-	            (if by-fn (setcdr by-fn (cons (cons src-lang block) (cdr by-fn)))
-		            (push (cons file-name (list (cons src-lang block))) blocks)))))))
-    ;; Ensure blocks are in the correct order.
-    (mapcar (lambda (b) (cons (car b) (nreverse (cdr b))))
-	          (nreverse blocks))))
-
-(advice-add 'org-babel-tangle-collect-blocks :override
-             #'*org-babel-tangle-collect-blocks)
-
-#+end_src
-
 ** Appearance
 *** Font
 
@@ -622,7 +580,7 @@ Current issues:
 
 #+begin_src emacs-lisp
 
-(add-to-list 'custom-theme-load-path "~/.emacs.d/themes/")
+(add-to-list 'custom-theme-load-path "~/.emacs.d/base/themes/")
 (load-theme 'neon-ocean-sunset t)
 
 #+end_src
@@ -646,27 +604,6 @@ To use a theme from an Emacs package:
 
 Note:
   If there are problems with themes conflicting with each other, it may help to use =disable-theme= before switching to another theme.
-
-*** Theme Faces and Colours
-
-How to edit a theme:
-
-#+begin_src emacs-lisp :tangle no
-
-(setq custom--inhibit-theme-enable nil)
-
-(with-eval-after-load "underwater-theme"
-  (let ((bg_1      "#000000")
-        (fg_1      "#ffffff"))
-    (custom-theme-set-faces
-     'underwater
-      ;; you can set variables and use them, use the colors directly, or use Emacs default colors
-     `(default                       ((t (:background ,bg_1 :foreground ,fg_1))))
-     '(region                        ((t (:background "#888888"))))
-     '(region                        ((t (:background "cyan"))))
-     )))
-
-#+end_src
 
 ** Functions and Minor modes
 *** Custom Functions
@@ -922,17 +859,6 @@ This command does not push text to `kill-ring'."
 
 #+begin_src emacs-lisp
 
-(defun my/org-latex-compile-and-open-pdf ()
-  "Compile an org document into a Latex pdf and open it.
-The compilation runs in the background.  If the compilation is successful
-the pdf is opened, otherwise the compilation error is shown"
-  (interactive)
-  (let ((filename (file-name-sans-extension buffer-file-name))
-        (compilation-exit-code (shell-command "make")))  ;; compile is async, shell-command is synchronous
-    ;; check if the exit code is 0, which means there are no errors
-    (when (= 0 compilation-exit-code)
-      (find-file-other-window (expand-file-name (concat filename ".pdf"))))))
-
 (defun my/org-content-with-argument ()
   "Choose how many org heading levels are viible."
   (interactive)
@@ -1133,7 +1059,8 @@ This will delete the old version."
                    name (file-name-nondirectory new-name)))))))
 
 (defun my/show-buffer-file-name ()
-  "Show the full path to the current file in the minibuffer."
+  "Show the full path to the current file in the minibuffer.
+Also copy to clipboard."
   (interactive)
   (let ((file-name (buffer-file-name)))
     (if file-name
@@ -1143,7 +1070,8 @@ This will delete the old version."
       (error "Buffer not visiting a file"))))
 
 (defun my/show-buffer-name ()
-  "Show the filename of the current file in the minibuffer."
+  "Show the filename of the current file in the minibuffer.
+Also copy to clipboard."
   (interactive)
   (let ((file-name (buffer-name)))
     (if file-name
@@ -1235,6 +1163,27 @@ This will delete the old version."
       (set-keymap-parent newmap oldmap))
     (define-key newmap key command)
     (use-local-map newmap)))
+
+(defun my/latex-compile-makefile-and-open-pdf ()
+  "Compile a Latex document using a Makefile and open resulting PDF.
+The compilation runs in the background.  If the compilation is successful
+the pdf is opened in Emacs, otherwise the compilation error is shown."
+  (interactive)
+  (let ((filename (file-name-sans-extension buffer-file-name))
+        (compilation-exit-code (shell-command "make")))  ;; compile is async, shell-command is synchronous
+    ;; check if the exit code is 0, which means there are no errors
+    (when (= 0 compilation-exit-code)
+      (find-file-other-window (expand-file-name (concat filename ".pdf"))))))
+
+(defun my/convert-pdf-to-png ()
+  "Convert PDF to png images."
+  (interactive)
+  (let* ((pdf-file-name (read-file-name "PDF name: "))
+         (pdf-name      (file-name-nondirectory (file-name-sans-extension pdf-file-name)))
+         (output-name   (completing-read "Output name: " (list "") nil nil pdf-name)))
+    (shell-command
+     (concat "pdftoppm '" pdf-file-name "' " output-name " -png"))
+    (message (concat output-name ".png successfully created"))))
 
 #+end_src
 
@@ -1349,7 +1298,7 @@ a region is active."
 #+end_src
 
 ** Keybindings
-*** Change default keybindings layout
+*** Change keybindings scheme
 **** Information
 
 Wakib changes emacs keybindings to be more modern and ergonomic.
@@ -1426,6 +1375,8 @@ Others add convenient things like zoom, reload, fullscreen, etc.
 ;; add a fullscreen toggle
 (bind-key "<f11>" 'my/toggle-fullscreen wakib-keys-overriding-map)
 
+(bind-key "<f12>" 'toggle-menu-bar wakib-keys-overriding-map)
+
 (bind-key "C--" 'text-scale-decrease wakib-keys-overriding-map)
 (bind-key "C-=" 'text-scale-increase wakib-keys-overriding-map)
 
@@ -1482,7 +1433,10 @@ Others add convenient things like zoom, reload, fullscreen, etc.
 (bind-key "C-<down>" 'forward-paragraph wakib-keys-overriding-map)
 
 
-(bind-key "M-j" 'avy-goto-char wakib-keys-overriding-map)
+(bind-key "M-m" 'avy-goto-char wakib-keys-overriding-map)
+
+
+(bind-key "C-S-r" 'replace-regexp wakib-keys-overriding-map)
 
 
 ;;     on Linux, the menu/apps key syntax is <menu>
@@ -1518,7 +1472,7 @@ Useful resources:
 
 Configure stuff that already comes with emacs. No packages are installed in this section.
 
-*** Preferences
+*** General Preferences
 
 Some nice-to have things and general settings.
 
@@ -1536,9 +1490,6 @@ Some nice-to have things and general settings.
       blink-cursor-interval          1                      ;; change cursor blink speed. default is 0.5
       require-final-newline          t                      ;; On save, automatically add final newline
       vc-follow-symlinks             t)                     ;; don't ask for confirmation when opening symlinked file
-
-;; open new buffers in an already existing frame
-;; (setq ns-pop-up-frames nil)
 
 ;; this hook applies to every mode, so its the same as applying it globally
 (add-hook 'after-change-major-mode-hook #'my/modify-word-definitions)
@@ -1583,6 +1534,7 @@ Some nice-to have things and general settings.
 (setq electric-pair-inhibit-predicate 'electric-pair-conservative-inhibit)
 ;; (setq electric-pair-inhibit-predicate 'ignore)
 
+;; switch default cursor type to a thin bar
 (setq-default cursor-type 'bar)
 (set-cursor-color "#ffffff")
 
@@ -1756,7 +1708,6 @@ For more information about syntax, check the [[https://www.gnu.org/software/emac
 #+end_src
 
 *** Searching
-**** Package: isearch
 
 Note: this is a package that is installed by default, so that's why it's in this section.
 
@@ -1868,11 +1819,11 @@ Important reminder: The first time this package is installed, you need to run 'a
    ("Current project"
     (("f" fzf-git-files "find file")
      ("r" projectile-recentf "recent file")
-     ("b" projectile-switch-to-buffer "switch buffer"))
+     ("b" projectile-switch-to-buffer "switch to open buffer"))
     "Manage Projects"
     (("p" counsel-projectile-switch-project "switch to project")
      ("a" projectile-add-known-project "add a new project")
-     ("d" projectile-remove-known-project "remove known project"))
+     ("d" projectile-remove-known-project "delete known project"))
     )))
 
 #+end_src
@@ -2092,12 +2043,12 @@ Only the last element of the path is displayed."
          ;; (find-file . (lambda () (call-interactively #'bufler-workspace-focus-buffer)))
          (bufler-list-mode . my/set-buffer-large-fringe)
          ;; modify frame name without modfying workspace name. this function definition doesnt work if used in a init or config block
-         (emacs-startup . (lambda() (defun bufler-workspace-set-frame-name (path)
+         (emacs-startup . (lambda () (defun bufler-workspace-set-frame-name (path)
                                       "Set current frame's name according to PATH."
                                       (set-frame-name (when path
                                                         (format "Workspace: %s -- Emacs" (funcall bufler-workspace-format-path-fn path)))))))
          ;; focus the workspace of the "scratch" buffer at startup, which is the "All Files" workspace
-         (emacs-startup . (lambda() (my/bufler-workspace-set-from-buffer-name "*scratch*")))
+         (emacs-startup . (lambda () (my/bufler-workspace-set-from-buffer-name "*scratch*")))
          ))
 
 #+end_src
@@ -2215,7 +2166,7 @@ The sidebar only changes when bufler focuses a new workspace.
         (dired-sidebar-switch-to-dir root))))
 
   :hook
-  (dired-sidebar-mode . (lambda() (display-line-numbers-mode -1)))
+  (dired-sidebar-mode . (lambda () (display-line-numbers-mode -1)))
   (dired-sidebar-mode . hide-mode-line-mode)
   ;; (dired-sidebar-mode . dired-sidebar-set-mode-line)
   (bufler-workspace-set . my/dired-sidebar-focus-bufler)
@@ -2223,7 +2174,7 @@ The sidebar only changes when bufler focuses a new workspace.
 
 #+end_src
 
-**** Package: treemacs
+**** Package: treemacs                                          :notangle:
 
 #+begin_src emacs-lisp
 
@@ -2279,7 +2230,7 @@ The sidebar only changes when bufler focuses a new workspace.
   ;;   (add-hook hook 'change-cursor))
 
 
-  :hook (treemacs-mode . (lambda() (display-line-numbers-mode -1)))  ;; dont show line numbers in the sidebar
+  :hook (treemacs-mode . (lambda () (display-line-numbers-mode -1)))  ;; dont show line numbers in the sidebar
   :bind
   (:map treemacs-mode-map
         ("<mouse-1>" . treemacs-single-click-expand-action))  ;; single mouse click to open files and folders
@@ -2306,7 +2257,7 @@ The sidebar only changes when bufler focuses a new workspace.
 
 #+end_src
 
-**** Package: treemacs-projectile
+**** Package: treemacs-projectile                               :notangle:
 
 #+begin_src emacs-lisp
 
@@ -2315,7 +2266,7 @@ The sidebar only changes when bufler focuses a new workspace.
 
 #+end_src
 
-**** Package: treemacs-magit
+**** Package: treemacs-magit                                    :notangle:
 
 #+begin_src emacs-lisp
 
@@ -2385,7 +2336,7 @@ The sidebar only changes when bufler focuses a new workspace.
         dashboard-set-init-info        t
         dashboard-set-footer           nil
         dashboard-set-navigator        t
-        dashboard-startup-banner       (expand-file-name "resources/Emacs-logo.svg" user-emacs-directory)
+        dashboard-startup-banner       (expand-file-name "base/resources/Emacs-logo.svg" user-emacs-directory)
         dashboard-banner-logo-title    (format "GNU Emacs version %d.%d" emacs-major-version emacs-minor-version)
         dashboard-init-info            (format "%d packages loaded with straight. finished in %s"
                                                (length (hash-table-keys straight--success-cache)) (emacs-init-time))
@@ -2706,7 +2657,7 @@ mouse-3: Open indentation menu"
 
   (doom-modeline-def-modeline 'my/main
     '(" " my/bufler-workspace my/vcs bar window-number matches my/buffer-info remote-host parrot " " selection-info)
-    '(objed-state grip irc mu4e gnus github debug repl lsp minor-modes my/spellcheck process checker input-method my/indent-info my/buffer-eol my/buffer-encoding major-mode my/buffer-position " "))
+    '(objed-state grip irc mu4e gnus github debug repl lsp minor-modes process my/spellcheck checker input-method my/indent-info my/buffer-eol my/buffer-encoding major-mode my/buffer-position " "))
 
   ;;
   ;; Setup Modeline
@@ -3289,7 +3240,7 @@ The code below executes org-babel-tangle asynchronously when the config file is 
       (async-start
        `(lambda ()
           ;; (require 'org)
-          (load-file (expand-file-name "resources/tangle-patch.el" user-emacs-directory))
+          (load-file (expand-file-name "base/resources/tangle-patch.el" user-emacs-directory))
           (org-babel-tangle-file ,org-file))
        (unless *show-async-tangle-results*
          `(lambda (result)
@@ -3361,7 +3312,7 @@ The code below executes org-babel-tangle asynchronously when the config file is 
 
   :hook ((after-save . my/config-tangle)
          (org-mode . (lambda () (prettify-symbols-mode)))
-         (org-agenda-mode . (lambda() (display-line-numbers-mode -1)))))
+         (org-agenda-mode . (lambda () (display-line-numbers-mode -1)))))
 
 #+end_src
 
@@ -3455,7 +3406,7 @@ Inline tasks behave as you would expect them to, for the most part. They have tw
 
 #+end_src
 
-**** Package: org-ql
+**** REVIEW Package: org-ql
 
 #+begin_src emacs-lisp
 
@@ -3519,7 +3470,7 @@ Inline tasks behave as you would expect them to, for the most part. They have tw
 
 #+end_src
 
-**** Package: org-super-agenda
+**** REVIEW Package: org-super-agenda
 
 #+begin_src emacs-lisp
 
@@ -3574,7 +3525,7 @@ I would like to be able to activate this from the file itself, but the problem i
 
 (defun my/org-fontify-simple-headlines ()
   "Fontify any headings with a todo keyword, in selected files."
-  (when (member (my/show-buffer-name) my/org-simple-headlines-files)
+  (when (member (buffer-name) my/org-simple-headlines-files)
     (push (list (format org-heading-keyword-regexp-format
                         (concat
                          "\\(?:"
@@ -3593,8 +3544,8 @@ Emphasis: when to use = or ~
 ~ is for code, functions, or things that can be executed
 = is for general emphasis
 
-*** REVIEW Modal editing
-**** Package: ryo-modal
+*** Modal editing
+**** REVIEW Package: ryo-modal
 
 try out a modal configuration
 
@@ -3740,7 +3691,7 @@ Use hydra menu to enable/disable.
 
 #+end_src
 
-**** Package: company-quickhelp
+**** REVIEW Package: company-quickhelp
 
 #+begin_src emacs-lisp
 
@@ -3754,7 +3705,7 @@ Use hydra menu to enable/disable.
 
 #+end_src
 
-**** Package: company-box
+**** REVIEW Package: company-box
 
 #+begin_src emacs-lisp
 
@@ -3873,7 +3824,7 @@ Uses the active region as input, if it is active."
    ("<f3>" . next-line)
    ("<S-f3>" . previous-line)
    ;; cant use C-m for swiper-mc. when doing that, every time enter is pressed after search, swiper-mc is activated
-   ("C-h" . swiper-mc)  ;; swiper-mc puts a cursor on every swiper search result
+   ("C-r" . swiper-mc)  ;; swiper-mc puts a cursor on every swiper search result
    ))
 
 #+end_src
@@ -4037,7 +3988,7 @@ By default, changes are displayed in the fringe.
 
 #+end_src
 
-**** Package: git-ml
+**** git-ml.el
 
 Taken from https://gist.github.com/pkkm/3be34dd19622e194eca4653782f616c8
 It's not available in a melpa package, so the whole package is in the following snippet.
@@ -4359,7 +4310,8 @@ Can use either hydra menu or type a snippet abbreviation and press TAB to expand
 (use-package yasnippet
   :after yasnippet-snippets
   :config
-  (yas-global-mode 1))
+  (yas-global-mode 1)
+  :hook (makefile-gmake-mode . (lambda () (yas-minor-mode -1))))
 
 (use-package ivy-yasnippet
   :after yasnippet
@@ -4382,11 +4334,12 @@ Use multiple cursors on swiper candidates with the corresponding swiper keybindi
   (define-key rectangular-region-mode-map [remap keyboard-quit] 'rrm/keyboard-quit)
   ;; use C-7 to add a cursor to every swiper selection
   (add-to-list 'mc/cmds-to-run-once 'swiper-mc)
+  (global-unset-key (kbd "C-<down-mouse-1>"))
   :bind
   ("C-<mouse-1>" . mc/add-cursor-on-click)
   (:map wakib-keys-overriding-map
-        ("M-S" . set-rectangular-region-anchor)
-        :map mc/keymap
+        ("M-S" . set-rectangular-region-anchor))
+  (:map mc/keymap
         ("M-S-<down>" . mc/mark-next-like-this)
         ("M-S-<up>" . mc/mark-previous-like-this)))
 
@@ -4513,38 +4466,6 @@ Otherwise, just execute the normal behaviour"
 #+end_src
 
 *** Hydras
-**** Hydra temporary notes
-
-# menu entries that are also menus have a different color
-# M-<up/down> moves by paragraphs instead of lines (org-move-down)
-# company completion - writing something quits the completion popup
-
-
-# https://github.com/hlissner/doom-emacs/blob/develop/modules/config/default/+evil-bindings.el
-
-
-tab - workspace menu
-  tab - show tab bar (temporarily show tab bar - dissapears after moving cursor or writing something)
-  . - switch workspace
-  0 - switch to final workspace
-  1-9 - stitch to Nth workspace
-
-spc - find file in project
-ret - jump to bookmarks
-
-b - buffer menu
-
-c - code menu
-
-h - help menu
-
-i - insert menu
-  f - current file name
-  F - current file path
-  s - snippet
-
-n - notes menu
-
 **** Package: hydra
 
 #+begin_src emacs-lisp
@@ -4607,14 +4528,14 @@ show a different main hydra, depending on major mode
    (("s" save-some-buffers "Save all buffers"))
    "Switch Buffer"
    (("b" bufler-list "Show all buffers and workspaces")
-    ("B" bufler-switch-buffer "Switch buffer (current workspace)")
-    ("uB" my/bufler-switch-buffer-C-u "Switch buffer (all workspaces)"))
+    ("Bw" bufler-switch-buffer "Switch buffer (current workspace)")
+    ("Ba" my/bufler-switch-buffer-C-u "Switch buffer (all workspaces)"))
    "Switch Workspace"
    (("w" bufler-workspace-frame-set "Switch current workspace"))
-   "Todo"
-   (("tp" hl-todo-previous "jump to previous TODO or similar keyword")
-    ("tn" hl-todo-next "jump to next TODO or similar keyword")
-    ("to" hl-todo-occur "find all TODO or similar keywords"))
+   "TODO and similar keywords"
+   (("tp" hl-todo-previous "Jump to previous TODO keyword")
+    ("tn" hl-todo-next "Jump to next TODO keyword")
+    ("to" hl-todo-occur "Find all TODO keywords"))
    ))
 
 #+end_src
@@ -4788,6 +4709,19 @@ show a different main hydra, depending on major mode
 
 #+end_src
 
+**** Hydra: latex-mode
+
+#+begin_src emacs-lisp
+
+(major-mode-hydra-define latex-mode
+  (:color teal :quit-key "q" :title "Latex hydra" :separator "-")
+  ("Compile"
+   (("c" TeX-command-run-all "compile with Emacs")
+    ("m" my/latex-compile-makefile-and-open-pdf "compile with Makefile"))
+   ))
+
+#+end_src
+
 **** Hydra: markdown-mode
 
 #+begin_src emacs-lisp
@@ -4811,7 +4745,8 @@ show a different main hydra, depending on major mode
     ("s" my/open-scratch-buffer "open scratch buffer")
     ("a" my/org-agenda "open agenda")
     ("A" org-agenda "open agenda menu")
-    ("d" dired "open directory with dired"))
+    ("d" dired "open directory with dired")
+    ("e" eshell "open emacs shell"))
    "Special File"
    (("p" my/open-init-file "open private Emacs config"))
    "Org Directory"
@@ -4833,13 +4768,14 @@ show a different main hydra, depending on major mode
     ("g" counsel-org-goto "goto org heading")
     ("e" org-export-dispatch "export dispatch")
     ("i" org-insert-link "insert/edit link")
-    ("p" org-emphasize "insert or change text emphasis"))
+    ("P" org-emphasize "insert or change text emphasis"))
    "Org Latex"
-   (("l" org-latex-export-to-latex "export to Latex file")
-    ("L" my/org-latex-compile-and-open-pdf "export to PDF (with Makefile)"))
+   (("ll" org-latex-export-to-latex "export to Latex file")
+    ("lc" org-latex-export-to-pdf "compile with Emacs")
+    ("lm" my/latex-compile-makefile-and-open-pdf "compile with Makefile"))
    "Reveal.js"
-   (("r" org-reveal-export-to-html "export to HTML file")
-    ("R" my/export-reveal-presentation-to-pdf "convert HTML file to PDF"))
+   (("rr" org-reveal-export-to-html "export to HTML file")
+    ("rp" my/export-reveal-presentation-to-pdf "convert HTML file to PDF"))
    "Heading"
    (("s" org-sort "sort subtree")
     ("x" org-cut-subtree "cut subtree")
@@ -4936,7 +4872,8 @@ show a different main hydra, depending on major mode
     ("s" flyspell-mode "spell checker" :toggle t)
     ("c" global-company-mode "code completion" :toggle t)
     ("p" electric-pair-mode "auto close parens" :toggle t)
-    ("g" diff-hl-mode "git gutter" :toggle t))
+    ("g" diff-hl-mode "git gutter" :toggle t)
+    ("S" yas-global-mode "snippets" :toggle t))
    "UI Elements"
    (("e" dired-sidebar-toggle-sidebar "file explorer sidebar")
     ("t" global-tab-line-mode "tab-line" :toggle t)
@@ -4944,9 +4881,11 @@ show a different main hydra, depending on major mode
     ("m" hide-mode-line-mode "modeline" :toggle t)
     ("M" toggle-menu-bar "menu bar")
     ("n" display-line-numbers-mode "line numbers" :toggle t)
-    ("N" global-display-line-numbers-mode "line numbers (global)" :toggle t))
+    ("N" global-display-line-numbers-mode "line numbers (global)" :toggle t)
+    ("o" imenu-list-smart-toggle "outline sidebar"))
    "Misc"
-   (("o" global-org-hide-emphasis-mode "hide org emphasis markers" :toggle t)
+   (("O" global-org-hide-emphasis-mode "hide org emphasis markers" :toggle t)
+    ;; ("G" golden-ratio-mode "resize windows with golden ratio" :toggle t)
     ("w" line-wrap-mode "line wrap" :toggle t))
    "Debug"
    (("D" toggle-debug-on-error "debug on error" :toggle (default-value 'debug-on-error))
@@ -4964,7 +4903,8 @@ show a different main hydra, depending on major mode
   ("Magit"
    (("g" magit-status "show git status")
     ("l" magit-log "git log")
-    ("D" magit-diff "git diff"))
+    ("D" magit-diff "git diff")
+    ("b" magit-blame "git blame"))
    "Hunk"
    (("p" diff-hl-previous-hunk "previous")
     ("n" diff-hl-next-hunk "next")
@@ -5030,6 +4970,9 @@ Behavior by color:
 As for naming conventions inside a hydra:
   - section names should be objects
   - section entries should be actions (performed on the respective object)
+
+To see an example of hydras from a popular Emacs distribution:
+# https://github.com/hlissner/doom-emacs/blob/develop/modules/config/default/+evil-bindings.el
 
 *** PDF Viewer
 **** Package: pdf-tools
@@ -5148,21 +5091,13 @@ This is configured to use the margin, instead of the default fringe.
 
 #+end_src
 
-**** Latex linter                                               :notangle:
-
-#+begin_src emacs-lisp
-
-(use-package flycheck-aspell
-  :config
-  (add-to-list 'flycheck-checkers 'tex-aspell-dynamic))
-
-#+end_src
-
 *** Spacemacs-esque menu
 **** Package: general
 
 This should be one of the last packages to be loaded.
 The other packages first have to create their hydras and only after that should we create a menu using those hydras.
+
+Normally, when an entry is a sub-menu, it has a different color and a plus sign. Since my menus are hydras, it doesn't count as a sub-menu for general.
 
 #+begin_src emacs-lisp
 
@@ -5172,10 +5107,10 @@ The other packages first have to create their hydras and only after that should 
 
   (general-define-key
    :prefix "M-SPC"
-   "\"" '(eshell :which-key "open emacs shell")
    "\'" '(my/open-external-terminal-here :which-key "open external terminal")
    "," '(ivy-resume :which-key "resume last search")
-   "." '(repeat :which-key "repeat last command"))
+   "." '(repeat :which-key "repeat last command")
+   ":" '(eval-expression :which-key "eval expression"))
 
   (general-define-key
    :prefix "M-SPC"
@@ -5183,7 +5118,6 @@ The other packages first have to create their hydras and only after that should 
    "B" '(hydra-bookmarks/body :which-key "+bookmarks")
    "c" '(hydra-code/body :which-key "+code")
    "d" '(hydra-diff/body :which-key "+diff")
-   ;; "e" '(hydra-eval/body :which-key "+eval")
    "f" '(hydra-file/body :which-key "+file")
    "g" '(hydra-git/body :which-key "+git")
    "h" '(hydra-help/body :which-key "+help")
@@ -5198,6 +5132,29 @@ The other packages first have to create their hydras and only after that should 
    "S" '(hydra-spellcheck/body :which-key "+spellcheck")
    "t" '(hydra-toggles/body :which-key "+toggles")
    "w" '(hydra-window/body :which-key "+window")))
+
+#+end_src
+
+*** Outline sidebar
+**** Package: imenu-list
+
+Shows a sidebar with a list of all symbols (methods, variables, etc.) in current buffer.
+Allows searching and jumping to these symbols.
+
+#+begin_src emacs-lisp
+
+(use-package imenu-list
+  :commands (imenu-list-smart-toggle)
+  :custom
+  (imenu-list-focus-after-activation t)
+  (imenu-list-auto-resize            nil)
+  (imenu-list-size                   70)
+  (imenu-list-after-jump-hook        nil)
+  (imenu-list-position               'right)
+  :hook
+  (imenu-list-after-jump . recenter-top-bottom)
+  (imenu-list-major-mode . (lambda () (display-line-numbers-mode -1)))
+  (imenu-list-major-mode . hide-mode-line-mode))
 
 #+end_src
 
@@ -5380,7 +5337,7 @@ default behaviour is to do the operation between the cursor and the mark, which 
         ("C-k" . my/whole-line-or-region-delete-region))
 
   :hook
-  (makefile-mode . (lambda() (bind-key "C-c" 'whole-line-or-region-kill-ring-save makefile-mode-map))))
+  (makefile-mode . (lambda () (bind-key "C-c" 'whole-line-or-region-kill-ring-save makefile-mode-map))))
 
 ;; Comment code lines, command reacts based on the major mode.
 ;; (bind-key "C-«" 'whole-line-or-region-comment-dwim wakib-keys-overriding-map)
@@ -5801,7 +5758,7 @@ Basics:
 #+begin_src emacs-lisp
 
 (use-package gitignore-mode
-  :mode ("/\\.gitignore\\'" "/\\.git/info/exclude\\'" "/git/ignore\\'"))
+  :mode ("/\\.gitignore\\'" "/\\.git/info/exclude\\'" "/git/ignore\\'" "ignore\\'"))
 
 #+end_src
 
@@ -5877,13 +5834,12 @@ Basics:
   - [ ] linting
   - [ ] code completion
 
-
 **** Package: json-mode
 
 #+begin_src emacs-lisp
 
 (use-package js2-mode
-  :mode "\\.json\\'")
+  :mode "\\.json\\'" "\\.js\\'")
 
 #+end_src
 
@@ -5893,11 +5849,20 @@ Basics:
 Basics:
   - [ ] syntax highlighting
   - [ ] linting
-  - [ ] code completion
+  - [X] code completion
 
 Extra:
   - references (deactivated)
   - minted code listings
+
+**** Package: company-auctex
+
+#+begin_src emacs-lisp
+
+(use-package company-auctex
+  :after company)
+
+#+end_src
 
 **** Package: org-ref                                           :notangle:
 
@@ -6288,7 +6253,7 @@ Detect existing emacs server and switch to it if possible
         (dired-sidebar-switch-to-dir root))))
 
   :hook
-  (dired-sidebar-mode . (lambda() (display-line-numbers-mode -1)))
+  (dired-sidebar-mode . (lambda () (display-line-numbers-mode -1)))
   (dired-sidebar-mode . hide-mode-line-mode)
   (bufler-workspace-set-hook . my/dired-sidebar-focus-bufler))
 
@@ -6690,6 +6655,29 @@ Available packages:
 emacs mark (pop, push) -> C-', C-" (or Meta key)
 company -> C-SPC
 
+*** Theme Faces and Colours                                      :notangle:
+
+How to edit a theme:
+
+#+begin_src emacs-lisp
+
+(setq custom--inhibit-theme-enable nil)
+
+(with-eval-after-load "underwater-theme"
+  (let ((bg_1      "#000000")
+        (fg_1      "#ffffff"))
+    (custom-theme-set-faces
+     'underwater
+
+     ;; you can set variables and use them, use the colors directly, or use Emacs default colors
+     `(default                       ((t (:background ,bg_1 :foreground ,fg_1))))
+     '(region                        ((t (:background "#888888"))))
+     '(region                        ((t (:background "cyan"))))
+
+     )))
+
+#+end_src
+
 ** File Footer
 
 #+begin_src emacs-lisp
@@ -6861,24 +6849,27 @@ Todo:
   - [X] some items in the toggles hydra dont change icon when toggled
   - [X] auto switch to new window is annoying when used with company (first line in file opens full report) or magit (C-d C-c commit opens new commit diff window)
   - [X] add a =M-SPC f z= command that uses fzf and shows every file, including git ignored ones.
+  - [X] convert my colour options into a standard Emacs color theme
+  - [X] Makefile mode can't use C-c to copy (happens when =yas--direct-makefile-gmake-mode= is set to t)
+  - [X] hydra toggle for golden-ratio-mode
+  - [X] magit diffs use blue and pink for additions and deletions
+  - [X] there's some sort of problem with fonts (Cartograph not detected; M-x menu font size)
+  - [X] hydra toggle menu - add a toggle for a side panel (in the right), that allows jumping to functions
+  - [X] C-<mouse-1> doesn't work
   - [ ] add keybindings tables (or a cheatsheet image) in config file
   - [ ] commenting/indenting inside source block jumps to top of block. happens with just 'emacs -Q' and comment-dwim ([[https://www.reddit.com/r/emacs/comments/ap4s7z/orgmode_weirdness_questions/][reddit thread]])
   - [ ] maybe incorporate previous/next concept from wakib-emacs? (it uses the ';' key)
   - [ ] use 'C-.' to fix any type of error (flycheck/flyspell)
-  - [ ] allow C-page up/down to cycle when at first/last tab
-  - [ ] use C-S-page up/down to move tabs
+  - [ ] allow C-page up/down to cycle when at first/last tab (setting =tab-line-switch-cycling= to =t= will be able to do this in a future patch)
   - [ ] use smerge hydra for better merging conflict resolution (https://github.com/alphapapa/unpackaged.el#hydra)
-  - [ ] improve appearance of tab-line arrows (they appear when the bar is too full)
+  - [ ] improve appearance of tab-line backward and forward buttons (they appear when the bar is too full)
   - [ ] for every package, add a quote from their git repo explaining what the package does
   - [ ] allow jumping to a function definition by ctrl-click or f2 or something else (check 'embark' package)
   - [ ] add hydra or M-<key> commands for org-mark-ring-push, org-mark-ring-goto, counsel-mark-ring
   - [ ] C-SPC and C-u SPC don't work with ryo-modal (C-SPC C-SPC to mark, C-u C-SPC to jump to prev mark)
-  - [ ] hydra toggle for golden-ratio-mode
   - [ ] golden-ratio seems to be interfering with which-key
   - [ ] try out =calfw= package
-  - [ ] magit diffs use blue and pink for additions and deletions
-  - [ ] make startup time under 1 second with use-package defer features
-  - [ ] reduce font size for hydra menus (should see menus even at 60% window width)
+  - [ ] reduce font size for hydra menus (should see menus even at 60% window width) (it's very hard to read the text when window size is too small)
   - [ ] crux has a lot of useful commands. I could replace some of my custom functions with their package.
   - [ ] rainbow-mode gets overshadowed by current line highlighting
   - [ ] electric-indent-mode in gitconfig-mode adds unnecessary tab after RET
@@ -6887,11 +6878,8 @@ Todo:
   - [ ] open function help buffer -> click link to go to definition -> opens with cursor on top of function, at bottom of window. Should open on top of window instead. (=find-function-search-for-symbol= does not use ~(recenter find-function-recenter-line)~, unlike =find-function=)
   - [ ] make 'my/indent-region-custom' function (M-arrows) work even in a blank line (could try 'indent-to' function)
   - [ ] select region and press '(' to surround in parens; doesnt work in YAML mode
-  - [ ] add a keybinding for 'counsel-company'
-  - [ ] convert my colour options into a standard Emacs color theme
+  - [ ] add a keybinding for 'counsel-company' (maybe =C-SPC=?)
   - [ ] make auto-correct work like in google docs (suggestion appears automatically; press tab to open menu; use tab to move in menu; menu has these buttons: most likely correction, cancel, save, more options) [[https://gist.github.com/aaronjensen/a46f88dbd1ab9bb3aa22][link1]] [[https://github.com/company-mode/company-mode/wiki/Switching-from-Vim][link2]]
-  - [ ] there's some sort of problem with fonts (Cartograph not detected; M-x menu font size)
-  - [ ] hydra toggle menu - add a toggle for a side panel (in the right), that allows jumping to functions
   - [ ] add support for /.editorconfig/
   - [ ] replace dired keybindings with a better version (and also dired-sidebar)
   - [ ] after opening bufler with =M-SPC b b= (bufler-list), the previous window layout is deleted and only a single window is visible
@@ -6900,15 +6888,27 @@ Todo:
   - [ ] yascroll was disabled, but I don't remember why. I'll reactivate it and see if anything bad happens.
   - [ ] change colors or org headings to something more neutral
   - [ ] use C-. for spelling and C-spc for completion. Figure out how to replace C-u C-spc (pop-to-mark-command / set-mark-command)
+  - [ ] change theme faces for latex mode
+  - [ ] add a modeline indicator to indocate if =company= is active
+  - [ ] figure out what to do with =C-u=, =C-SPC C-SPC= and with marks in general. should also pick one of the packages in the experimental area.
+  - [ ] figure out what to do with =C-SPC=, =ryo-modal=, and =flycheck=
+  - [ ] allow selecting an entire line, or duplicating an entire line
+  - [ ] allow moving the window by a single line up or down (like VSCode)
+  - [ ] make =swiper-mc= work on C-r or combine C-f with C-r better
+  - [ ] when trying to use fzf on home directory, it searches for commands instead of files. This is fine, but it should be more transparent.
+  - [ ] bug - every time I switch to a new file, its name goes into the clipboard (problem is my/org-fontify-simple-headlines -> my/show-buffer-name -> kill-new)
+  - [ ] need to have some way to navigate to previous/next in flycheck, flyspell, and diff-hl
 
 
 # NOTE: use org-sort and select 'X' to sort this list by what items are checked
 
 
 add documentation:
-  - [ ] (in org mode) M-left/right -> promote/demote single heading; M-S-left/right -> promote/demote heading subtree
-  - [ ] C-RET and C-S-RET to make newlines (add keybinding docs)
-  - [ ] C-t "go to symbol", C-p "go to file" (add to keybindings documentation)
+  - [X] (in org mode) M-left/right -> promote/demote single heading; M-S-left/right -> promote/demote heading subtree
+  - [X] C-RET and C-S-RET to make newlines (add keybinding docs)
+  - [X] C-t "go to symbol", C-p "go to file" (add to keybindings documentation)
+  - [ ] add something about how to use base/utils/emacs-server.sh
+  - [ ] add =emacs= and =emacs-distributions= tags to git repo, when the time is appropriate
 
 
 from sublime:
@@ -6924,11 +6924,16 @@ from sublime:
   - [X] show git untracked/unstaged/staged number in the modeline segment (also N of commits ahead/behind)
   - [X] bookmarks (C-F2 toggle, F2 next, S-F2 prev, C-S-F2 clear all, M-F2 select all)
   - [X] notifications plugin
-  - [ ] snippet shows in autocomplete menu. just type and use tab for autocomplete. then use tab to jump in next snippet position
   - [ ] C-F6 for spellcheck, F6 for next error
-  - [ ] jumping to start/end and PG-up/down all use scrolling
+  - [ ] snippet shows in autocomplete menu (integrate company and yasnippet). just type and use tab for autocomplete. then use tab to jump in next snippet position
+  - [ ] jumping to start/end and PG-up/down all use smooth scrolling
 
 
-and also:
+from VSCode:
+  - [ ] automatically create =.gitignore= files, after selecting project languages
+
+
+long term goals:
   - [ ] look at vscode settings + extensions and import anything I like
   - [ ] when this config is developed enough, see what it needs to work on Windows
+  - [ ] occasionally go through all the packages, and enable use-package defer features when possible, to keep startup time under 1 second

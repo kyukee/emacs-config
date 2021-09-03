@@ -1,3 +1,10 @@
+;;; tangle-patch.el --- Patch org-babel-tangle to allow excluding with tags
+
+;;; Commentary:
+;;; Allows excluding org headings and trees from being tangled, by using the =notangle= tag.
+
+;;; Code:
+
 (require 'ob-tangle)
 (load-file "/home/kyukee/.emacs.d/straight/repos/org/lisp/ob-tangle.el")
 
@@ -13,7 +20,7 @@
 	        (setq last-heading-pos current-heading-pos)))
       (unless (or (org-in-commented-heading-p)
 		              (org-in-archived-heading-p))
-	      (let* ((tags (org-get-tags-at))
+	      (let* ((tags (org-get-tags))
                (info (org-babel-get-src-block-info 'light))
 	             (src-lang (nth 0 info))
 	             (src-tfile (cdr (assq :tangle (nth 2 info)))))

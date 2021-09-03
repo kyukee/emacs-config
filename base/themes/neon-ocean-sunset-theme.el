@@ -1,4 +1,4 @@
-;;; neon-ocean-sunset-theme.el --- A gentle, deep blue color theme
+;;; neon-ocean-sunset-theme.el --- A deep blue color theme
 
 ;;; Commentary:
 
@@ -101,8 +101,8 @@
    `(isearch                          ((t (:background ,red_1 :foreground "black"))))
    '(isearch-fail                     ((t (:background "#5654ca" :foreground "white"))))
    '(match                            ((t (:background "#8b4887" :foreground "white"))))
-   '(header-line                      ((t (:foreground "#94bff3" :background "#2d3352"))))
-   `(term                             ((t (:background ,bg_3 :foreground ,fg_1))))      ;; this is mostly for the fzf prompt
+   `(header-line                      ((t (:foreground ,green_1 :background "#2d2d45"))))   ; #2d3352, #2a2e47
+   `(term                             ((t (:background ,bg_3 :foreground ,fg_1))))    ;; this is mostly for the fzf prompt
    `(term-bold                        ((t (:background ,bg_3 :foreground ,fg_1 :weight bold))))
    '(highlight                        ((t (:background "#1B2530"))))
    `(hl-line                          ((t (:inherit (highlight) :extend t))))
@@ -162,7 +162,7 @@
    `(eshell-ls-symlink                ((t (:foreground ,cyberpunk-cyan :weight bold))))
 
    ;; diff
-   '(magit-section-heading            ((t (:foreground "#efd517" :weight bold))))     ; #94bff3
+   `(magit-section-heading            ((t (:foreground ,green_1 :weight bold))))     ; #94bff3, "#efd517"
    `(diff-added                       ((t (:inherit magit-diffstat-added))))
    `(diff-changed                     ((t (:foreground ,cyberpunk-yellow))))
    `(diff-removed                     ((t (:inherit magit-diffstat-removed))))
@@ -277,6 +277,10 @@
    ;; yascroll
    `(yascroll:thumb-text-area         ((t (:background "#454259"))))
    `(yascroll:thumb-fringe            ((t (:background "#454259" :foreground "#454259"))))
+
+   ;; latex-mode
+   `(font-latex-warning-face          ((t (:inherit font-lock-warning-face))))
+   `(font-latex-sectioning-5-face     ((t (:foreground "#efd517" :weight bold))))
 
    ;; -- Underwater theme --
 

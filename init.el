@@ -11,7 +11,7 @@
 (defvar *config-file-tangled* (expand-file-name "config.el" user-emacs-directory)
   "The configuration file, after being tangled.")
 
-(load-file (expand-file-name "resources/tangle-patch.el" user-emacs-directory))
+(load-file (expand-file-name "base/resources/tangle-patch.el" user-emacs-directory))
 
 ;; If tangled elisp exists then load it, otherwise tangle the Org file and load it
 (if (file-exists-p *config-file-tangled*)

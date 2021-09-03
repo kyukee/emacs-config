@@ -1,0 +1,370 @@
+%% Copyright 2020 Alexander Yakushev
+%
+% This work may be distributed and/or modified under the
+% conditions of the LaTeX Project Public License, either version 1.3
+% of this license or (at your option) any later version.
+% The latest version of this license is in
+%   http://www.latex-project.org/lppl.txt
+% and version 1.3 or later is part of all distributions of LaTeX
+% version 2005/12/01 or later.
+%
+% This work has the LPPL maintenance status `maintained'.
+%
+% The Current Maintainer of this work is Alexander Yakushev.
+%
+% This work consists of the files latex-cheatsheet-template.tex.
+
+\documentclass[10pt,english,landscape]{article}
+\usepackage{multicol}
+\usepackage{calc}
+\usepackage[landscape]{geometry}
+\usepackage{color,graphicx}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{url}
+\usepackage{amsfonts}
+\usepackage{array,booktabs}
+\usepackage{textcomp}
+\usepackage[usenames,dvipsnames,table]{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{colortbl}
+\usepackage{tikz}
+\usepackage{environ}
+
+\usetikzlibrary{calc}
+\pgfdeclarelayer{background}
+\pgfdeclarelayer{foreground}
+\pgfsetlayers{background,main,foreground}
+
+\geometry{top=-0.5cm,left=0.5cm,right=0.5cm,bottom=0.25cm}
+
+\pagestyle{empty} % Turn off header and footer
+
+% \renewcommand\rmdefault{phv} % Arial
+% \renewcommand\sfdefault{phv} % Arial
+
+% Redefine section commands to use less space
+\makeatletter
+\renewcommand{\section}{\@startsection{section}{1}{0mm}%
+  {-1ex plus -.5ex minus -.2ex}%
+  {0.5ex plus .2ex}%x
+  {\normalfont\large\bfseries}}
+\renewcommand{\subsection}{\@startsection{subsection}{2}{0mm}%
+  {-1explus -.5ex minus -.2ex}%
+  {0.5ex plus .2ex}%
+  {\normalfont\normalsize\bfseries}}
+\renewcommand{\subsubsection}{\@startsection{subsubsection}{3}{0mm}%
+  {-1ex plus -.5ex minus -.2ex}%
+  {1ex plus .2ex}%
+  {\normalfont\small\bfseries}}
+\makeatother
+
+\setcounter{secnumdepth}{0} % Don't print section numbers
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt plus 0.5ex}
+
+\definecolor{TableHead}{rgb}{0.353, 0.329, 0.667}
+\definecolor{TableRow}{rgb}{0.816, 0.812, 0.902}
+
+\NewEnviron{keys}[1]{
+  % \begin{center}
+  \smallskip
+  \begin{tikzpicture}
+      \rowcolors{1}{}{TableRow}
+      \centering
+      \node (tbl) [inner sep=0pt] {
+        \begin{tabular}{p{4.85cm}p{2.90cm}} % length of first and second column in each box
+          \rowcolor{TableHead}
+          \multicolumn{2}{l}{\normalsize\textbf{\color{white}{#1}}}\parbox{0pt}{\rule{0pt}{0.3ex+\baselineskip}}\\
+          \BODY
+          \arrayrulecolor{TableHead}\specialrule{.17em}{0em}{.2em}
+        \end{tabular}};
+      \begin{pgfonlayer}{background}
+        \draw[rounded corners=2pt,top color=TableHead,bottom color=TableHead, draw=white]
+        ($(tbl.north west)-(0,-0.05)$) rectangle ($(tbl.north east)-(0.0,0.15)$);
+        \draw[rounded corners=2pt,top color=TableHead,bottom color=TableHead, draw=white]
+        ($(tbl.south west)-(0.0,-0.11)$) rectangle ($(tbl.south east)-(-0.0,-0.02)$);
+      \end{pgfonlayer}
+    \end{tikzpicture}
+  % \end{center}
+}
+
+\begin{document}
+
+\raggedright\
+
+\begin{center}
+  \huge{\underline{Emacs Custom Cheat Sheet}}
+\end{center}
+
+\footnotesize
+\begin{multicols}{3}
+
+  \centering\section{Basic}
+
+  \begin{keys}{Glossary}
+    Control (Ctrl) key                                      & \texttt{C} \\
+    Alt (Meta) key                                          & \texttt{M} \\
+    Shift key                                               & \texttt{S} \\
+  \end{keys}
+
+  \begin{keys}{Essentials - Basic}
+    Execute command by name                                 & \texttt{M-x} \\
+    Cancel command                                          & \texttt{C-g} \\
+    Exit Emacs                                              & \texttt{C-q} \\
+    Hydra prefix                                            & \texttt{M-SPC} \\
+    Command prefix                                          & \texttt{C-e} \\
+    Mode prefix                                             & \texttt{C-d} \\
+    Help prefix                                             & \texttt{C-h} \\
+  \end{keys}
+
+  \begin{keys}{Essentials - Advanced}
+    Exit current mode/delete all other windows              & \texttt{ESC} \\
+    Universal Argument                                      & \texttt{C-u} \\
+    Repeat command X times                                  & \texttt{C-<0..9> <command> / C-u <>} \\
+    Reload current buffer                                   & \texttt{F5} \\
+    Reload Emacs init file                                  & \texttt{C-F5} \\
+    Toggle fullscreen                                       & \texttt{F11} \\
+    Toggle menu bar                                         & \texttt{F12} \\
+  \end{keys}
+
+  \begin{keys}{Getting Help}
+    Help: describe function bound to key combination        & \texttt{C-h k <key>} \\
+    Help: describe a function                               & \texttt{C-h f} \\
+    Help: describe a variable                               & \texttt{C-h v} \\
+    Help: describe key bindings for current buffer          & \texttt{C-h b} \\
+    Help: describe current mode                             & \texttt{C-h m} \\
+  \end{keys}
+
+  \begin{keys}{Navigation}
+    Previous/next word                                      & \texttt{C-left / C-right} \\
+    Previous/next paragpaph                                 & \texttt{C-up / C-down} \\
+    Previous/next s-expression                              & \texttt{C-M-left / C-M-right} \\
+    Move up/down one level of parentheses or parentheses-like expression   & \texttt{C-M-up / C-M-down} \\
+    Scroll up/down one page                                 & \texttt{PgUp / PgDown} \\
+    Scroll up/down one page in other window                 & \texttt{M-PgUp / M-PgDown} \\
+    Beginning/end of document                               & \texttt{C-Home / C-End} \\
+    Beginning/end of line                                   & \texttt{Home / End} \\
+    Add shift to these commands to select instead           & \texttt{add S to select} \\
+  \end{keys}
+
+  \begin{keys}{Selection}
+    Enter selection mode                                    & \texttt{M-s} \\
+    Enter rectangular selection mode                        & \texttt{M-S-s} \\
+    Select all buffer                                       & \texttt{C-a} \\
+    Select line/block/all                                   & \texttt{M-a} \\
+    While selection is active:                              & \hfil \texttt{-----} \\
+    \ - Disable selection                                   & \texttt{M-s / ESC} \\
+    \ - Return to beginning of selection                    & \texttt{C-g} \\
+    While rectangular selection is active:                  & \hfil \texttt{-----} \\
+    \ - Enter multiple cursors mode                         & \texttt{RET} \\
+    \ - Quit                                                & \texttt{C-g} \\
+    While multiple cursors mode is active:                  & \hfil \texttt{-----} \\
+    \ - Add cursor up/down (when region disabled)           & \texttt{M-S-up / M-S-down} \\
+    \ - Quit                                                & \texttt{RET / C-g} \\
+  \end{keys}
+
+  % \columnbreak\
+
+  \begin{keys}{Editing}
+    Kill line                                               & \texttt{C-k} \\
+    Cut line/selection to clipboard                         & \texttt{C-x} \\
+    Copy line/selection to clipboard                        & \texttt{C-c} \\
+    Paste from clipboard                                    & \texttt{C-v} \\
+    Undo                                                    & \texttt{C-z} \\
+    Redo                                                    & \texttt{C-y} \\
+    Indent line                                             & \texttt{TAB} \\
+    Comment or uncomment region                             & \texttt{C-/} \\
+    Move line left/right                                    & \texttt{M-left / M-right} \\
+    Move line up/down                                       & \texttt{M-up / M-down} \\
+    Delete previous/next character                          & \texttt{backspace / delete} \\
+    Delete previous/next word                               & \texttt{C-backspace / C-delete} \\
+  \end{keys}
+
+  \begin{keys}{Search}
+    Search forward                                          & \texttt{C-f / F3} \\
+    Search backward                                         & \texttt{S-F3} \\
+    Search in directory                                     & \texttt{C-S-f} \\
+    While search is active:                                 & \hfil \texttt{-----} \\
+    \ - Next match                                          & \texttt{down} \\
+    \ - Prev match                                          & \texttt{up} \\
+  \end{keys}
+
+  \begin{keys}{Replace}
+    Interactive replace                                     & \texttt{C-r} \\
+    Replace without confirmation                            & \texttt{C-S-r} \\
+    While replace is active:                                & \hfil \texttt{-----} \\
+    \ - Replace current occurrence                          & \texttt{y} \\
+    \ - Skip current occurrence                             & \texttt{n} \\
+    \ - Replace all occurrences                             & \texttt{!} \\
+    \ - Exit                                                & \texttt{q} \\
+    \ - Show help                                           & \texttt{C-d ?} \\
+  \end{keys}
+
+  \begin{keys}{Files}
+    Find (open) file                                        & \texttt{C-o} \\
+    Save file                                               & \texttt{C-s} \\
+  \end{keys}
+
+  \begin{keys}{Buffers}
+    Jump to buffer in current workspace                     & \texttt{C-p} \\
+    Jump to buffer in any workspace                         & \texttt{C-u C-p} \\
+    Jump to buffer in any workspace and focus workspace     & \texttt{C-u C-u C-p} \\
+    Kill current buffer                                     & \texttt{C-w} \\
+    New empty buffer                                        & \texttt{C-n} \\
+    New empty buffer                                        & \texttt{C-n} \\
+    Previous/next buffer in tab line                        & \texttt{C-PgUp / C-PgDown} \\
+    Previous/next buffer in navigation history              & \texttt{C-TAB / C-S-TAB} \\
+    Switch to previous buffer                               & \texttt{C-p RET} \\
+  \end{keys}
+
+  \begin{keys}{Windows}
+    Delete other windows                                    & \texttt{M-3} \\
+    Delete current window                                   & \texttt{M-S-3} \\
+    Split window vertically                                 & \texttt{M-4} \\
+    Split window horizontally                               & \texttt{M-S-4} \\
+    Cycle selected window                                   & \texttt{M-h} \\
+    Select specific window                                  & \texttt{M-S-h} \\
+  \end{keys}
+
+  \begin{keys}{Miscellaneous}
+    Ediff                                                   & \texttt{M-x ediff} \\
+    Decrease/Increase text size                             & \texttt{C-- / C-=} \\
+    Recenter window so current line is at top/middle/bottom of window   & \texttt{C-l} \\
+    Jump to visible character                               & \texttt{M-m} \\
+    Jump to function or other relevant location             & \texttt{C-t} \\
+    Create bookmark or jump to bookmarked file/directory    & \texttt{C-b} \\
+    Add cursor on click                                     & \texttt{C-LeftMouse} \\
+    Correct spellchecker error                              & \texttt{C-.} \\
+    While ivy minibuffer is active:                         & \hfil \texttt{-----} \\
+    \ - extra options                                       & \texttt{M-o} \\
+    While company menu is active:                           & \hfil \texttt{-----} \\
+    \ - select option                                       & \texttt{M-<0..9>} \\
+    Customize variables and faces                           & \texttt{M-x customize} \\
+    Create newline below                                    & \texttt{C-RET} \\
+    Create newline above                                    & \texttt{C-S-RET} \\
+  \end{keys}
+
+  \begin{keys}{File Bookmarks}
+    Toggle bookmark at point                                & \texttt{C-F2} \\
+    Go to next bookmark in file                             & \texttt{F2} \\
+    Go to previous bookmark in file                         & \texttt{S-F2} \\
+  \end{keys}
+
+  \begin{keys}{Dired (File explorer)}
+    While dired menu is active:                             & \hfil \texttt{-----} \\
+    \ - show help                                           & \texttt{h} \\
+    \ - mark for deletion                                   & \texttt{d} \\
+    \ - unmark for deletion                                 & \texttt{u} \\
+    \ - delete marked files (expunge)                       & \texttt{x} \\
+    \ - Delete                                              & \texttt{D} \\
+    \ - Copy                                                & \texttt{D} \\
+    \ - Rename                                              & \texttt{R} \\
+    \ - open in current window (find)                       & \texttt{f} \\
+    \ - open in another window                              & \texttt{o} \\
+  \end{keys}
+
+  \begin{keys}{Org mode}
+    Demote/Promote Heading                                  & \texttt{M-left / M-right} \\
+    Demote/Promote Subtree                                  & \texttt{M-S-left / M-S-right} \\
+  \end{keys}
+
+  \centering\section{Version control}
+
+  \begin{keys}{Magit status}
+    Magit status                                            & \texttt{C-x g} \\
+    Move up/down                                            & \texttt{p / n} \\
+    Change current section visibility                       & \texttt{1 / 2 / 4} \\
+    Change all sections visibility                          & \texttt{M-1 / M-2 / M-4} \\
+    Collapse or expand section                              & \texttt{TAB} \\
+    Stage file or chunk                                     & \texttt{s} \\
+    Unstage file or chunk                                   & \texttt{u} \\
+    Discard uncommited file or chunk                        & \texttt{k} \\
+    Commit staged                                           & \texttt{c c} \\
+    Commit mode: confirm commit                             & \texttt{C-c C-c} \\
+    Commit mode: cancel commit                              & \texttt{C-c C-a} \\
+    Pull into current branch                                & \texttt{F F} \\
+    Push current branch                                     & \texttt{P P} \\
+    Merge into current branch                               & \texttt{m m} \\
+    Show process buffer                                     & \texttt{\$} \\
+    Quit                                                    & \texttt{q} \\
+  \end{keys}
+
+  \begin{keys}{Magit branches}
+    Checkout branch                                         & \texttt{b b} \\
+    Create branch                                           & \texttt{b B} \\
+    List branches                                           & \texttt{y} \\
+    Branch list: checkout branch                            & \texttt{Enter} \\
+  \end{keys}
+
+  \begin{keys}{Magit log}
+    Show log of current branch                              & \texttt{l l} \\
+    Show log of all local branches                          & \texttt{l L} \\
+    Show commit at point                                    & \texttt{Enter} \\
+  \end{keys}
+
+  \begin{keys}{Magit stash}
+    Stash working tree changes                              & \texttt{z z} \\
+    Apply stash at point                                    & \texttt{A} \\
+    Inspect stash at point                                  & \texttt{Enter} \\
+    Delete stash at point                                   & \texttt{k} \\
+  \end{keys}
+
+  \begin{keys}{Revisions and blame}
+    Annotate current file                                   & \texttt{M-x vc-annotate} \\
+    Annotate: hide metadata                                 & \texttt{v} \\
+    Annotate: previous/next revision                        & \texttt{p / n} \\
+    Annotate: quit                                          & \texttt{q} \\
+    Time machine for current file                           & \texttt{C-F8} \\
+    Time-machine: prev/next revision                        & \texttt{p / n} \\
+    Time-machine: quit                                      & \texttt{q} \\
+  \end{keys}
+
+\end{multicols}
+
+\newpage
+
+\raggedright\
+
+\begin{center}
+  \huge{\underline{Emacs Custom Cheat Sheet - Hydras}}
+\end{center}
+
+\footnotesize
+\begin{multicols}{3}
+
+  \centering\section{Hydra}
+
+  \begin{keys}{Basic}
+    Open hydra menu             & \texttt{M-SPC} \\
+    While hydra menu is active: & \hfil \texttt{-----} \\
+    \ - Open external terminal  & \texttt{'} \\
+    \ - Resume last search      & \texttt{,} \\
+    \ - Repeat last command     & \texttt{.} \\
+    \ - Eval lisp expression    & \texttt{:} \\
+    \ - Buffer                  & \texttt{b} \\
+    \ - Bookmarks               & \texttt{B} \\
+    \ - Code                    & \texttt{c} \\
+    \ - Diff                    & \texttt{d} \\
+    \ - File                    & \texttt{f} \\
+    \ - Git                     & \texttt{g} \\
+    \ - Help                    & \texttt{h} \\
+    \ - Insert                  & \texttt{i} \\
+    \ - Indentation             & \texttt{I} \\
+    \ - Mode                    & \texttt{m} \\
+    \ - Open                    & \texttt{o} \\
+    \ - Project                 & \texttt{p} \\
+    \ - Packages                & \texttt{P} \\
+    \ - Session                 & \texttt{q} \\
+    \ - Search                  & \texttt{s} \\
+    \ - Spellcheck              & \texttt{S} \\
+    \ - Toggles                 & \texttt{t} \\
+    \ - Window                  & \texttt{w} \\
+  \end{keys}
+
+\end{multicols}
+
+\end{document}
