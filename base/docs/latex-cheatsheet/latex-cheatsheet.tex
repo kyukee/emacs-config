@@ -17,7 +17,7 @@
 \documentclass[10pt,english,landscape]{article}
 \usepackage{multicol}
 \usepackage{calc}
-\usepackage[landscape]{geometry}
+\usepackage[landscape,a3paper]{geometry}
 \usepackage{color,graphicx}
 
 \usepackage[T1]{fontenc}
@@ -39,7 +39,7 @@
 \pgfdeclarelayer{foreground}
 \pgfsetlayers{background,main,foreground}
 
-\geometry{top=-0.5cm,left=0.5cm,right=0.5cm,bottom=0.25cm}
+\geometry{top=-0.5cm,left=0.5cm,right=0.5cm,bottom=0.5cm}
 
 \pagestyle{empty} % Turn off header and footer
 
@@ -76,7 +76,7 @@
       \rowcolors{1}{}{TableRow}
       \centering
       \node (tbl) [inner sep=0pt] {
-        \begin{tabular}{p{4.85cm}p{2.90cm}} % length of first and second column in each box
+        \begin{tabular}{p{5.95cm}p{3.05cm}} % length of first and second column in each box
           \rowcolor{TableHead}
           \multicolumn{2}{l}{\normalsize\textbf{\color{white}{#1}}}\parbox{0pt}{\rule{0pt}{0.3ex+\baselineskip}}\\
           \BODY
@@ -101,9 +101,11 @@
 \end{center}
 
 \footnotesize
-\begin{multicols}{3}
+\begin{multicols}{4}
 
   \centering\section{Basic}
+
+  \raggedcolumns
 
   \begin{keys}{Glossary}
     Control (Ctrl) key                                      & \texttt{C} \\
@@ -115,6 +117,7 @@
     Execute command by name                                 & \texttt{M-x} \\
     Cancel command                                          & \texttt{C-g} \\
     Exit Emacs                                              & \texttt{C-q} \\
+    Toggle Modal mode                                       & \texttt{C-SPC} \\
     Hydra prefix                                            & \texttt{M-SPC} \\
     Command prefix                                          & \texttt{C-e} \\
     Mode prefix                                             & \texttt{C-d} \\
@@ -124,11 +127,12 @@
   \begin{keys}{Essentials - Advanced}
     Exit current mode/delete all other windows              & \texttt{ESC} \\
     Universal Argument                                      & \texttt{C-u} \\
-    Repeat command X times                                  & \texttt{C-<0..9> <command> / C-u <>} \\
+    Repeat command X times                                  & \texttt{C-<num> <command> / C-u <num> <command>} \\
     Reload current buffer                                   & \texttt{F5} \\
     Reload Emacs init file                                  & \texttt{C-F5} \\
     Toggle fullscreen                                       & \texttt{F11} \\
     Toggle menu bar                                         & \texttt{F12} \\
+    Customize variables and faces                           & \texttt{M-x customize} \\
   \end{keys}
 
   \begin{keys}{Getting Help}
@@ -138,6 +142,10 @@
     Help: describe key bindings for current buffer          & \texttt{C-h b} \\
     Help: describe current mode                             & \texttt{C-h m} \\
   \end{keys}
+
+  \columnbreak\
+
+  \centering\section{Global}
 
   \begin{keys}{Navigation}
     Previous/next word                                      & \texttt{C-left / C-right} \\
@@ -182,6 +190,8 @@
     Move line up/down                                       & \texttt{M-up / M-down} \\
     Delete previous/next character                          & \texttt{backspace / delete} \\
     Delete previous/next word                               & \texttt{C-backspace / C-delete} \\
+    Create newline below                                    & \texttt{C-RET} \\
+    Create newline above                                    & \texttt{C-S-RET} \\
   \end{keys}
 
   \begin{keys}{Search}
@@ -191,6 +201,7 @@
     While search is active:                                 & \hfil \texttt{-----} \\
     \ - Next match                                          & \texttt{down} \\
     \ - Prev match                                          & \texttt{up} \\
+    \ - Add a cursor to each result                         & \texttt{C-r} \\
   \end{keys}
 
   \begin{keys}{Replace}
@@ -230,38 +241,39 @@
     Select specific window                                  & \texttt{M-S-h} \\
   \end{keys}
 
-  \begin{keys}{Miscellaneous}
-    Ediff                                                   & \texttt{M-x ediff} \\
-    Decrease/Increase text size                             & \texttt{C-- / C-=} \\
-    Recenter window so current line is at top/middle/bottom of window   & \texttt{C-l} \\
-    Jump to visible character                               & \texttt{M-m} \\
-    Jump to function or other relevant location             & \texttt{C-t} \\
-    Create bookmark or jump to bookmarked file/directory    & \texttt{C-b} \\
-    Add cursor on click                                     & \texttt{C-LeftMouse} \\
-    Correct spellchecker error                              & \texttt{C-.} \\
-    While ivy minibuffer is active:                         & \hfil \texttt{-----} \\
-    \ - extra options                                       & \texttt{M-o} \\
-    While company menu is active:                           & \hfil \texttt{-----} \\
-    \ - select option                                       & \texttt{M-<0..9>} \\
-    Customize variables and faces                           & \texttt{M-x customize} \\
-    Create newline below                                    & \texttt{C-RET} \\
-    Create newline above                                    & \texttt{C-S-RET} \\
+  \begin{keys}{Mark Ring (File Bookmarks)}
+    Toggle bookmark at point                                & \texttt{C-F2} \\
+    Go to previous/next bookmark in file                    & \texttt{S-F2 / F2} \\
+    Mark buffer location (mark-ring push)                   & \texttt{F6} \\
+    Go to previous/next location in mark-ring               & \texttt{C---- / C-=} \\
   \end{keys}
 
-  \begin{keys}{File Bookmarks}
-    Toggle bookmark at point                                & \texttt{C-F2} \\
-    Go to next bookmark in file                             & \texttt{F2} \\
-    Go to previous bookmark in file                         & \texttt{S-F2} \\
+  \begin{keys}{Macros}
+    Start defining a keyboard macro                         & \texttt{C-F4} \\
+    If a macro is being defined, end the definition; otherwise, execute the most recent macro   & \texttt{F4} \\
   \end{keys}
+
+  \begin{keys}{Miscellaneous}
+    Decrease/Increase text size                             & \texttt{C-\_ / C-+} \\
+    Recenter window so current line is at top/middle/bottom of window   & \texttt{C-l} \\
+    Jump to function or other relevant symbol               & \texttt{C-t} \\
+    Create bookmark or jump to bookmarked file/directory    & \texttt{C-b} \\
+    Use code completion                                     & \texttt{C-,} \\
+    Correct spellchecker error                              & \texttt{C-.} \\
+    Add cursor on click                                     & \texttt{C-LeftMouse} \\
+    Jump to visible character                               & \texttt{M-m} \\
+  \end{keys}
+
+  \centering\section{Special Modes}
 
   \begin{keys}{Dired (File explorer)}
     While dired menu is active:                             & \hfil \texttt{-----} \\
-    \ - show help                                           & \texttt{h} \\
+    \ - show help                                           & \texttt{?} \\
     \ - mark for deletion                                   & \texttt{d} \\
     \ - unmark for deletion                                 & \texttt{u} \\
     \ - delete marked files (expunge)                       & \texttt{x} \\
     \ - Delete                                              & \texttt{D} \\
-    \ - Copy                                                & \texttt{D} \\
+    \ - Copy                                                & \texttt{C} \\
     \ - Rename                                              & \texttt{R} \\
     \ - open in current window (find)                       & \texttt{f} \\
     \ - open in another window                              & \texttt{o} \\
@@ -272,11 +284,57 @@
     Demote/Promote Subtree                                  & \texttt{M-S-left / M-S-right} \\
   \end{keys}
 
+  \begin{keys}{Ripgrep (Search and Replace across directories)}
+    While rg is active:                                     & \hfil \texttt{-----} \\
+    \ - show help                                           & \texttt{?} \\
+    \ - make changes to current match (wgrep mode)          & \texttt{C-d C-p / e} \\
+    \ - apply all changes and save files                    & \texttt{C-d C-e} \\
+    \ - discard all changes and exit                        & \texttt{C-d C-k} \\
+    \ - Repeat this search in another directory             & \texttt{d} \\
+    \ - Repeat this search with another file pattern        & \texttt{f} \\
+    \ - Change the search regexp                            & \texttt{r} \\
+    \ - Change the search literal                           & \texttt{t} \\
+    \ - Repeat search with toggled ’--no-ignore’ flag       & \texttt{i} \\
+    \ - Repeat search with toggled case sensitivity         & \texttt{c} \\
+    \ - Save search result                                  & \texttt{s} \\
+    \ - Save search result and prompt for name              & \texttt{S} \\
+  \end{keys}
+
+  \begin{keys}{Ediff (Compare files and regions)}
+    Diff files                                              & \texttt{M-x ediff} \\
+    Diff regions from two open buffers                      & \texttt{M-x ediff-regions-wordwise} \\
+    While ediff is active:                                  & \hfil \texttt{-----} \\
+    \ - show help                                           & \texttt{?} \\
+  \end{keys}
+
+  \begin{keys}{Ivy (Minibuffer)}
+    While ivy minibuffer is active:                         & \hfil \texttt{-----} \\
+    \ - extra options for current option                    & \texttt{M-o} \\
+  \end{keys}
+
+  \begin{keys}{Company (Autocompletion)}
+    Manually activate autocompletion                        & \texttt{M-x counsel-company} \\
+    While company completion is active:                     & \hfil \texttt{-----} \\
+    \ - quick select candidate                              & \texttt{M-<0..9>} \\
+  \end{keys}
+
+  \begin{keys}{Ryo-Modal (Modal Editing)}
+    Toggle modal editing                                    & \texttt{C-SPC} \\
+    While modal editing is active:                          & \hfil \texttt{-----} \\
+    \ - quit                                                & \texttt{q} \\
+    \ - repeat                                              & \texttt{,} \\
+    \ - previous line                                       & \texttt{i} \\
+    \ - next line                                           & \texttt{k} \\
+    \ - backward char                                       & \texttt{j} \\
+    \ - forward char                                        & \texttt{l} \\
+  \end{keys}
+
+  % \columnbreak\
+
   \centering\section{Version control}
 
   \begin{keys}{Magit status}
-    Magit status                                            & \texttt{C-x g} \\
-    Move up/down                                            & \texttt{p / n} \\
+    Magit status                                            & \texttt{C-x g / M-x magit} \\
     Change current section visibility                       & \texttt{1 / 2 / 4} \\
     Change all sections visibility                          & \texttt{M-1 / M-2 / M-4} \\
     Collapse or expand section                              & \texttt{TAB} \\
@@ -284,87 +342,77 @@
     Unstage file or chunk                                   & \texttt{u} \\
     Discard uncommited file or chunk                        & \texttt{k} \\
     Commit staged                                           & \texttt{c c} \\
-    Commit mode: confirm commit                             & \texttt{C-c C-c} \\
-    Commit mode: cancel commit                              & \texttt{C-c C-a} \\
-    Pull into current branch                                & \texttt{F F} \\
-    Push current branch                                     & \texttt{P P} \\
+    Commit mode: confirm commit                             & \texttt{C-d C-c} \\
+    Commit mode: cancel commit                              & \texttt{C-d C-a} \\
+    Pull into current branch                                & \texttt{F p} \\
+    Push current branch                                     & \texttt{P p} \\
     Merge into current branch                               & \texttt{m m} \\
-    Show process buffer                                     & \texttt{\$} \\
+    Help                                                    & \texttt{?} \\
     Quit                                                    & \texttt{q} \\
   \end{keys}
 
   \begin{keys}{Magit branches}
+    While magit-status is active:                           & \hfil \texttt{-----} \\
     Checkout branch                                         & \texttt{b b} \\
-    Create branch                                           & \texttt{b B} \\
+    Create branch                                           & \texttt{b n} \\
     List branches                                           & \texttt{y} \\
-    Branch list: checkout branch                            & \texttt{Enter} \\
   \end{keys}
 
   \begin{keys}{Magit log}
+    While magit-status is active:                           & \hfil \texttt{-----} \\
     Show log of current branch                              & \texttt{l l} \\
     Show log of all local branches                          & \texttt{l L} \\
-    Show commit at point                                    & \texttt{Enter} \\
   \end{keys}
 
-  \begin{keys}{Magit stash}
-    Stash working tree changes                              & \texttt{z z} \\
-    Apply stash at point                                    & \texttt{A} \\
-    Inspect stash at point                                  & \texttt{Enter} \\
-    Delete stash at point                                   & \texttt{k} \\
+  \begin{keys}{Magit diff}
+    While magit-status is active:                           & \hfil \texttt{-----} \\
+    Diff thing at point                                     & \texttt{d d} \\
+    Diff worktree                                           & \texttt{d w} \\
   \end{keys}
 
-  \begin{keys}{Revisions and blame}
-    Annotate current file                                   & \texttt{M-x vc-annotate} \\
-    Annotate: hide metadata                                 & \texttt{v} \\
-    Annotate: previous/next revision                        & \texttt{p / n} \\
-    Annotate: quit                                          & \texttt{q} \\
-    Time machine for current file                           & \texttt{C-F8} \\
-    Time-machine: prev/next revision                        & \texttt{p / n} \\
-    Time-machine: quit                                      & \texttt{q} \\
-  \end{keys}
-
-\end{multicols}
-
-\newpage
-
-\raggedright\
-
-\begin{center}
-  \huge{\underline{Emacs Custom Cheat Sheet - Hydras}}
-\end{center}
-
-\footnotesize
-\begin{multicols}{3}
-
-  \centering\section{Hydra}
+  \centering\section{Hydras}
 
   \begin{keys}{Basic}
-    Open hydra menu             & \texttt{M-SPC} \\
-    While hydra menu is active: & \hfil \texttt{-----} \\
-    \ - Open external terminal  & \texttt{'} \\
-    \ - Resume last search      & \texttt{,} \\
-    \ - Repeat last command     & \texttt{.} \\
-    \ - Eval lisp expression    & \texttt{:} \\
-    \ - Buffer                  & \texttt{b} \\
-    \ - Bookmarks               & \texttt{B} \\
-    \ - Code                    & \texttt{c} \\
-    \ - Diff                    & \texttt{d} \\
-    \ - File                    & \texttt{f} \\
-    \ - Git                     & \texttt{g} \\
-    \ - Help                    & \texttt{h} \\
-    \ - Insert                  & \texttt{i} \\
-    \ - Indentation             & \texttt{I} \\
-    \ - Mode                    & \texttt{m} \\
-    \ - Open                    & \texttt{o} \\
-    \ - Project                 & \texttt{p} \\
-    \ - Packages                & \texttt{P} \\
-    \ - Session                 & \texttt{q} \\
-    \ - Search                  & \texttt{s} \\
-    \ - Spellcheck              & \texttt{S} \\
-    \ - Toggles                 & \texttt{t} \\
-    \ - Window                  & \texttt{w} \\
+    Open hydra menu                                         & \texttt{M-SPC} \\
+    While hydra menu is active:                             & \hfil \texttt{-----} \\
+    \ - Open external terminal                              & \texttt{'\ (Single quote)} \\
+    \ - Resume last search                                  & \texttt{,\ (Comma)} \\
+    \ - Repeat last command                                 & \texttt{.\ (Period)} \\
+    \ - Eval lisp expression                                & \texttt{:\ (Colon)} \\
+    \ - Buffer                                              & \texttt{b} \\
+    \ - Bookmarks                                           & \texttt{B} \\
+    \ - Code                                                & \texttt{c} \\
+    \ - Diff                                                & \texttt{d} \\
+    \ - File                                                & \texttt{f} \\
+    \ - Git                                                 & \texttt{g} \\
+    \ - Help                                                & \texttt{h} \\
+    \ - Insert                                              & \texttt{i} \\
+    \ - Indentation                                         & \texttt{I} \\
+    \ - Linter                                              & \texttt{L} \\
+    \ - Mode                                                & \texttt{m} \\
+    \ - Open                                                & \texttt{o} \\
+    \ - Project                                             & \texttt{p} \\
+    \ - Packages                                            & \texttt{P} \\
+    \ - Session                                             & \texttt{q} \\
+    \ - Search                                              & \texttt{s} \\
+    \ - Spellcheck                                          & \texttt{S} \\
+    \ - Toggles                                             & \texttt{t} \\
+    \ - Window                                              & \texttt{w} \\
   \end{keys}
 
 \end{multicols}
+
+% \newpage
+
+% \raggedright\
+
+% \begin{center}
+%   \huge{\underline{Emacs Custom Cheat Sheet - Hydras}}
+% \end{center}
+
+% \footnotesize
+% \begin{multicols}{4}
+
+% \end{multicols}
 
 \end{document}

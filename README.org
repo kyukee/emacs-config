@@ -4,19 +4,22 @@
 
 * Table of contents                                                   :TOC_3:
 - [[#introduction][Introduction]]
-  - [[#what-is-this-and-who-is-it-for][What is this and who is it for?]]
+  - [[#description][Description]]
   - [[#dependencies][Dependencies]]
   - [[#installation][Installation]]
-  - [[#custom-keybindings][Custom Keybindings]]
+  - [[#usage][Usage]]
+    - [[#custom-keybindings][Custom Keybindings]]
+    - [[#notes-and-advice][Notes and advice]]
 - [[#file-early-init][File: Early Init]]
   - [[#file-header][File Header]]
-  - [[#start-time-optimizations][Start time optimizations]]
-  - [[#user-interface][User Interface]]
+  - [[#start-time-optimizations][Start Time optimizations]]
+  - [[#user-interface-tweaks][User Interface tweaks]]
   - [[#file-footer][File Footer]]
 - [[#file-init][File: Init]]
   - [[#file-header-1][File Header]]
-  - [[#define-file-names][Define file names]]
-  - [[#load-config-file][Load config file]]
+  - [[#defining-file-names][Defining file names]]
+  - [[#loading-the-config-file][Loading the config file]]
+    - [[#load-changes-to-tangle-function][Load changes to tangle function]]
     - [[#method-1-tangle-on-save-and-load-pre-parsed-config-file][Method 1: tangle on save and load pre-parsed config file]]
     - [[#method-2-always-parse-config-file-on-load][Method 2: always parse config file on load]]
   - [[#file-footer-1][File Footer]]
@@ -43,14 +46,15 @@
   - [[#defaults][Defaults]]
     - [[#general-preferences][General Preferences]]
     - [[#indentation][Indentation]]
-    - [[#tabs][Tabs]]
+    - [[#tab-bar][Tab Bar]]
     - [[#scrolling][Scrolling]]
-    - [[#fringe-margin-and-line-numbers][Fringe, Margin and line numbers]]
+    - [[#fringe-margin-and-line-numbers][Fringe, Margin and Line numbers]]
     - [[#backup-autosave-and-lockfiles][Backup, Autosave and Lockfiles]]
     - [[#desktop-session][Desktop session]]
     - [[#directory-local-variables][Directory local variables]]
-    - [[#searching][Searching]]
+    - [[#incremental-searching][Incremental Searching]]
     - [[#window-splits][Window Splits]]
+    - [[#buffer-kill-confirmation][Buffer kill confirmation]]
   - [[#external-features][External Features]]
     - [[#icon-integration][Icon integration]]
     - [[#project-management][Project Management]]
@@ -58,7 +62,7 @@
     - [[#file-explorer][File Explorer]]
     - [[#dashboard][Dashboard]]
     - [[#modeline][Modeline]]
-    - [[#search-across-directories][Search Across Directories]]
+    - [[#search-and-replace-across-directories][Search and Replace Across Directories]]
     - [[#interactive-visual-replace][Interactive Visual Replace]]
     - [[#org-mode][Org mode]]
     - [[#modal-editing][Modal editing]]
@@ -114,13 +118,16 @@
     - [[#vim-and-ryo-modal-keybindings][Vim and Ryo-modal keybindings]]
     - [[#git-graph][Git Graph]]
     - [[#bookmarks-and-marks][bookmarks and marks]]
-    - [[#experimental-keybind-changes][experimental keybind changes]]
     - [[#theme-faces-and-colours][Theme Faces and Colours]]
+    - [[#vim-keybindings-in-dired][Vim keybindings in dired]]
+    - [[#partial-horizontal-scroll][Partial Horizontal Scroll]]
   - [[#file-footer-2][File Footer]]
 - [[#fixes-improvements-and-todos][Fixes, Improvements and TODOs]]
 
 * Introduction
-** What is this and who is it for?
+** Description
+
+*What is this and who is it for?*
 
 Just as Spacemacs and Doom Emacs try to combine the best parts of Emacs and Vim, this is my attempt at a configuration that combines Emacs and VSCode.
 
@@ -128,7 +135,7 @@ This Emacs configuration allows you to use Org mode while still having access to
 Many of the Emacs keybindings are replaced with what I consider "standard" keybinds, like those you would find in Sublime Text, Atom or VSCode. Likewise, many of the features you would expect from some of these editors are also implemented here.
 The goal of this configuration is to provide a comfortable experience editing Org mode files to programmers that are accustomed to modern text editors.
 
-Also, this Emacs configuration is not a window manager, nor does it try cram as many features as possible within Emacs. I will use Emacs to edit text and nothing more.
+Also, this Emacs configuration is not a window manager, nor does it try cram as many features as possible within Emacs. I will only use Emacs to edit text and do programming related tasks.
 So I only plan on installing packages that either help with programming or add features to org-mode.
 
 ** Dependencies
@@ -147,8 +154,8 @@ By default, in order for everything to work correctly, you should have the follo
 
 If one or more packages are missing, I cannot guarantee everything will work properly.
 
-Some Tips:
-  - Some features like markdown previewing and spellchecking have multiple alternatives available.
+Extra relevant information:
+  - Some features like markdown previewing and spellchecking have multiple alternatives available. You can choose your preferred dependency.
   - In general, if a dependency is missing, Emacs should be able to detect that and show a warning.
   - If you want to know where and why a system package is necessary, search for the =ensure-system-package= keyword.
 
@@ -176,7 +183,8 @@ git clone https://github.com/kyukee/emacs-config.git
 
 Then, after opening Emacs for the first time, open the command menu with =M-x= and run the function ~my/first-startup~.
 
-** Custom Keybindings
+** Usage
+*** Custom Keybindings
 
 *WARNING*
 Most of the keybinds are missing or out of date...
@@ -193,6 +201,12 @@ The following image shows all the keys you need to know to get started:
 The wakib-keys package defines a lot more bindings that are more oriented towards speed and productivity.
 If you're interested, go check it out.
 
+
+# Useful reference foy my own cheatsheet
+# https://resources.jetbrains.com/storage/products/intellij-idea/docs/IntelliJIDEA_ReferenceCard.pdf
+# https://code.visualstudio.com/shortcuts/keyboard-shortcuts-windows.pdf
+
+
 # How to modify layout images:
 #  - go to http://www.keyboard-layout-editor.com/#/
 #  - import json file
@@ -202,10 +216,11 @@ If you're interested, go check it out.
 #  - firefox screenshot tool can easily select correct area (by selecting the div)
 #  - website export function exists but doesn't work very well
 
-Notes:
-  - If you know M-x and C-h, you're already halfway there. Even if you forget something, knowing these two bindings allows you to discover anything you need.
-  - The modeline segments can be hovered on to show information and clicked to perform certain actions.
-  - In a lot of modes, you can use =q= to quit and =?= to show help
+*** Notes and advice
+
+- If you know the M-x and C-h keybindings, you're already halfway there in learning Emacs. Even if you forget something, knowing these two bindings allows you to discover anything you need.
+- The modeline segments can be hovered on to show information and clicked to perform certain actions.
+- In a lot of modes, you can use =q= to quit and =?= to show help
 
 * File: Early Init
 ** File Header
@@ -222,7 +237,9 @@ Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before p
 
 #+end_src
 
-** Start time optimizations
+** Start Time optimizations
+
+Speed up Emacs startup.
 
 #+begin_src emacs-lisp :tangle early-init.el
 
@@ -241,7 +258,7 @@ Emacs HEAD (27+) introduces early-init.el, which is run before init.el, before p
 
 #+end_src
 
-** User Interface
+** User Interface tweaks
 
 For the GUI changes that deserve to be in early-init. It is more efficient to disable UI elements before they are even loaded than to load them with the wrong configuration and then change them.
 
@@ -288,6 +305,9 @@ For the GUI changes that deserve to be in early-init. It is more efficient to di
 * File: Init
 ** File Header
 
+init.el is the file that Emacs loads by default.
+With this setup, we basically just use this file to load the main configuration file.
+
 #+begin_src emacs-lisp :tangle init.el
 ;;; init.el --- Emacs Init File          -*- lexical-binding: t -*-
 
@@ -298,7 +318,10 @@ For the GUI changes that deserve to be in early-init. It is more efficient to di
 
 #+end_src
 
-** Define file names
+** Defining file names
+
+Choose the name of the source configuration file and the exported tangled version.
+In this context, to tangle a file is to "Extract the bodies of all source code blocks from the current file into their own source-specific files."
 
 #+begin_src emacs-lisp :tangle init.el
 
@@ -310,7 +333,18 @@ For the GUI changes that deserve to be in early-init. It is more efficient to di
 
 #+end_src
 
-** Load config file
+** Loading the config file
+*** Load changes to tangle function
+
+This patch allows excluding org headings and trees from being tangled, by using the =notangle= tag.
+It is necessary to load this before using the 'org-babel-load-file' function.
+
+#+begin_src emacs-lisp :tangle init.el
+
+(load-file (expand-file-name "base/resources/tangle-patch.el" user-emacs-directory))
+
+#+end_src
+
 *** Method 1: tangle on save and load pre-parsed config file
 
 After the first time that config.el is created, this will no longer tangle the config file.
@@ -318,8 +352,6 @@ This method is slightly faster than just using org-babel-load-file.
 This is most effective when you have a hook to tangle the config file every time you save it.
 
 #+begin_src emacs-lisp :tangle init.el
-
-(load-file (expand-file-name "base/resources/tangle-patch.el" user-emacs-directory))
 
 ;; If tangled elisp exists then load it, otherwise tangle the Org file and load it
 (if (file-exists-p *config-file-tangled*)
@@ -330,7 +362,7 @@ This is most effective when you have a hook to tangle the config file every time
 
 *** Method 2: always parse config file on load                   :notangle:
 
-Always parse the config file when starting emacs.
+Always parse the config file when starting Emacs.
 This can be useful if recovering from errors in the config file is a concern.
 The downside is that =org-babel-tangle= can take several seconds to complete.
 
@@ -411,6 +443,10 @@ straight.el is used to make the init-file the sole source of truth for package o
       (goto-char (point-max))
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
+
+(defun my/straight-rebuild-message ()
+  (princ "Finished building packages."))
+(advice-add 'straight-rebuild-all :after #'my/straight-rebuild-message)
 
 #+end_src
 
@@ -532,6 +568,42 @@ Use emacs with a server/client model.
 
 #+end_src
 
+**** Notes and basic usage
+
+It is also highly recommended to use the included =base/util/emacs-server.sh= script.
+
+*What does emacs-server.sh do?*
+
+  It allows you to automatically open files in an existing Emacs session. This means you get to have all of your files open in a single frame.
+
+  In more detail, this is what happens when you use the command, depending on the circumstances:
+
+|-------------------------------------------------+--------------------------------------------+--------------------------------------|
+|                                                 | there is no Emacs instance running         | an Emacs instance is already running |
+|-------------------------------------------------+--------------------------------------------+--------------------------------------|
+| the script is called with no arguments          | start a new Emacs frame and open dashboard | focus existing Emacs frame           |
+| the script is called with a file as an argument | start a new Emacs frame and open file      | open file in existing Emacs frame    |
+|-------------------------------------------------+--------------------------------------------+--------------------------------------|
+
+*How to setup emacs-server.sh?*
+
+  1. copy =base/util/emacs-server.sh= to your scripts folder.
+     note for inexperienced users: make sure the folder you copy the script to is included in your =$PATH.=
+
+  2. alias the =emacs-server.sh= script to the =emacs= command.
+     Add the following to your =.bash_aliases= or the equivalent alias file for your shell:
+
+#+begin_example
+
+alias emacs='emacs-server.sh'
+
+#+end_example
+
+After you do this, you can now use the =emacs= command regardless of the situation, and it will always use a single frame.
+Creating the alias will also affect the =emacs.desktop= file. This means you can also use the application launcher, since it will also be using the script.
+
+If, for some reason, you need to open an extra frame, you can do it by using =/usr/bin/emacs=. You can even add a new alias for that, if you so desire.
+
 ** Appearance
 *** Font
 
@@ -612,7 +684,7 @@ General user created functions.
 These functions aren't associated with any package since they only use default emacs functionality.
 Functions that depend on an emacs package will be declared alongside their respective package.
 
-**** Functions: Emacs - reload, quit, etc
+**** Functions: Emacs reload, quit, full-screen, etc
 
 #+begin_src emacs-lisp
 
@@ -772,31 +844,44 @@ This command does not push text to `kill-ring'."
   (interactive "p")
   (my/delete-word-no-clipboard (- arg)))
 
+(defun my/current-line-empty-p ()
+  (save-excursion
+    (beginning-of-line)
+    (looking-at-p "[[:space:]]*$")))
+
+(defun my/tab-to-tab-stop (arg)
+  "Like `tab-to-tab-stop', but toggle direction with argument."
+  (let* ((prev (if (< arg 0) t nil))
+         (nexttab (indent-next-tab-stop (current-column) prev)))
+    (delete-horizontal-space t)
+    (indent-to nexttab)))
+
 (defun my/indent-region-custom (numSpaces)
   "Indent current line or active region, if one is selected, by NUMSPACES.
       For every line with a selected character, indent from the beggining of the line.
       This means that the first and last line don't need to be completly selected."
   (progn
-    ;; default to start and end of current line
-    (setq start (line-beginning-position))
-    (setq end (line-end-position))
+    (if (and (my/current-line-empty-p) (not (use-region-p)))
+        (my/tab-to-tab-stop numSpaces)
+      (progn
+        ;; default to start and end of current line
+        (setq start (line-beginning-position))
+        (setq end (line-end-position))
 
-    ;; (if (equal start end)
-    ;;     )
-
-    ;; if there's a selection, use that instead of the current line
-    (when (use-region-p)
-      (setq regionStart (region-beginning))
-      (setq regionEnd (region-end))
-      (save-excursion                       ; restore the position afterwards
-        (goto-char regionStart)                ; go to the start of region
-        (setq start (line-beginning-position)) ; save the start of the line
-        (goto-char regionEnd)                  ; go to the end of region
-        (setq end (line-end-position))         ; save the end of the line
-        (setq deactivate-mark nil)             ; re-select the region
-        ))
-    (indent-rigidly start end numSpaces)   ; indent between start and end
-    (setq deactivate-mark nil)))
+        ;; if there's a selection, use that instead of the current line
+        (when (use-region-p)
+          (setq regionStart (region-beginning))
+          (setq regionEnd (region-end))
+          (save-excursion                        ; restore the position afterwards
+            (goto-char regionStart)                ; go to the start of region
+            (setq start (line-beginning-position)) ; save the start of the line
+            (goto-char regionEnd)                  ; go to the end of region
+            (setq end (line-end-position))         ; save the end of the line
+            (setq deactivate-mark nil)             ; re-select the region
+            ))
+        (indent-rigidly start end numSpaces)   ; indent between start and end
+        (setq deactivate-mark nil)
+        ))))
 
 (defun my/untab-region (N)
   "Unindent all lines in region by N spaces."
@@ -905,6 +990,27 @@ Use text in selected region as input."
   "Show custom agenda view, with a normal weekly view plus all NEXT items."
   (org-agenda nil "a"))
 
+(defun my/org-number-of-subentries (&optional pos match scope level)
+  "Return number of subentries for entry at POS.
+MATCH and SCOPE are the same as for `org-map-entries', but
+SCOPE defaults to 'tree.
+By default, all subentries are counted; restrict with LEVEL."
+  (interactive)
+  (save-excursion
+    (goto-char (or pos (point)))
+    ;; If we are in the middle ot an entry, use the current heading.
+    (org-back-to-heading t)
+    (let ((maxlevel (when (and level (org-current-level))
+                      (+ level (org-current-level)))))
+      (message "%s subentries"
+               (1- (length
+                    (delq nil
+                          (org-map-entries
+                           (lambda ()
+                             ;; Return true, unless below maxlevel.
+                             (or (not maxlevel)
+                                 (<= (org-current-level) maxlevel)))
+                           match (or scope 'tree)))))))))
 
 #+end_src
 
@@ -1366,9 +1472,6 @@ Others add convenient things like zoom, reload, fullscreen, etc.
 ;; reload current file
 (bind-key "<f5>" 'reload-buffer wakib-keys-overriding-map)
 
-;; make 'C-SPC' select in a rectangle instead of the normal selection
-;; (bind-key "C-SPC" 'rectangle-mark-mode wakib-keys-overriding-map)
-
 ;; alternative way to quit emacs besides C-x C-c
 (bind-key "C-q" 'my/kill-emacs wakib-keys-overriding-map)
 
@@ -1377,8 +1480,10 @@ Others add convenient things like zoom, reload, fullscreen, etc.
 
 (bind-key "<f12>" 'toggle-menu-bar wakib-keys-overriding-map)
 
-(bind-key "C--" 'text-scale-decrease wakib-keys-overriding-map)
-(bind-key "C-=" 'text-scale-increase wakib-keys-overriding-map)
+(bind-key "<C-f4>" 'kmacro-start-macro-or-insert-counter wakib-keys-overriding-map)
+
+;; (bind-key "C-_" 'text-scale-decrease wakib-keys-overriding-map)
+(bind-key "C-+" 'text-scale-increase wakib-keys-overriding-map)
 
 (bind-key "<escape>" 'keyboard-escape-quit wakib-keys-overriding-map)
 
@@ -1470,7 +1575,7 @@ Useful resources:
 
 ** Defaults
 
-Configure stuff that already comes with emacs. No packages are installed in this section.
+Configure stuff that already comes with Emacs. No packages are installed in this section.
 
 *** General Preferences
 
@@ -1547,6 +1652,9 @@ Some nice-to have things and general settings.
 ;; change sorting of folders in dired (these are ls flags)
 (setq dired-listing-switches "-laGh1v --group-directories-first")
 
+;; To save buffer automatically when wgrep-finish-edit.
+(setq wgrep-auto-save-buffer t)
+
 #+end_src
 
 *** Indentation
@@ -1584,7 +1692,7 @@ Some nice-to have things and general settings.
 
 #+end_src
 
-*** Tabs
+*** Tab Bar
 
 =Tabs= as in the ones found at the top of a browser window.
 
@@ -1628,7 +1736,7 @@ Some nice-to have things and general settings.
 
 #+end_src
 
-*** Fringe, Margin and line numbers
+*** Fringe, Margin and Line numbers
 
 #+begin_src emacs-lisp
 
@@ -1707,9 +1815,9 @@ For more information about syntax, check the [[https://www.gnu.org/software/emac
 
 #+end_src
 
-*** Searching
+*** Incremental Searching
 
-Note: this is a package that is installed by default, so that's why it's in this section.
+Note: this is a package that is installed by default, so that's why it's in the 'Defaults' section.
 
 #+begin_src emacs-lisp
 
@@ -1785,9 +1893,34 @@ Patch =split-window-sensibly= function so that it prefers vertical splits over h
 
 #+end_src
 
+*** Buffer kill confirmation
+
+Ask for confirmation when killing untitled unsaved buffers.
+By default, only file-backed unsaved buffers display a confirmation message on exit.
+
+#+begin_src emacs-lisp
+
+(defvar-local confirm-buffer-kill nil)
+
+(defun my/confirm-buffer-kill-modified ()
+  (if (and (buffer-modified-p)
+           confirm-buffer-kill)
+    (yes-or-no-p
+     (format "Buffer %S is modified; kill it?" (buffer-name)))
+    t))
+
+(add-hook 'kill-buffer-query-functions #'my/confirm-buffer-kill-modified)
+
+(defun my/new-empty-buffer-enable-kill-confirmation ()
+  (setq confirm-buffer-kill t))
+
+(advice-add 'wakib-new-empty-buffer :after #'my/new-empty-buffer-enable-kill-confirmation)
+
+#+end_src
+
 ** External Features
 
-Add more features by installing emacs packages.
+Add more features by installing Emacs packages from a package repository.
 
 *** Icon integration
 **** Package: all-the-icons
@@ -1810,7 +1943,22 @@ Important reminder: The first time this package is installed, you need to run 'a
 #+begin_src emacs-lisp
 
 (use-package projectile
+  :init
+  (defvar my/known-projects-ignored-directories-list (list (expand-file-name "straight/repos" user-emacs-directory)
+                                                          "~/Workspaces"
+                                                          ;; "~/"
+                                                          ))
+
   :config
+  ;; filter projects from being added to the known projects list
+  (require 'f)
+  (require 'cl-lib)
+  (defun my/projectile-ignore-project (project-root)
+    (cl-dolist (val my/known-projects-ignored-directories-list)
+      (when (f-descendant-of? project-root val)
+        (cl-return t))))
+  (setq projectile-ignored-project-function #'my/projectile-ignore-project)
+
   (setq projectile-completion-system 'ivy)
   ;; (setq projectile-indexing-method 'hybrid)
   (projectile-mode 1)
@@ -2135,6 +2283,42 @@ This is a desired but not required feature:
 
 Taking this into account, projectile is a good start but it doesnt give me everything I want, so I'm also using Treemacs workspaces.
 
+**** Package: dired
+
+Replace default help prompt.
+
+#+begin_src emacs-lisp
+
+(use-package dired
+  :straight nil
+  :config
+  (defun dired-summary ()
+    "Summarize basic Dired commands and show recent Dired errors."
+    (interactive)
+    (dired-why)
+    ;>> this should check the key-bindings and use substitute-command-keys if non-standard
+    (message
+     (concat
+      (propertize "d" 'face 'font-lock-constant-face) "-elete (mark), "
+      (propertize "u" 'face 'font-lock-constant-face) "-ndelete (unmark), "
+      (propertize "x" 'face 'font-lock-constant-face) "-punge (delete marked), "
+      (propertize "f" 'face 'font-lock-constant-face) "-ind (open same window), "
+      (propertize "o" 'face 'font-lock-constant-face) "-pen (open other window), "
+      (propertize "D" 'face 'font-lock-constant-face) "-elete, "
+      (propertize "R" 'face 'font-lock-constant-face) "-ename, "
+      (propertize "C" 'face 'font-lock-constant-face) "-opy, "
+      (propertize "n" 'face 'font-lock-constant-face) "-ew file, "
+      (propertize "N" 'face 'font-lock-constant-face) "-ew directory, "
+      (propertize "h" 'face 'font-lock-constant-face) "-elp"
+      )))
+
+  :bind
+  (:map dired-mode-map
+        ("n" . dired-create-empty-file)
+        ("N" . dired-create-directory)))
+
+#+end_src
+
 **** Package: dired-sidebar
 
 The sidebar only changes when bufler focuses a new workspace.
@@ -2321,7 +2505,7 @@ The sidebar only changes when bufler focuses a new workspace.
 
   (defun my/open-dashboard ()
     (interactive)
-    (switch-to-buffer (get-buffer "*dashboard*")))
+    (switch-to-buffer dashboard-buffer-name))
 
   (add-to-list 'dashboard-item-generators '(perspectives . dashboard-insert-persp-mode))
 
@@ -2340,14 +2524,14 @@ The sidebar only changes when bufler focuses a new workspace.
         dashboard-banner-logo-title    (format "GNU Emacs version %d.%d" emacs-major-version emacs-minor-version)
         dashboard-init-info            (format "%d packages loaded with straight. finished in %s"
                                                (length (hash-table-keys straight--success-cache)) (emacs-init-time))
-        dashboard-navigator-buttons    `(((,(all-the-icons-octicon "dashboard" :height 1.1 :v-adjust 0.0)
-                                           "Config file"
-                                           "Open private configuration file"
-                                           (lambda (&rest _) (my/open-init-file)))
-                                          (,(all-the-icons-octicon "gear" :height 1.1 :v-adjust 0.0)
+        dashboard-navigator-buttons    `(((,(all-the-icons-octicon "gear" :height 1.1 :v-adjust 0.0)
                                            "Restore session"
                                            "Add buffers from last saved session to current session"
                                            (lambda (&rest _) (my/desktop-enable)))
+                                          (,(all-the-icons-octicon "dashboard" :height 1.1 :v-adjust 0.0)
+                                           "Config file"
+                                           "Open private configuration file"
+                                           (lambda (&rest _) (my/open-init-file)))
                                           (,(all-the-icons-octicon "globe" :height 1.1 :v-adjust 0.0)
                                            "Browse Packages"
                                            "Search for packages on MELPA"
@@ -2605,14 +2789,16 @@ lines are selected, or the NxM dimensions of a block selection."
     (if flyspell-mode
         (let ((active (doom-modeline--active)))
           (when-let (text
-                     (propertize (format " %s " ispell-current-dictionary)  ;
-                                 'face '(:foreground "gray60")
-                                 'mouse-face 'mode-line-highlight
-                                 'help-echo (format "Spellcheck dictionary language: %s\nmouse-1: Change dictionary"
-                                                    ispell-current-dictionary)
-                                 'local-map (let ((map (make-sparse-keymap)))
-                                              (define-key map [mode-line mouse-1] 'ispell-change-dictionary)
-                                              map)))
+                     (concat (doom-modeline-spc)
+                             (propertize (format "  %s " ispell-current-dictionary)  ;
+                                         'face '(:foreground "gray60")
+                                         'mouse-face 'mode-line-highlight
+                                         'help-echo (format "Spellcheck dictionary language: %s\nmouse-1: Change dictionary"
+                                                            ispell-current-dictionary)
+                                         'local-map (let ((map (make-sparse-keymap)))
+                                                      (define-key map [mode-line mouse-1] 'ispell-change-dictionary)
+                                                      map)))
+                     )
             (if active
                 text
               (propertize text 'face 'mode-line-inactive))))
@@ -2825,7 +3011,7 @@ This can be used to define a segment for any modeline.
 
 #+end_src
 
-*** Search Across Directories
+*** Search and Replace Across Directories
 **** Information
 
 There are plenty of choices for what to use here. My choice current choice is =rg=.
@@ -3007,21 +3193,16 @@ It assumes the region is active."
 #+begin_src emacs-lisp
 
 :bind
-;; (:map wakib-keys-overriding-map
-;;       ("C-h" . my/visual-replace-with-active-region-support)))
-
-((:map wakib-keys-overriding-map
-       ("C-r" . my/visual-replace-with-active-region-support))
- ;; ("C-h" . my/visual-replace-with-active-region-support)
- ))
-
-;; using C-7 inside swiper seems better. it does the same thing
-;; (bind-key "C-S-h" 'vr/mc-mark wakib-keys-overriding-map)
+(:map wakib-keys-overriding-map
+      ("C-r" . nil))
+(:map global-map
+      ("C-r" . my/visual-replace-with-active-region-support)))
 
 #+end_src
 
-
 This is how the author of the package suggests implementing thing-at-point in a github issue:
+
+#+begin_example emacs-lisp
 
 (defvar vr-current-thing-at-point nil)
 (defun vr-thing-at-point-minibuffer-setup ()
@@ -3034,6 +3215,8 @@ This is how the author of the package suggests implementing thing-at-point in a 
   (interactive)
   (let ((vr-current-thing-at-point (thing-at-point 'symbol t)))
     (call-interactively 'vr/query-replace)))
+
+#+end_example
 
 **** test: display matches in folded org headings               :notangle:
 
@@ -3220,7 +3403,7 @@ The code below executes org-babel-tangle asynchronously when the config file is 
     "Keeps *emacs* async buffers around for later inspection.")
 
   (defun my/config-updated ()
-    "Checks if the configuration file has been updated since the last time."
+    "Checks if the configuration file has been updated since the time of the last change."
     (time-less-p *config-last-change*
                  (nth 5 (file-attributes *config-file*))))
 
@@ -3236,6 +3419,7 @@ The code below executes org-babel-tangle asynchronously when the config file is 
     (let ((init-tangle-start-time (current-time))
           (file (buffer-file-name))
           (async-quiet-switch "-q"))
+      ;; non-async version
       ;; (org-babel-tangle-file org-file)
       (async-start
        `(lambda ()
@@ -3268,11 +3452,9 @@ The code below executes org-babel-tangle asynchronously when the config file is 
         org-descriptive-links                t             ;; highlight links
         org-cycle-separator-lines            2             ;; set how may real newlines are necessary to display a newline when folded.
         org-todo-keywords                    '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")   ;; default todo keywords ✔ ✘
-                                               (sequence "SOMEDAY(s)" "WAITING(w)" "PAUSED(p)" "REVIEW(r)" "|" "CANCELLED(c)"))
+                                               (sequence "WAITING(w)" "PAUSED(p)" "REVIEW(r)" "|" "CANCELLED(c)"))
         org-todo-repeat-to-state             "NEXT"
         org-todo-keyword-faces               '(("TODO" . "#efcb82")
-                                               ("SOMEDAY" . "#3dc7f0")
-                                               ("WAITING" . "#3dc7f0")
                                                ("PAUSED"  . "#3dc7f0")
                                                ("REVIEW"  . "#3dc7f0"))
         org-log-done                         (quote time)  ;; insert a note in a task when it is marked as done, which includes a timestamp
@@ -3339,7 +3521,7 @@ The code below executes org-babel-tangle asynchronously when the config file is 
 
 #+end_src
 
-**** org-superstar: Testing extra features                      :notangle:
+***** org-superstar: Testing extra features                    :notangle:
 
 Here are some symbols that can be used for Org headings:
 
@@ -3521,7 +3703,7 @@ I would like to be able to activate this from the file itself, but the problem i
   :group 'org-faces)
 
 (defvar my/org-simple-headlines-files (list "Manga list.org" "Anime list.org")
-  "Files where simple headings are desired.")
+  "Files where simple headings are in effect.")
 
 (defun my/org-fontify-simple-headlines ()
   "Fontify any headings with a todo keyword, in selected files."
@@ -3535,6 +3717,39 @@ I would like to be able to activate this from the file itself, but the problem i
           org-font-lock-extra-keywords)))
 
 (add-hook 'org-font-lock-set-keywords-hook #'my/org-fontify-simple-headlines)
+
+#+end_src
+
+**** Feature: always show drawers
+
+#+begin_src emacs-lisp
+
+(defvar my/org-cycle-hide-drawers t
+  "Whether to hide drawers on org-cycle.")
+
+(defun org-cycle-hide-drawers (state)
+  "Like the default function, but checks a variable
+to confirm wether to automatically hide drawers."
+  (when (derived-mode-p 'org-mode)
+    (cond ((not (memq state '(overview folded contents)))
+           (let* ((global? (eq state 'all))
+                  (beg (if global? (point-min) (line-beginning-position)))
+                  (end (cond (global? (point-max))
+                             ((eq state 'children) (org-entry-end-position))
+                             (t (save-excursion (org-end-of-subtree t t))))))
+             (when my/org-cycle-hide-drawers
+               (org--hide-drawers beg end))
+             ))
+          ((memq state '(overview contents))
+           ;; Hide drawers before first heading.
+           (let ((beg (point-min))
+                 (end (save-excursion
+                        (goto-char (point-min))
+                        (if (org-before-first-heading-p)
+                            (org-entry-end-position)
+                          (point-min)))))
+             (when (< beg end)
+               (org--hide-drawers beg end)))))))
 
 #+end_src
 
@@ -3553,66 +3768,83 @@ C-up gives error: "wrong number of arguments: (0 . 1), 2"
 related to org-backward-paragraph
 it works if I manually execute the use-package after emacs is loaded. probably a dependency issue.
 
-after some experimentation, is seems there's a conflict with some org package.
+After some experimentation, is seems there's a conflict with some org package.
 Solution: load this package after the org section.
 
 #+begin_src emacs-lisp
 
 (use-package ryo-modal
   :commands ryo-modal-mode
-  ;; :init
-  ;; (unbind-key "C-SPC")
+  :init
+  (unbind-key "C-SPC")
   :config
   (setq ryo-modal-cursor-color "white")
 
-  (bind-key "M-j" 'drag-stuff-left wakib-keys-overriding-map)
-  (bind-key "M-l" 'drag-stuff-right wakib-keys-overriding-map)
-  (bind-key "M-i" 'drag-stuff-up wakib-keys-overriding-map)
-  (bind-key "M-k" 'drag-stuff-down wakib-keys-overriding-map)
+  ;; (bind-key "M-j" 'drag-stuff-left wakib-keys-overriding-map)
+  ;; (bind-key "M-l" 'drag-stuff-right wakib-keys-overriding-map)
+  ;; (bind-key "M-i" 'drag-stuff-up wakib-keys-overriding-map)
+  ;; (bind-key "M-k" 'drag-stuff-down wakib-keys-overriding-map)
 
-  (bind-key "M-p" 'my/smarter-move-beginning-of-line wakib-keys-overriding-map)
-  (bind-key "M-+" 'end-of-visual-line wakib-keys-overriding-map)
-  (bind-key "M-ç" 'scroll-down-command wakib-keys-overriding-map)
-  (bind-key "M-º" 'scroll-up-command wakib-keys-overriding-map)
+  ;; (bind-key "M-p" 'my/smarter-move-beginning-of-line wakib-keys-overriding-map)
+  ;; (bind-key "M-[" 'end-of-visual-line wakib-keys-overriding-map)
+  ;; (bind-key "M-;" 'scroll-down-command wakib-keys-overriding-map)
+  ;; (bind-key "M-'" 'scroll-up-command wakib-keys-overriding-map)
+
+
+
+  ;; how about using C-arrow keys to replace normal C-M-arrow and M-arrows to scroll line by line?
+  ;; maybe have a different command for super-word navigation
+  ;; and also add general on space key
+
+
+
+  ;; prevent non-mapped keys from doing anything unless they are explicitly binded
+  ;; some possible options for the key behavior are: 'undefined', 'ignore', or a custom function that prints something in the modeline with '(message ...)'
+  (define-key ryo-modal-mode-map [remap self-insert-command] 'ignore)
 
   (ryo-modal-keys
-   ("," ryo-modal-repeat)
    ("q" ryo-modal-mode)
+   ("," ryo-modal-repeat)
    ("i" previous-line)
    ("k" next-line)
    ("j" backward-char)
    ("l" forward-char)
-   ;; ("u" )
-   ;; ("o" )
-   ("I" backward-paragraph)
-   ("K" forward-paragraph)
-   ("J" backward-word)
-   ("L" forward-word)
-   ;; ("U" )
-   ;; ("O" )
-   ("[" backward-sexp)
-   ("]" forward-sexp)
-   ("{" backward-up-list)
-   ("}" down-list)
+   ;; ("u" ?)
+   ;; ("o" ?)
+   ;; ("I" backward-paragraph)
+   ;; ("K" forward-paragraph)
+   ;; ("J" backward-word)
+   ;; ("L" forward-word)
+   ;; ("U" ?)
+   ;; ("O" ?)
+   ;; ("[" backward-sexp)
+   ;; ("]" forward-sexp)
+   ;; ("{" backward-up-list)
+   ;; ("}" down-list)
+   ("<up>" backward-paragraph)
+   ("<down>" forward-paragraph)
+   ("<left>" backward-word)
+   ("<right>" forward-word)
+   ;; ("SPC" general)
    )
 
   (ryo-modal-keys
    ;; First argument to ryo-modal-keys may be a list of keywords.
    ;; These keywords will be applied to all keybindings.
    (:norepeat t)
-   ("0" "M-0")
-   ("1" "M-1")
-   ("2" "M-2")
-   ("3" "M-3")
-   ("4" "M-4")
-   ("5" "M-5")
-   ("6" "M-6")
-   ("7" "M-7")
-   ("8" "M-8")
-   ("9" "M-9"))
+   ("0" "C-0")
+   ("1" "C-1")
+   ("2" "C-2")
+   ("3" "C-3")
+   ("4" "C-4")
+   ("5" "C-5")
+   ("6" "C-6")
+   ("7" "C-7")
+   ("8" "C-8")
+   ("9" "C-9"))
 
-  ;; :bind
-  ;; ("C-SPC" . ryo-modal-mode)
+  :bind
+  ("C-SPC" . ryo-modal-mode)
   ;; :hook
   ;; ((after-init . ryo-modal-mode))
   )
@@ -3622,7 +3854,7 @@ Solution: load this package after the org section.
 *** Spellcheck
 **** Package: flyspell
 
-Between aspell and hunspell, aspell seems to have much better performance.
+Between aspell and hunspell, aspell seems to have much better performance, but slightly worse correction suggestions. It seems worth it to use it.
 
 #+begin_src emacs-lisp
 
@@ -3764,7 +3996,7 @@ swiper is a tool for performing searches, powered by Ivy, all while
 #+begin_src emacs-lisp
 
 (use-package counsel
-  :after ivy
+  :after (ivy company)
   :config
   (counsel-mode)
 
@@ -3776,7 +4008,8 @@ swiper is a tool for performing searches, powered by Ivy, all while
   :bind
   (:map wakib-keys-overriding-map
         ("C-b" . counsel-bookmark)
-        ("C-o" . counsel-find-file)))
+        ("C-o" . counsel-find-file)
+        ("C-," . counsel-company)))
 
 #+end_src
 
@@ -3816,16 +4049,16 @@ Uses the active region as input, if it is active."
     (swiper-isearch-backward (car swiper-history)))
 
   :bind
-  (("<f3>" . my/swiper-isearch-again)
+  ("<f3>" . my/swiper-isearch-again)
    ("<S-f3>" . my/swiper-isearch-again-backward)
-   :map wakib-keys-overriding-map
-   ("C-f" . my/swiper-isearch-with-selection)   ;; replace 'isearch' with swiper
-   :map swiper-isearch-map
-   ("<f3>" . next-line)
-   ("<S-f3>" . previous-line)
-   ;; cant use C-m for swiper-mc. when doing that, every time enter is pressed after search, swiper-mc is activated
-   ("C-r" . swiper-mc)  ;; swiper-mc puts a cursor on every swiper search result
-   ))
+   (:map wakib-keys-overriding-map
+         ("C-f" . my/swiper-isearch-with-selection))
+   (:map swiper-isearch-map
+         ("<f3>" . next-line)
+         ("<S-f3>" . previous-line)
+         ("C-r" . swiper-mc)  ;; swiper-mc puts a cursor on every swiper search result
+         ;; ("C-M-?" . ivy-occur-delete-candidate)
+         ))
 
 #+end_src
 
@@ -3910,7 +4143,7 @@ If ivy-prescient is not being used, then put the =ivy-re-builders-alist= declara
    '((swiper                . 15)
      (swiper-isearch        . 1)
      (flyspell-correct-ivy  . 10)
-     (t . 20)))
+     (t . 21)))      ; final count will have minus 1 line
   (ivy-posframe-display-functions-alist
    '((complete-symbol       . ivy-posframe-display-at-point)
      (swiper                . ivy-display-function-fallback)
@@ -4329,19 +4562,23 @@ Use multiple cursors on swiper candidates with the corresponding swiper keybindi
 (use-package multiple-cursors
   :init
   (custom-set-variables `(mc/always-run-for-all ,t))
+
   :config
   (define-key mc/keymap [remap keyboard-quit] 'mc/keyboard-quit)
   (define-key rectangular-region-mode-map [remap keyboard-quit] 'rrm/keyboard-quit)
   ;; use C-7 to add a cursor to every swiper selection
   (add-to-list 'mc/cmds-to-run-once 'swiper-mc)
-  (global-unset-key (kbd "C-<down-mouse-1>"))
+
   :bind
   ("C-<mouse-1>" . mc/add-cursor-on-click)
+  ("C-<down-mouse-1>" . nil)
   (:map wakib-keys-overriding-map
         ("M-S" . set-rectangular-region-anchor))
   (:map mc/keymap
         ("M-S-<down>" . mc/mark-next-like-this)
-        ("M-S-<up>" . mc/mark-previous-like-this)))
+        ("M-S-<up>" . mc/mark-previous-like-this))
+
+  :hook (multiple-cursors-mode-disabled . (lambda () (deactivate-mark))))
 
 #+end_src
 
@@ -4709,6 +4946,23 @@ show a different main hydra, depending on major mode
 
 #+end_src
 
+**** Hydra: linter
+
+#+begin_src emacs-lisp
+
+(pretty-hydra-define hydra-linter
+  (:color teal :quit-key "q" :title "Linter Hydra")
+  ("Information"
+   (("l" flycheck-list-errors "list all errors")
+    ("e" flycheck-explain-error-at-point "explain error at point"))
+   "Navigation"
+   (("f" flycheck-first-error "go to first error")
+    ("p" flycheck-previous-error "go to previous error")
+    ("n" flycheck-next-error "go to next error"))
+   ))
+
+#+end_src
+
 **** Hydra: latex-mode
 
 #+begin_src emacs-lisp
@@ -4752,7 +5006,7 @@ show a different main hydra, depending on major mode
    "Org Directory"
    (("o" my/open-file-from-org-dir "open file from org directory"))
    "URL"
-   (("u" browse-url-xdg-open "open URL in browser"))
+   (("u" org-open-at-point "open URL or link in browser"))   ;; browse-url-xdg-open
    ))
 
 #+end_src
@@ -4849,6 +5103,8 @@ show a different main hydra, depending on major mode
   (:color teal :quit-key "q" :title "Spellcheck Hydra")
   ("Dictionary"
    (("d" ispell-change-dictionary "change dictionary language"))
+   "Navigation"
+   (("n" flyspell-goto-next-error "go to next error"))
    ))
 
 #+end_src
@@ -4870,7 +5126,7 @@ show a different main hydra, depending on major mode
    "Code"
    (("l" flycheck-mode "linter" :toggle t)
     ("s" flyspell-mode "spell checker" :toggle t)
-    ("c" global-company-mode "code completion" :toggle t)
+    ("c" company-mode "code completion" :toggle t)
     ("p" electric-pair-mode "auto close parens" :toggle t)
     ("g" diff-hl-mode "git gutter" :toggle t)
     ("S" yas-global-mode "snippets" :toggle t))
@@ -4903,13 +5159,14 @@ show a different main hydra, depending on major mode
   ("Magit"
    (("g" magit-status "show git status")
     ("l" magit-log "git log")
-    ("D" magit-diff "git diff")
-    ("b" magit-blame "git blame"))
+    ("d" magit-diff "git diff")
+    ("b" magit-blame "git blame")
+    ("y" magit-show-refs "git references"))
    "Hunk"
    (("p" diff-hl-previous-hunk "previous")
     ("n" diff-hl-next-hunk "next")
     ("r" diff-hl-revert-hunk "revert")
-    ("d" diff-hl-diff-goto-hunk "show hunk diff"))
+    ("D" diff-hl-diff-goto-hunk "show diff for hunk"))
    ))
 
 #+end_src
@@ -4921,8 +5178,8 @@ show a different main hydra, depending on major mode
 (pretty-hydra-define hydra-window
   (:color teal :quit-key "q" :title "Window Hydra")
   ("Create"
-   (("h" my/split-window-horizontally-and-follow "New horizontal split")
-    ("v" my/split-window-vertically-and-follow "New vertical split"))
+   (("h" my/split-window-horizontally-and-follow "Split window horizontally")
+    ("v" my/split-window-vertically-and-follow "Split window vertically"))
    "Delete"
    (("w" delete-other-windows "Other windows")
     ("d" delete-window "Current window"))
@@ -4988,7 +5245,6 @@ For Arch, the respective necessary packages are:
 #+begin_src emacs-lisp
 
 (use-package pdf-tools
-  :commands (pdf-occur-global-minor-mode)
   :ensure-system-package
   (("/usr/lib/libpoppler-glib.so" . libpng)
    ("/usr/lib/libz.so"            . zlib)
@@ -5122,6 +5378,7 @@ Normally, when an entry is a sub-menu, it has a different color and a plus sign.
    "g" '(hydra-git/body :which-key "+git")
    "h" '(hydra-help/body :which-key "+help")
    "i" '(hydra-insert/body :which-key "+insert")
+   "L" '(hydra-linter/body :which-key "+linter")
    "I" '(hydra-indentation/body :which-key "+indentation")
    "m" '(major-mode-hydra :which-key "+major-mode")
    "o" '(hydra-open/body :which-key "+open")
@@ -5175,6 +5432,25 @@ Allows searching and jumping to these symbols.
 
 #+end_src
 
+**** Package: back-button
+
+#+begin_src emacs-lisp
+
+(use-package back-button
+  :config
+  (setq mark-ring-max 30)
+  (setq global-mark-ring-max 30)
+  (back-button-mode 1)
+  :bind
+  (:map wakib-keys-overriding-map
+       ("<f6>" . back-button-push-mark-local-and-global)
+       ("C--" . back-button-local-backward)
+       ("C-=" . back-button-local-forward)))
+
+;; (setq back-button-never-push-mark ?)
+
+#+end_src
+
 **** Package: undo-tree
 
 Change undo/redo behaviour
@@ -5191,7 +5467,8 @@ Change undo/redo behaviour
         ("C-z" . undo-tree-undo)
         ("C-y" . undo-tree-redo))
   (:map undo-tree-map
-        ("C-/" . my/comment-dwim-2)))
+        ("C-/" . my/comment-dwim-2)
+        ("C-_" . text-scale-decrease)))
 
 ;; C-/ is defined here because it conflicts with an existing bindin in this package
 
@@ -6046,7 +6323,7 @@ Remember to add this file to =.gitignore=.
 ** Experimental Snippets + Work in Progress
 
 This section has random code snippets and unfinished ideas.
-None of these is exported to the config file. Eventually, these ideas should be finished and implemented or deleted.
+None of these are exported to the config file. Eventually, these ideas should be either finished and implemented or deleted.
 They are in the end of the config file to allow most of the config to be loaded even if there's an error.
 
 *** org beautify symbols                                         :notangle:
@@ -6537,6 +6814,7 @@ custom theme ideas:
   - space
   - navy
   - sun
+  - nocturnal
 
 
 space-navy
@@ -6641,19 +6919,44 @@ Provides magit-pg command.
 
 #+end_src
 
-*** bookmarks and marks
+*** bookmarks and marks                                          :notangle:
 
 Available packages:
-  - bm
   - goto-last-change
   - point-pos
   - point-stack
   - back-button
 
-*** experimental keybind changes
+#+begin_src emacs-lisp
 
-emacs mark (pop, push) -> C-', C-" (or Meta key)
-company -> C-SPC
+(use-package point-stack
+  :config
+  (point-stack-setup-advices)
+  :bind
+  (:map wakib-keys-overriding-map
+        ("C-_" . point-stack-pop)
+        ("f6" . point-stack-push)
+        ("C-+" . point-stack-forward-stack-pop)))
+
+(use-package goto-last-change
+  :bind
+  (:map wakib-keys-overriding-map
+        ("C-_" . goto-last-change)))
+
+;; (use-package point-pos
+;;   :bind
+;;   (:map wakib-keys-overriding-map
+;;         ("C-_" . point-pos-next)
+;;         ("C-+" . point-pos-previous)))
+
+(use-package back-button
+  :bind
+  (:map wakib-keys-overriding-map
+        ("C-_" . back-button-local-backward)
+        ("f6" . back-button-push-mark-local-and-global)
+        ("C-+" . back-button-local-forward)))
+
+#+end_src
 
 *** Theme Faces and Colours                                      :notangle:
 
@@ -6675,6 +6978,39 @@ How to edit a theme:
      '(region                        ((t (:background "cyan"))))
 
      )))
+
+#+end_src
+
+*** Vim keybindings in dired                                     :notangle:
+
+#+begin_src emacs-lisp
+
+(use-package evil-collection
+  :after (evil)
+  :config
+  (setq evil-collection-mode-list '(dired))
+  (evil-collection-init))
+
+#+end_src
+
+*** Partial Horizontal Scroll                                    :notangle:
+
+#+begin_src emacs-lisp
+
+;; (use-package phscroll
+;;   :straight (phscroll :type git :host github :repo "misohena/phscroll")
+;;   :hook (org-mode . phscroll-mode))
+
+;; (setq truncate-lines nil)
+;; (load "org-phscroll.el")
+
+(use-package phscroll
+  :straight (phscroll :type git :host github :repo "misohena/phscroll")
+  :after org
+  :init
+  (setq org-startup-truncated nil)
+  :config
+  (load "org-phscroll.el"))
 
 #+end_src
 
@@ -6856,7 +7192,23 @@ Todo:
   - [X] there's some sort of problem with fonts (Cartograph not detected; M-x menu font size)
   - [X] hydra toggle menu - add a toggle for a side panel (in the right), that allows jumping to functions
   - [X] C-<mouse-1> doesn't work
-  - [ ] add keybindings tables (or a cheatsheet image) in config file
+  - [X] add keybindings tables (or a cheatsheet image) in config file
+  - [X] change theme faces for latex mode
+  - [X] when trying to use fzf on home directory, it searches for commands instead of files. This is fine, but it should be more transparent.
+  - [X] bug - every time I switch to a new file, its name goes into the clipboard (problem is my/org-fontify-simple-headlines -> my/show-buffer-name -> kill-new)
+  - [X] yascroll was disabled, but I don't remember why. I'll reactivate it and see if anything bad happens.
+  - [X] color of line that divides windows
+  - [X] make 'my/indent-region-custom' function (M-arrows) work even in a blank line
+  - [X] a =[bash]= modeline segment appears when in Shell-script major mode ('process' mode line segment & 'mode-line-process' variable)
+  - [X] =(global-unset-key (kbd "C-<down-mouse-1>"))= from multiple cursors is being overwritten after startup
+  - [X] make multiple cursors quit also disable selection
+  - [X] make =swiper-mc= work on C-r or combine C-f with C-r better
+  - [X] add a keybinding for 'counsel-company' (maybe =C-SPC=?)
+  - [X] use C-. for spelling and C-spc for completion. Figure out how to replace C-u C-spc (pop-to-mark-command / set-mark-command)
+  - [X] C-SPC and C-u SPC don't work with ryo-modal (C-SPC C-SPC to mark, C-u C-SPC to jump to prev mark)
+  - [X] figure out what to do with =C-u=, =C-SPC C-SPC= and with marks in general. should also pick one of the packages in the experimental area.
+  - [X] figure out what to do with =C-SPC=, =ryo-modal=, =flycheck=, =flyspell=, =company= and =mark-ring=
+  - [X] change keybinds: C-- and C-= for prev, next change; C-S-- and C-S-= for zoom (and update cheatsheet)
   - [ ] commenting/indenting inside source block jumps to top of block. happens with just 'emacs -Q' and comment-dwim ([[https://www.reddit.com/r/emacs/comments/ap4s7z/orgmode_weirdness_questions/][reddit thread]])
   - [ ] maybe incorporate previous/next concept from wakib-emacs? (it uses the ';' key)
   - [ ] use 'C-.' to fix any type of error (flycheck/flyspell)
@@ -6864,40 +7216,33 @@ Todo:
   - [ ] use smerge hydra for better merging conflict resolution (https://github.com/alphapapa/unpackaged.el#hydra)
   - [ ] improve appearance of tab-line backward and forward buttons (they appear when the bar is too full)
   - [ ] for every package, add a quote from their git repo explaining what the package does
-  - [ ] allow jumping to a function definition by ctrl-click or f2 or something else (check 'embark' package)
-  - [ ] add hydra or M-<key> commands for org-mark-ring-push, org-mark-ring-goto, counsel-mark-ring
-  - [ ] C-SPC and C-u SPC don't work with ryo-modal (C-SPC C-SPC to mark, C-u C-SPC to jump to prev mark)
+  - [ ] allow jumping to a function definition by ctrl-click or f2 or something else (check 'embark' package) (maybe needs lsp support)
   - [ ] golden-ratio seems to be interfering with which-key
   - [ ] try out =calfw= package
   - [ ] reduce font size for hydra menus (should see menus even at 60% window width) (it's very hard to read the text when window size is too small)
   - [ ] crux has a lot of useful commands. I could replace some of my custom functions with their package.
-  - [ ] rainbow-mode gets overshadowed by current line highlighting
-  - [ ] electric-indent-mode in gitconfig-mode adds unnecessary tab after RET
-  - [ ] divide org-agenda NEXT section into sections based on different projects, and show warning if no NEXT action exists for a project
+  - [ ] rainbow-mode gets overshadowed by current line highlighting (hl-line-mode) (overlays always take precedence over text properties)
+  - [ ] divide org-agenda 'NEXT' section into sections based on different projects, and show warning if no NEXT action exists for a project
   - [ ] can't customize emacs variables because of =wakib-keys= package
   - [ ] open function help buffer -> click link to go to definition -> opens with cursor on top of function, at bottom of window. Should open on top of window instead. (=find-function-search-for-symbol= does not use ~(recenter find-function-recenter-line)~, unlike =find-function=)
-  - [ ] make 'my/indent-region-custom' function (M-arrows) work even in a blank line (could try 'indent-to' function)
-  - [ ] select region and press '(' to surround in parens; doesnt work in YAML mode
-  - [ ] add a keybinding for 'counsel-company' (maybe =C-SPC=?)
-  - [ ] make auto-correct work like in google docs (suggestion appears automatically; press tab to open menu; use tab to move in menu; menu has these buttons: most likely correction, cancel, save, more options) [[https://gist.github.com/aaronjensen/a46f88dbd1ab9bb3aa22][link1]] [[https://github.com/company-mode/company-mode/wiki/Switching-from-Vim][link2]]
-  - [ ] add support for /.editorconfig/
+  - [ ] electric-pair-mode doesnt work in YAML mode, but only for parenthesis
+  - [ ] make auto-correct/completion work like in google docs (suggestion appears automatically; press tab to open menu; use tab to move in menu; menu has these buttons: most likely correction, cancel, save, more options) [[https://gist.github.com/aaronjensen/a46f88dbd1ab9bb3aa22][link1]] [[https://github.com/company-mode/company-mode/wiki/Switching-from-Vim][link2]]
+  - [ ] add support for /.editorconfig/ (mostly for organization: i.e. to consolidate all the settings in one place)
   - [ ] replace dired keybindings with a better version (and also dired-sidebar)
   - [ ] after opening bufler with =M-SPC b b= (bufler-list), the previous window layout is deleted and only a single window is visible
   - [ ] use [[https://github.com/lepisma/org-books][org-books]] as template to create an org capture template for anime, manga, movies, books, etc.
   - [ ] diff-hl seems to sometimes cause the lines to align to the left, when moving up or down (either by scrolling line by line or with pgUp/pgDown)
-  - [ ] yascroll was disabled, but I don't remember why. I'll reactivate it and see if anything bad happens.
   - [ ] change colors or org headings to something more neutral
-  - [ ] use C-. for spelling and C-spc for completion. Figure out how to replace C-u C-spc (pop-to-mark-command / set-mark-command)
-  - [ ] change theme faces for latex mode
-  - [ ] add a modeline indicator to indocate if =company= is active
-  - [ ] figure out what to do with =C-u=, =C-SPC C-SPC= and with marks in general. should also pick one of the packages in the experimental area.
-  - [ ] figure out what to do with =C-SPC=, =ryo-modal=, and =flycheck=
+  - [ ] add a modeline indicator to indicate if =company= is active
   - [ ] allow selecting an entire line, or duplicating an entire line
   - [ ] allow moving the window by a single line up or down (like VSCode)
-  - [ ] make =swiper-mc= work on C-r or combine C-f with C-r better
-  - [ ] when trying to use fzf on home directory, it searches for commands instead of files. This is fine, but it should be more transparent.
-  - [ ] bug - every time I switch to a new file, its name goes into the clipboard (problem is my/org-fontify-simple-headlines -> my/show-buffer-name -> kill-new)
   - [ ] need to have some way to navigate to previous/next in flycheck, flyspell, and diff-hl
+  - [ ] try out =guess-language= package
+  - [ ] try out =org-bars= package
+  - [ ] change saved session into saved workspaces (allow saving multiple sessions and naming them)
+  - [ ] C-c on an empty line should also copy the newline
+  - [ ] add a way to interact with tmux terminal sessions
+  - [ ] try out the kakoune.el package for at least a week or two
 
 
 # NOTE: use org-sort and select 'X' to sort this list by what items are checked
@@ -6907,7 +7252,7 @@ add documentation:
   - [X] (in org mode) M-left/right -> promote/demote single heading; M-S-left/right -> promote/demote heading subtree
   - [X] C-RET and C-S-RET to make newlines (add keybinding docs)
   - [X] C-t "go to symbol", C-p "go to file" (add to keybindings documentation)
-  - [ ] add something about how to use base/utils/emacs-server.sh
+  - [X] add something about how to use base/utils/emacs-server.sh
   - [ ] add =emacs= and =emacs-distributions= tags to git repo, when the time is appropriate
 
 
@@ -6930,10 +7275,10 @@ from sublime:
 
 
 from VSCode:
-  - [ ] automatically create =.gitignore= files, after selecting project languages
+  - [ ] select project languages and automatically generate =.gitignore= files
 
 
 long term goals:
   - [ ] look at vscode settings + extensions and import anything I like
-  - [ ] when this config is developed enough, see what it needs to work on Windows
+  - [ ] when this config is developed enough, see what it needs to work on Windows, with Docker
   - [ ] occasionally go through all the packages, and enable use-package defer features when possible, to keep startup time under 1 second

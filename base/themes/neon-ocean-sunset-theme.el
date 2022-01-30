@@ -42,8 +42,8 @@
       (*string*             "#89E14B")
       (*type*               "#5BA0EB")
       (*variable*           "#8AC6F2")
-      (*vertical-border*    "#0A1721")
-      (*visual-selection*   "#262D51")
+      (*vertical-border*    "#252338")
+      (*visual-selection*   "#1B2530")
       (bg_1      "#14141D")
       (bg_2      "#15151f")     ;; #13141A
       (bg_3      "#151522")     ;; #151424
@@ -101,7 +101,7 @@
    `(isearch                          ((t (:background ,red_1 :foreground "black"))))
    '(isearch-fail                     ((t (:background "#5654ca" :foreground "white"))))
    '(match                            ((t (:background "#8b4887" :foreground "white"))))
-   `(header-line                      ((t (:foreground ,green_1 :background "#2d2d45"))))   ; #2d3352, #2a2e47
+   `(header-line                      ((t (:foreground "#7cdeeb" :background "#28283d"))))   ; #2d3352, #2a2e47, #2d2d45, #21D7D7, #7cdeeb, #fcf578, #dcd172
    `(term                             ((t (:background ,bg_3 :foreground ,fg_1))))    ;; this is mostly for the fzf prompt
    `(term-bold                        ((t (:background ,bg_3 :foreground ,fg_1 :weight bold))))
    '(highlight                        ((t (:background "#1B2530"))))
@@ -221,7 +221,7 @@
    '(hydra-posframe-border-face       ((t (:background "#A13878"))))
 
    ;; flyspell
-   `(flyspell-incorrect               ((t (:underline (:style wave :color ,red_2)))))
+   `(flyspell-incorrect               ((t (:underline (:style wave :color "DarkOrange")))))    ; red_2
    '(flyspell-duplicate               ((t (:underline (:style wave :color "DarkOrange")))))
 
    ;; flymake
