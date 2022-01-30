@@ -2,7 +2,8 @@
 #+PROPERTY: header-args :tangle config.el
 #+STARTUP: inlineimages show2levels
 
-* Table of contents                                                   :TOC_3:
+* Table of contents                                          :TOC_3_gh:QUOTE:
+#+BEGIN_QUOTE
 - [[#introduction][Introduction]]
   - [[#description][Description]]
   - [[#dependencies][Dependencies]]
@@ -99,30 +100,9 @@
     - [[#yaml][YAML]]
   - [[#personal-settings][Personal Settings]]
   - [[#experimental-snippets--work-in-progress][Experimental Snippets + Work in Progress]]
-    - [[#org-beautify-symbols][org beautify symbols]]
-    - [[#word-navigation][word navigation]]
-    - [[#stuff-i-need-to-try-that-might-improve-scrolling][stuff I need to try that might improve scrolling.]]
-    - [[#make-tab-line-empty][make tab-line empty]]
-    - [[#emacs-server][Emacs server]]
-    - [[#system-notifications][system notifications]]
-    - [[#ledger][ledger]]
-    - [[#agenda-todo-list---ignore-scheduled-and-deadline][agenda todo list - ignore scheduled and deadline]]
-    - [[#export-org-agenda-to-ics-file-for-google-calendar][export org agenda to .ics file for Google calendar]]
-    - [[#dired-sidebar-test][dired-sidebar test]]
-    - [[#indent-guides][indent guides]]
-    - [[#company-flyspelel][company-flyspel.el]]
-    - [[#dired-sort-menu][dired-sort-menu]]
-    - [[#check-host-os][check host OS]]
-    - [[#format-org-files---move-planning-to-top-of-heading][format org files - move planning to top of heading]]
-    - [[#color-theme-examples-and-research][Color theme examples and research]]
-    - [[#vim-and-ryo-modal-keybindings][Vim and Ryo-modal keybindings]]
-    - [[#git-graph][Git Graph]]
-    - [[#bookmarks-and-marks][bookmarks and marks]]
-    - [[#theme-faces-and-colours][Theme Faces and Colours]]
-    - [[#vim-keybindings-in-dired][Vim keybindings in dired]]
-    - [[#partial-horizontal-scroll][Partial Horizontal Scroll]]
   - [[#file-footer-2][File Footer]]
 - [[#fixes-improvements-and-todos][Fixes, Improvements and TODOs]]
+#+END_QUOTE
 
 * Introduction
 ** Description
@@ -6320,7 +6300,7 @@ Remember to add this file to =.gitignore=.
 
 #+end_src
 
-** Experimental Snippets + Work in Progress
+** Experimental Snippets + Work in Progress                     :noexport_1:
 
 This section has random code snippets and unfinished ideas.
 None of these are exported to the config file. Eventually, these ideas should be either finished and implemented or deleted.
