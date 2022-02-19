@@ -106,6 +106,7 @@
    `(term-bold                        ((t (:background ,bg_3 :foreground ,fg_1 :weight bold))))
    '(highlight                        ((t (:background "#1B2530"))))
    `(hl-line                          ((t (:inherit (highlight) :extend t))))
+   '(italic                           ((t (:slant italic :underline nil))))
 
    ;; defaults - programming
    `(font-lock-keyword-face           ((t (:foreground "#21D7D7"))))

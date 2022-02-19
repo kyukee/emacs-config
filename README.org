@@ -15,6 +15,7 @@
   - [[#file-header][File Header]]
   - [[#start-time-optimizations][Start Time optimizations]]
   - [[#user-interface-tweaks][User Interface tweaks]]
+  - [[#native-compilation-cache-folder-location][Native compilation cache folder location]]
   - [[#file-footer][File Footer]]
 - [[#file-init][File: Init]]
   - [[#file-header-1][File Header]]
@@ -56,8 +57,10 @@
     - [[#incremental-searching][Incremental Searching]]
     - [[#window-splits][Window Splits]]
     - [[#buffer-kill-confirmation][Buffer kill confirmation]]
+    - [[#native-compilation][Native compilation]]
   - [[#external-features][External Features]]
     - [[#icon-integration][Icon integration]]
+    - [[#org-mode][Org mode]]
     - [[#project-management][Project Management]]
     - [[#workspaces][Workspaces]]
     - [[#file-explorer][File Explorer]]
@@ -65,7 +68,6 @@
     - [[#modeline][Modeline]]
     - [[#search-and-replace-across-directories][Search and Replace Across Directories]]
     - [[#interactive-visual-replace][Interactive Visual Replace]]
-    - [[#org-mode][Org mode]]
     - [[#modal-editing][Modal editing]]
     - [[#spellcheck][Spellcheck]]
     - [[#code-completion][Code Completion]]
@@ -236,6 +238,9 @@ Speed up Emacs startup.
              (setq gc-cons-threshold (* 16 8 1024 1024) ; 16MB
                    file-name-handler-alist file-name-handler-alist-original)))
 
+;; Disbale default package.el package manager
+(setq package-enable-at-startup nil)
+
 #+end_src
 
 ** User Interface tweaks
@@ -271,6 +276,25 @@ For the GUI changes that deserve to be in early-init. It is more efficient to di
 
 ;; Do not resize the frame at this early stage.
 (setq frame-inhibit-implied-resize t)
+
+#+end_src
+
+** Native compilation cache folder location
+
+Change location of native compilation cache folder.
+
+#+begin_src emacs-lisp :tangle early-init.el
+
+;; ;; Set eln-cache dir (this is the official way to do it. should work on emacs 29)
+;; (when (boundp 'native-comp-eln-load-path)
+;;   (startup-redirect-eln-cache (expand-file-name "var/eln-cache/" user-emacs-directory)))
+
+;; Workaround for emacs 28
+(when (boundp 'native-comp-eln-load-path)
+  (setcar native-comp-eln-load-path (expand-file-name "var/eln-cache/" user-emacs-directory)))
+
+;; prevent 'emacs -q' from using auto-save
+(setq auto-save-default nil)
 
 #+end_src
 
@@ -408,12 +432,15 @@ straight.el is used to make the init-file the sole source of truth for package o
 
 #+begin_src emacs-lisp
 
+;; user configuration
 (setq straight-use-package-by-default         t
-      straight-check-for-modifications        '(find-when-checking))
+      straight-check-for-modifications        '(find-when-checking)
+      straight-base-dir                       (expand-file-name "var/" user-emacs-directory))
 
+;; bootstrap code
 (defvar bootstrap-version)
 (let ((bootstrap-file
-       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" straight-base-dir))
       (bootstrap-version 5))
   (unless (file-exists-p bootstrap-file)
     (with-current-buffer
@@ -424,9 +451,11 @@ straight.el is used to make the init-file the sole source of truth for package o
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
-(defun my/straight-rebuild-message ()
-  (princ "Finished building packages."))
-(advice-add 'straight-rebuild-all :after #'my/straight-rebuild-message)
+(defun my/straight-update ()
+  (interactive)
+  (straight-pull-all)
+  (straight-check-all)
+  (princ "Finished package update."))
 
 #+end_src
 
@@ -465,17 +494,17 @@ nicer syntax for declaring hydras with use-package
 **** Notes and basic usage
 
 To install a package temporarily (until you restart Emacs):
-- M-x straight-use-package
+  - M-x straight-use-package
 
 To install a package permanently, place a call to straight-use-package in your init-file, like:
-- (straight-use-package 'el-patch)
+  - (straight-use-package 'el-patch)
 
 To update all packages to their most recent version:
-- M-x straight-pull-all
+  - M-x straight-pull-all
 
 A note about ":init" and ":config".
-- init is executed before a package is loaded (even if deferred)
-- config is executed after a package is loaded
+  - init is executed before a package is loaded (even if deferred)
+  - config is executed after a package is loaded
 
 *** Organize configuration directory
 **** Package: no-littering
@@ -488,6 +517,14 @@ Make emacs configuration directory more organized and keep it clean.
 (use-package no-littering)
 
 #+end_src
+
+**** Notes and basic usage
+
+By default, =no-littering=, uses two folders: =etc= and =var=.
+=etc= is for configuration files and persistant files.
+=var= is for package data and temporary files.
+
+For more details, see the package's repository.
 
 *** System Path
 **** Package: exec-path-from-shell
@@ -539,6 +576,7 @@ To see the results, run:
 **** Package: server
 
 Use emacs with a server/client model.
+This is not the same as running Emacs as a daemon.
 
 #+begin_src emacs-lisp
 
@@ -632,7 +670,7 @@ Current issues:
 
 #+begin_src emacs-lisp
 
-(add-to-list 'custom-theme-load-path "~/.emacs.d/base/themes/")
+(add-to-list 'custom-theme-load-path (expand-file-name "base/themes/" user-emacs-directory))
 (load-theme 'neon-ocean-sunset t)
 
 #+end_src
@@ -1758,7 +1796,7 @@ Some nice-to have things and general settings.
 (setq auto-save-file-name-transforms    `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))    ;; change auto-save location
       auto-save-default                 t           ;; put auto-save files in designated folder
       backup-inhibited                  t           ;; disable file backup
-      create-lockfiles                  nil)        ;; stop emacs from creating temoporary symbolic link file named “#something”
+      create-lockfiles                  nil)        ;; stop emacs from creating temoporary symbolic link files named in the form “.#*”
 
 #+end_src
 
@@ -1768,7 +1806,7 @@ Some nice-to have things and general settings.
 
 (setq desktop-save               t             ;; always save on exit and never ask before saving
       desktop-restore-eager      nil           ;; number of buffers to restore immediatly
-      desktop-dirname            (no-littering-expand-var-file-name "desktop/")
+      desktop-dirname            (no-littering-expand-var-file-name "desktops/.quick-save/")
       desktop-base-file-name     "emacs.desktop"
       desktop-save-mode          nil)
 
@@ -1898,6 +1936,17 @@ By default, only file-backed unsaved buffers display a confirmation message on e
 
 #+end_src
 
+*** Native compilation
+
+Change settings related to the native compilation =*Warnings*= buffer.
+
+#+begin_src emacs-lisp
+
+(setq comp-async-report-warnings-errors t)
+(setq warning-minimum-level :error)
+
+#+end_src
+
 ** External Features
 
 Add more features by installing Emacs packages from a package repository.
@@ -1917,6 +1966,379 @@ Important reminder: The first time this package is installed, you need to run 'a
 
 #+end_src
 
+*** Org mode
+**** Package: async
+
+The code below executes org-babel-tangle asynchronously when the config file is saved.
+
+#+begin_src emacs-lisp
+
+(use-package async
+  :config
+  (defvar *config-last-change* (nth 5 (file-attributes *config-file*))
+    "Last modification time of the configuration file.")
+
+  (defvar *show-async-tangle-results* nil
+    "Keeps *emacs* async buffers around for later inspection.")
+
+  (defun my/config-updated ()
+    "Checks if the configuration file has been updated since the time of the last change."
+    (time-less-p *config-last-change*
+                 (nth 5 (file-attributes *config-file*))))
+
+  (defun my/config-tangle ()
+    "Tangles the user configuration org file asynchronously."
+    (when (my/config-updated)
+      (setq *config-last-change*
+            (nth 5 (file-attributes *config-file*)))
+      (my/async-babel-tangle *config-file*)))
+
+  (defun my/async-babel-tangle (org-file)
+    "Tangles an org file asynchronously."
+    (let ((init-tangle-start-time (current-time))
+          (file (buffer-file-name))
+          (async-quiet-switch "-q"))
+      ;; non-async version
+      ;; (org-babel-tangle-file org-file)
+      (async-start
+       `(lambda ()
+          (load-file (expand-file-name "base/resources/tangle-patch.el" user-emacs-directory))
+          (org-babel-tangle-file ,org-file))
+       (unless *show-async-tangle-results*
+         `(lambda (result)
+            (if result
+                (message "SUCCESS: %s successfully tangled (%.2fs)."
+                         ,org-file
+                         (float-time (time-subtract (current-time)
+                                                    ',init-tangle-start-time)))
+              (message "ERROR: %s as tangle failed." ,org-file))))))))
+
+#+end_src
+
+**** Package: org
+
+#+begin_src emacs-lisp
+
+(use-package org
+  ;; :ensure org-plus-contrib
+  :demand t
+  :config
+  (setq org-startup-indented                 t             ;; indent text to heading level
+        org-startup-folded                   'overview     ;; set initial view to 'content' (show all headlines)
+        org-indent-indentation-per-level     2
+        org-export-exclude-tags              '("NOEXPORT")
+        org-descriptive-links                t             ;; highlight links
+        org-cycle-separator-lines            2             ;; set how may real newlines are necessary to display a newline when folded.
+        org-todo-keywords                    '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")   ;; default todo keywords ✔ ✘
+                                               (sequence "WAITING(w)" "PAUSED(p)" "REVIEW(r)" "|" "CANCELLED(c)"))
+        org-todo-repeat-to-state             "NEXT"
+        org-todo-keyword-faces               '(("TODO" . "#efcb82")
+                                               ("PAUSED"  . "#3dc7f0")
+                                               ("REVIEW"  . "#3dc7f0"))
+        org-log-done                         (quote time)  ;; insert a note in a task when it is marked as done, which includes a timestamp
+        org-support-shift-select             t             ;; allows using the shif key for selecting text
+        org-fontify-done-headline            t             ;; grey out completed tasks
+        org-src-preserve-indentation         t             ;; do not put two spaces on the left
+        org-src-tab-acts-natively            t             ;; make tab behave as it would normally for that language
+        org-ellipsis                         " ⤵"          ;; Changing the org-mode ellipsis
+        ;; setq org-ellipsis                 " ▼"
+        org-image-actual-width               nil           ;; if there is something like #+ATTR_ORG: width="200", resize to 200, otherwise don't resize
+        org-confirm-babel-evaluate           nil
+        org-blank-before-new-entry           '((heading . auto)              ;; Disable blank line on new heading
+                                               (plain-list-item . auto))
+        org-show-context-detail              '((agenda . local)
+                                               (default . lineage)))
+
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((shell . t)
+     (python . t)
+     (emacs-lisp . t)))
+
+  ;; (setq org-log-into-drawer "LOGBOOK")
+
+  :bind
+  (:map org-mode-map
+        ("C-d <C-left>" . org-backward-element)
+        ("C-d <C-right>" . org-forward-element)
+        ("C-d <C-up>" . org-up-element)
+        ("C-d <C-down>" . org-down-element)
+        ;; allow C-S-<arrow> selection of text
+        ("<C-S-left>" .  nil)
+        ("<C-S-right>" .  nil)
+        ("<C-S-up>" .  nil)
+        ("<C-S-down>" .  nil)
+        ("<end>" . end-of-visual-line))  ;; When in heading, put cursor after ellipsis
+
+  :hook ((after-save . my/config-tangle)
+         (org-mode . (lambda () (prettify-symbols-mode)))
+         (org-agenda-mode . (lambda () (display-line-numbers-mode -1)))))
+
+(use-package org-contrib)
+
+#+end_src
+
+**** Package: org-superstar
+
+#+begin_src emacs-lisp
+
+(use-package org-superstar
+  :after org
+  :custom
+  (org-superstar-headline-bullets-list '("◈" "❖" "✽" "✲" "✜" "✛" "✝" "†"))
+  (org-superstar-item-bullet-alist '((?* . ?►)
+                                     (?+ . ?○)
+                                     (?- . ?●)))
+
+  ;; Go through the bullet list, then repeat the last entry indefinitely.
+  (org-superstar-cycle-headline-bullets nil)
+
+  ;; ;; superstar has a more agressive way of removing leading stars
+  ;; (org-hide-leading-stars nil)
+  ;; (org-superstar-remove-leading-stars t)
+
+  :hook (org-mode . org-superstar-mode))
+
+#+end_src
+
+***** org-superstar: Testing extra features                    :notangle:
+
+Here are some symbols that can be used for Org headings:
+
+"✙" "♱" "♰" "☥" "✞" "✟" "✝" "†" "✠" "✚" "✜" "✛" "✢" "✣" "✤" "✥"
+"◉" "◈"
+"●" "○" "■" "□" "▶" "▷" "►" "▻"
+"◆" "◇" "◈" "◉" "◊" "○" "◌" "◎" "●"
+"❖" "➕"
+"✩" "✪" "✫" "✬" "✭" "✮" "✯" "✰" "✱" "✲" "✳" "✴" "✵" "✶" "✷" "✸" "✹" "✺" "✻" "✼" "✽" "✾" "✿" "❀" "❁" "❂" "❃" "❄" "❅" "❆" "❇" "❈" "❉" "❊" "❋"
+"✙" "✚" "✛" "✜" "✝" "✞" "✟" "✠" "✡" "✢" "✣" "✤" "✥" "✦" "✧"
+
+And here are some code samples from  the repo, showing some possibilities:
+
+This time we want all of the above but a little more personalized. First off, let’s make bullets a little more chunky. Mind that the height we provide for bullet faces is not the actual height of a bullet, but its height relative to its surroundings. Additionally, let’s hide the leading stars for terminal sessions, as the default leader does not look all that good in my chosen terminal font. I make use of the fact that org-superstar-leading-fallback can be set to the space character. This has the nice advantage over org-hide-leading-stars that it does not just “paint over” the asterisks, but makes them completely indistinguishable from white space, neat!
+
+#+begin_src emacs-lisp
+
+(with-eval-after-load 'org-superstar
+  (set-face-attribute 'org-superstar-item nil :height 1.2)
+  (set-face-attribute 'org-superstar-header-bullet nil :height 1.2)
+  (set-face-attribute 'org-superstar-leading nil :height 1.3))
+;; Set different bullets, with one getting a terminal fallback.
+(setq org-superstar-headline-bullets-list
+      '("◉" ("🞛" ?◈) "○" "▷"))
+;; Stop cycling bullets to emphasize hierarchy of headlines.
+(setq org-superstar-cycle-headline-bullets nil)
+;; Hide away leading stars on terminal.
+(setq org-superstar-leading-fallback ?\s)
+
+#+end_src
+
+
+Inline tasks behave as you would expect them to, for the most part. They have two bullets instead of one, but are otherwise treated the same as regular headlines by Org Superstar, meaning org-superstar-headline-bullets-list controls the bullet used as if it were a regular headline. If org-inlinetask-show-first-star is non-nil, you can customize the additional marker. Just like with the rest of Superstar’s decorations, you can more or less fully control how it looks, with independent settings for graphical and terminal displays and a dedicated face, should you find the default of using org-warn a little… unsubtle. We again use the LaTeX setup as a base and add a few tweaks.
+
+#+begin_src emacs-lisp
+
+(require 'org-inlinetask)
+(setq org-inlinetask-show-first-star t)
+;; Less gray please.
+(set-face-attribute 'org-inlinetask nil
+                    :foreground nil
+		      :inherit 'bold)
+(with-eval-after-load 'org-superstar
+  (set-face-attribute 'org-superstar-first nil
+                      :foreground "#9000e1"))
+;; Set different bullets, with one getting a terminal fallback.
+(setq org-superstar-headline-bullets-list
+      '("◉" ("🞛" ?◈) "○" "▷"))
+;; Set up a different marker for graphic display.
+(setq org-superstar-first-inlinetask-bullet ?🞸)
+;; Stop cycling bullets to emphasize hierarchy of headlines.
+(setq org-superstar-cycle-headline-bullets nil)
+;; A simple period works fine, too.
+(setq org-superstar-leading-fallback ?.)
+
+#+end_src
+
+**** Package: toc-org
+
+#+begin_src emacs-lisp
+
+(use-package toc-org
+  :hook (org-mode . toc-org-mode))
+
+#+end_src
+
+**** REVIEW Package: org-ql
+
+#+begin_src emacs-lisp
+
+(use-package org-ql)
+
+#+end_src
+
+**** Feature: Org notes
+
+# Note: org-directory needs to be defined before the org-agenda block
+
+#+begin_src emacs-lisp
+
+(setq org-directory                        "~/Cloud/Work - Google Cloud/Org/"    ;; where to look for org files
+      org-default-notes-file               (expand-file-name "notes/notes.org" org-directory))
+
+#+end_src
+
+**** Feature: Org inbox
+
+#+begin_src emacs-lisp
+
+(setq my/org-inbox-file                    (expand-file-name "inbox.org" org-directory))
+
+#+end_src
+
+**** Package: org-agenda
+
+#+begin_src emacs-lisp
+
+(use-package org-agenda
+  :straight org
+  :config
+  (setq org-agenda-files                     `(,org-directory
+                                               ,(expand-file-name "agenda/private" org-directory)
+                                               ,(expand-file-name "agenda/projects" org-directory)
+                                               ,(expand-file-name "agenda/projects/IST/year 5" org-directory))
+        org-agenda-dim-blocked-tasks         t             ;; dim blocked tasks
+        org-agenda-skip-deadline-if-done     t             ;; avoid showing unecessary tasks
+        org-agenda-skip-scheduled-if-done    t
+        org-agenda-skip-archived-trees       t
+        org-agenda-skip-deadline-prewarning-if-scheduled t
+        ;; org-agenda-span                      30            ;; amount of days in the agenda
+        org-agenda-start-on-weekday          nil           ;; start the agenda in the current day
+        org-agenda-prefix-format             '((agenda . " %i %-25:c%?-25t% s")    ;; make the first column in agenda wider (default is 12 characters)
+                                               (todo . " %i %-25:c")
+                                               (tags . " %i %-25:c")
+                                               (search . " %i %-25:c"))
+        org-agenda-window-setup              'only-window)
+
+  (setq org-agenda-custom-commands
+        '(("a" "Agenda and all NEXT items"
+           ((agenda "")
+            (todo "NEXT"))
+           ((org-agenda-todo-ignore-with-date t)))
+          ;; ("cm" "Custom: This month"
+          ;;  ((org-ql-block '(ts-active :from today :to (format-time-string "%Y-%m-%d" (org-read-date nil t "+30d")))
+          ;;                  ((org-ql-block-header "This month")))
+          ;;   (agenda)))
+          )))
+
+#+end_src
+
+**** REVIEW Package: org-super-agenda
+
+#+begin_src emacs-lisp
+
+(require 'org-habit)
+(use-package org-super-agenda
+  :config
+  ;; (let ((one-week-from-today (format-time-string "%Y-%m-%d" (org-read-date nil t "+1w")))
+  ;;       (one-month-from-today (format-time-string "%Y-%m-%d" (org-read-date nil t "+30d"))))
+  ;;   (setq org-super-agenda-groups
+  ;;         `(
+  ;;           (:name "Due within week"
+  ;;                  :deadline (before ,one-week-from-today)
+  ;;                  :order 0)
+  ;;           (:name "Due within month"
+  ;;                  :deadline (before ,one-month-from-today)
+  ;;                  :order 1)
+  ;;           ;; (:discard)
+  ;;           )))
+  ;; (setq org-super-agenda-groups
+  ;;       `(
+  ;;         (:name "Do ASAP"
+  ;;                :priority "A"
+  ;;                :order 0)
+  ;;         (:name "Do soon"
+  ;;                :priority "B"
+  ;;                :order 1)
+  ;;         (:name "Do Eventually"
+  ;;                :priority "C"
+  ;;                :order 2)
+  ;;         (:discard)
+  ;;         ))
+  (org-super-agenda-mode))
+
+#+end_src
+
+**** Feature: simple headings for special org files (lists)
+
+After choosing a face and a list of org files, any headings in one of those files that has a todo state will have the defined face applied.
+This is useful for org files with lists, like watch lists for Movies, Anime, Books, etc.
+It allows for the list entries to be visually different from normal headings.
+
+I would like to be able to activate this from the file itself, but the problem is that =org-font-lock-set-keywords-hook= is a global value.
+
+#+begin_src emacs-lisp
+
+(defface my/org-simple-headline '((t (:inherit default)))
+  "Simple face for org headings."
+  :group 'org-faces)
+
+(defvar my/org-simple-headlines-files (list "Manga list.org" "Anime list.org")
+  "Files where simple headings are in effect.")
+
+(defun my/org-fontify-simple-headlines ()
+  "Fontify any headings with a todo keyword, in selected files."
+  (when (member (buffer-name) my/org-simple-headlines-files)
+    (push (list (format org-heading-keyword-regexp-format
+                        (concat
+                         "\\(?:"
+                         (mapconcat 'regexp-quote org-todo-keywords-1 "\\|")
+                         "\\)"))
+                '(2 'my/org-simple-headline t))
+          org-font-lock-extra-keywords)))
+
+(add-hook 'org-font-lock-set-keywords-hook #'my/org-fontify-simple-headlines)
+
+#+end_src
+
+**** Feature: always show drawers
+
+#+begin_src emacs-lisp
+
+(defvar my/org-cycle-hide-drawers t
+  "Whether to hide drawers on org-cycle.")
+
+(defun org-cycle-hide-drawers (state)
+  "Like the default function, but checks a variable
+to confirm wether to automatically hide drawers."
+  (when (derived-mode-p 'org-mode)
+    (cond ((not (memq state '(overview folded contents)))
+           (let* ((global? (eq state 'all))
+                  (beg (if global? (point-min) (line-beginning-position)))
+                  (end (cond (global? (point-max))
+                             ((eq state 'children) (org-entry-end-position))
+                             (t (save-excursion (org-end-of-subtree t t))))))
+             (when my/org-cycle-hide-drawers
+               (org--hide-drawers beg end))
+             ))
+          ((memq state '(overview contents))
+           ;; Hide drawers before first heading.
+           (let ((beg (point-min))
+                 (end (save-excursion
+                        (goto-char (point-min))
+                        (if (org-before-first-heading-p)
+                            (org-entry-end-position)
+                          (point-min)))))
+             (when (< beg end)
+               (org--hide-drawers beg end)))))))
+
+#+end_src
+
+**** Notes and basic usage
+
+Emphasis: when to use = or ~
+~ is for code, functions, or things that can be executed
+= is for general emphasis
+
 *** Project Management
 **** Package: projectile
 
@@ -1924,7 +2346,7 @@ Important reminder: The first time this package is installed, you need to run 'a
 
 (use-package projectile
   :init
-  (defvar my/known-projects-ignored-directories-list (list (expand-file-name "straight/repos" user-emacs-directory)
+  (defvar my/known-projects-ignored-directories-list (list (expand-file-name "var/straight/repos" user-emacs-directory)
                                                           "~/Workspaces"
                                                           ;; "~/"
                                                           ))
@@ -2067,6 +2489,8 @@ Only the last element of the path is displayed."
   (setq bufler-workspace-format-path-fn 'my/bufler-format-path)
 
   :config
+  ;; for some reason, bufler-tabs-mode doesn't work properly if bufler-mode isn't activated first
+  (bufler-mode 1)
   (bufler-tabs-mode 1)
   (tab-bar-mode 0)
   (global-tab-line-mode 0)
@@ -2622,21 +3046,22 @@ The sidebar only changes when bufler focuses a new workspace.
   ;; Segment - Buffer Name
   ;;
 
-  ;; when the buffer is modified only show icon with 'modified' font, not the file name
   (defsubst doom-modeline--buffer-name-custom ()
     "The current buffer name."
-    ;; Only display the buffer name if the window is small, but doesn't need to
-    ;; respect file-name style.
-    (if (and (not (eq doom-modeline-buffer-file-name-style 'file-name))
-             doom-modeline--limited-width-p)
+    (if doom-modeline--limited-width-p
+        ;; If the window is small, display only the buffer name and ignore
+        ;; file-name style.
         (propertize "%b"
-                    'face (cond ((doom-modeline--active) 'doom-modeline-buffer-file)
-                                (t 'mode-line-inactive))
+                    'face (cond
+                           ((doom-modeline--active) 'doom-modeline-buffer-file)
+                           (t 'mode-line-inactive))
                     'mouse-face 'mode-line-highlight
-                    'help-echo "Buffer name
+                    'help-echo (format "%s
 mouse-1: Previous buffer
 mouse-3: Next buffer"
+                                       buffer-file-truename)
                     'local-map mode-line-buffer-identification-keymap)
+      ;; Otherwise, display filename as normal
       (when-let ((name (or doom-modeline--buffer-file-name
                            (doom-modeline-update-buffer-file-name))))
         (if (doom-modeline--active)
@@ -3056,6 +3481,8 @@ this is to avoid having python installed as a dependency
   ;; visual-regexp-steroids allows using python engine
   ;; (setq vr/engine 'pcre2el)
 
+  ;; (setq vr/default-regexp-modifiers '(:I nil :M t :S t :U nil))
+
 #+end_src
 
 **** Package: visual-regexp (patch 1 - search whole buffer)
@@ -3366,378 +3793,6 @@ they final view is the same as before the command executed.
                (if (= replace-count 1) "" "s")))))
 
 #+end_src
-
-*** Org mode
-**** Package: async
-
-The code below executes org-babel-tangle asynchronously when the config file is saved.
-
-#+begin_src emacs-lisp
-
-(use-package async
-  :config
-  (defvar *config-last-change* (nth 5 (file-attributes *config-file*))
-    "Last modification time of the configuration file.")
-
-  (defvar *show-async-tangle-results* nil
-    "Keeps *emacs* async buffers around for later inspection.")
-
-  (defun my/config-updated ()
-    "Checks if the configuration file has been updated since the time of the last change."
-    (time-less-p *config-last-change*
-                 (nth 5 (file-attributes *config-file*))))
-
-  (defun my/config-tangle ()
-    "Tangles the user configuration org file asynchronously."
-    (when (my/config-updated)
-      (setq *config-last-change*
-            (nth 5 (file-attributes *config-file*)))
-      (my/async-babel-tangle *config-file*)))
-
-  (defun my/async-babel-tangle (org-file)
-    "Tangles an org file asynchronously."
-    (let ((init-tangle-start-time (current-time))
-          (file (buffer-file-name))
-          (async-quiet-switch "-q"))
-      ;; non-async version
-      ;; (org-babel-tangle-file org-file)
-      (async-start
-       `(lambda ()
-          ;; (require 'org)
-          (load-file (expand-file-name "base/resources/tangle-patch.el" user-emacs-directory))
-          (org-babel-tangle-file ,org-file))
-       (unless *show-async-tangle-results*
-         `(lambda (result)
-            (if result
-                (message "SUCCESS: %s successfully tangled (%.2fs)."
-                         ,org-file
-                         (float-time (time-subtract (current-time)
-                                                    ',init-tangle-start-time)))
-              (message "ERROR: %s as tangle failed." ,org-file))))))))
-
-#+end_src
-
-**** Package: org
-
-#+begin_src emacs-lisp
-
-(use-package org
-  :ensure org-plus-contrib
-  :demand t
-  :config
-  (setq org-startup-indented                 t             ;; indent text to heading level
-        org-startup-folded                   'overview     ;; set initial view to 'content' (show all headlines)
-        org-indent-indentation-per-level     2
-        org-export-exclude-tags              '("NOEXPORT")
-        org-descriptive-links                t             ;; highlight links
-        org-cycle-separator-lines            2             ;; set how may real newlines are necessary to display a newline when folded.
-        org-todo-keywords                    '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")   ;; default todo keywords ✔ ✘
-                                               (sequence "WAITING(w)" "PAUSED(p)" "REVIEW(r)" "|" "CANCELLED(c)"))
-        org-todo-repeat-to-state             "NEXT"
-        org-todo-keyword-faces               '(("TODO" . "#efcb82")
-                                               ("PAUSED"  . "#3dc7f0")
-                                               ("REVIEW"  . "#3dc7f0"))
-        org-log-done                         (quote time)  ;; insert a note in a task when it is marked as done, which includes a timestamp
-        org-support-shift-select             t             ;; allows using the shif key for selecting text
-        org-fontify-done-headline            t             ;; grey out completed tasks
-        org-src-preserve-indentation         t             ;; do not put two spaces on the left
-        org-src-tab-acts-natively            t             ;; make tab behave as it would normally for that language
-        org-ellipsis                         " ⤵"          ;; Changing the org-mode ellipsis
-        ;; setq org-ellipsis                 " ▼"
-        org-image-actual-width               nil           ;; if there is something like #+ATTR_ORG: width="200", resize to 200, otherwise don't resize
-        org-confirm-babel-evaluate           nil
-        org-blank-before-new-entry           '((heading . auto)              ;; Disable blank line on new heading
-                                               (plain-list-item . auto))
-        org-show-context-detail              '((agenda . local)
-                                               (default . lineage)))
-
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((shell . t)
-     (python . t)
-     (emacs-lisp . t)))
-
-  ;; (setq org-log-into-drawer "LOGBOOK")
-
-  :bind
-  (:map org-mode-map
-        ("C-d <C-left>" . org-backward-element)
-        ("C-d <C-right>" . org-forward-element)
-        ("C-d <C-up>" . org-up-element)
-        ("C-d <C-down>" . org-down-element)
-        ;; allow C-S-<arrow> selection of text
-        ("<C-S-left>" .  nil)
-        ("<C-S-right>" .  nil)
-        ("<C-S-up>" .  nil)
-        ("<C-S-down>" .  nil)
-        ("<end>" . end-of-visual-line))  ;; When in heading, put cursor after ellipsis
-
-  :hook ((after-save . my/config-tangle)
-         (org-mode . (lambda () (prettify-symbols-mode)))
-         (org-agenda-mode . (lambda () (display-line-numbers-mode -1)))))
-
-#+end_src
-
-**** Package: org-superstar
-
-#+begin_src emacs-lisp
-
-(use-package org-superstar
-  :after org
-  :custom
-  (org-superstar-headline-bullets-list '("◈" "❖" "✽" "✲" "✜" "✛" "✝" "†"))
-  (org-superstar-item-bullet-alist '((?* . ?►)
-                                     (?+ . ?○)
-                                     (?- . ?●)))
-
-  ;; Go through the bullet list, then repeat the last entry indefinitely.
-  (org-superstar-cycle-headline-bullets nil)
-
-  ;; ;; superstar has a more agressive way of removing leading stars
-  ;; (org-hide-leading-stars nil)
-  ;; (org-superstar-remove-leading-stars t)
-
-  :hook (org-mode . org-superstar-mode))
-
-#+end_src
-
-***** org-superstar: Testing extra features                    :notangle:
-
-Here are some symbols that can be used for Org headings:
-
-"✙" "♱" "♰" "☥" "✞" "✟" "✝" "†" "✠" "✚" "✜" "✛" "✢" "✣" "✤" "✥"
-"◉" "◈"
-"●" "○" "■" "□" "▶" "▷" "►" "▻"
-"◆" "◇" "◈" "◉" "◊" "○" "◌" "◎" "●"
-"❖" "➕"
-"✩" "✪" "✫" "✬" "✭" "✮" "✯" "✰" "✱" "✲" "✳" "✴" "✵" "✶" "✷" "✸" "✹" "✺" "✻" "✼" "✽" "✾" "✿" "❀" "❁" "❂" "❃" "❄" "❅" "❆" "❇" "❈" "❉" "❊" "❋"
-"✙" "✚" "✛" "✜" "✝" "✞" "✟" "✠" "✡" "✢" "✣" "✤" "✥" "✦" "✧"
-
-And here are some code samples from  the repo, showing some possibilities:
-
-This time we want all of the above but a little more personalized. First off, let’s make bullets a little more chunky. Mind that the height we provide for bullet faces is not the actual height of a bullet, but its height relative to its surroundings. Additionally, let’s hide the leading stars for terminal sessions, as the default leader does not look all that good in my chosen terminal font. I make use of the fact that org-superstar-leading-fallback can be set to the space character. This has the nice advantage over org-hide-leading-stars that it does not just “paint over” the asterisks, but makes them completely indistinguishable from white space, neat!
-
-#+begin_src emacs-lisp
-
-(with-eval-after-load 'org-superstar
-  (set-face-attribute 'org-superstar-item nil :height 1.2)
-  (set-face-attribute 'org-superstar-header-bullet nil :height 1.2)
-  (set-face-attribute 'org-superstar-leading nil :height 1.3))
-;; Set different bullets, with one getting a terminal fallback.
-(setq org-superstar-headline-bullets-list
-      '("◉" ("🞛" ?◈) "○" "▷"))
-;; Stop cycling bullets to emphasize hierarchy of headlines.
-(setq org-superstar-cycle-headline-bullets nil)
-;; Hide away leading stars on terminal.
-(setq org-superstar-leading-fallback ?\s)
-
-#+end_src
-
-
-Inline tasks behave as you would expect them to, for the most part. They have two bullets instead of one, but are otherwise treated the same as regular headlines by Org Superstar, meaning org-superstar-headline-bullets-list controls the bullet used as if it were a regular headline. If org-inlinetask-show-first-star is non-nil, you can customize the additional marker. Just like with the rest of Superstar’s decorations, you can more or less fully control how it looks, with independent settings for graphical and terminal displays and a dedicated face, should you find the default of using org-warn a little… unsubtle. We again use the LaTeX setup as a base and add a few tweaks.
-
-#+begin_src emacs-lisp
-
-(require 'org-inlinetask)
-(setq org-inlinetask-show-first-star t)
-;; Less gray please.
-(set-face-attribute 'org-inlinetask nil
-                    :foreground nil
-		      :inherit 'bold)
-(with-eval-after-load 'org-superstar
-  (set-face-attribute 'org-superstar-first nil
-                      :foreground "#9000e1"))
-;; Set different bullets, with one getting a terminal fallback.
-(setq org-superstar-headline-bullets-list
-      '("◉" ("🞛" ?◈) "○" "▷"))
-;; Set up a different marker for graphic display.
-(setq org-superstar-first-inlinetask-bullet ?🞸)
-;; Stop cycling bullets to emphasize hierarchy of headlines.
-(setq org-superstar-cycle-headline-bullets nil)
-;; A simple period works fine, too.
-(setq org-superstar-leading-fallback ?.)
-
-#+end_src
-
-**** Package: toc-org
-
-#+begin_src emacs-lisp
-
-(use-package toc-org
-  :hook (org-mode . toc-org-mode))
-
-#+end_src
-
-**** REVIEW Package: org-ql
-
-#+begin_src emacs-lisp
-
-(use-package org-ql)
-
-#+end_src
-
-**** Feature: Org notes
-
-# Note: org-directory needs to be defined before the org-agenda block
-
-#+begin_src emacs-lisp
-
-(setq org-directory                        "~/Cloud/Work - Google Cloud/Org/"    ;; where to look for org files
-      org-default-notes-file               (expand-file-name "notes/notes.org" org-directory))
-
-#+end_src
-
-**** Feature: Org inbox
-
-#+begin_src emacs-lisp
-
-(setq my/org-inbox-file                    (expand-file-name "inbox.org" org-directory))
-
-#+end_src
-
-**** Package: org-agenda
-
-#+begin_src emacs-lisp
-
-(use-package org-agenda
-  :straight org
-  :config
-  (setq org-agenda-files                     `(,org-directory
-                                               ,(expand-file-name "agenda/private" org-directory)
-                                               ,(expand-file-name "agenda/projects" org-directory)
-                                               ,(expand-file-name "agenda/projects/IST/year 5" org-directory))
-        org-agenda-dim-blocked-tasks         t             ;; dim blocked tasks
-        org-agenda-skip-deadline-if-done     t             ;; avoid showing unecessary tasks
-        org-agenda-skip-scheduled-if-done    t
-        org-agenda-skip-archived-trees       t
-        org-agenda-skip-deadline-prewarning-if-scheduled t
-        ;; org-agenda-span                      30            ;; amount of days in the agenda
-        org-agenda-start-on-weekday          nil           ;; start the agenda in the current day
-        org-agenda-prefix-format             '((agenda . " %i %-25:c%?-25t% s")    ;; make the first column in agenda wider (default is 12 characters)
-                                               (todo . " %i %-25:c")
-                                               (tags . " %i %-25:c")
-                                               (search . " %i %-25:c"))
-        org-agenda-window-setup              'only-window)
-
-  (setq org-agenda-custom-commands
-        '(("a" "Agenda and all NEXT items"
-           ((agenda "")
-            (todo "NEXT"))
-           ((org-agenda-todo-ignore-with-date t)))
-          ;; ("cm" "Custom: This month"
-          ;;  ((org-ql-block '(ts-active :from today :to (format-time-string "%Y-%m-%d" (org-read-date nil t "+30d")))
-          ;;                  ((org-ql-block-header "This month")))
-          ;;   (agenda)))
-          )))
-
-#+end_src
-
-**** REVIEW Package: org-super-agenda
-
-#+begin_src emacs-lisp
-
-(require 'org-habit)
-(use-package org-super-agenda
-  :config
-  ;; (let ((one-week-from-today (format-time-string "%Y-%m-%d" (org-read-date nil t "+1w")))
-  ;;       (one-month-from-today (format-time-string "%Y-%m-%d" (org-read-date nil t "+30d"))))
-  ;;   (setq org-super-agenda-groups
-  ;;         `(
-  ;;           (:name "Due within week"
-  ;;                  :deadline (before ,one-week-from-today)
-  ;;                  :order 0)
-  ;;           (:name "Due within month"
-  ;;                  :deadline (before ,one-month-from-today)
-  ;;                  :order 1)
-  ;;           ;; (:discard)
-  ;;           )))
-  ;; (setq org-super-agenda-groups
-  ;;       `(
-  ;;         (:name "Do ASAP"
-  ;;                :priority "A"
-  ;;                :order 0)
-  ;;         (:name "Do soon"
-  ;;                :priority "B"
-  ;;                :order 1)
-  ;;         (:name "Do Eventually"
-  ;;                :priority "C"
-  ;;                :order 2)
-  ;;         (:discard)
-  ;;         ))
-  (org-super-agenda-mode))
-
-#+end_src
-
-**** Feature: simple headings for special org files (lists)
-
-After choosing a face and a list of org files, any headings in one of those files that has a todo state will have the defined face applied.
-This is useful for org files with lists, like watch lists for Movies, Anime, Books, etc.
-It allows for the list entries to be visually different from normal headings.
-
-I would like to be able to activate this from the file itself, but the problem is that =org-font-lock-set-keywords-hook= is a global value.
-
-#+begin_src emacs-lisp
-
-(defface my/org-simple-headline '((t (:inherit default)))
-  "Simple face for org headings."
-  :group 'org-faces)
-
-(defvar my/org-simple-headlines-files (list "Manga list.org" "Anime list.org")
-  "Files where simple headings are in effect.")
-
-(defun my/org-fontify-simple-headlines ()
-  "Fontify any headings with a todo keyword, in selected files."
-  (when (member (buffer-name) my/org-simple-headlines-files)
-    (push (list (format org-heading-keyword-regexp-format
-                        (concat
-                         "\\(?:"
-                         (mapconcat 'regexp-quote org-todo-keywords-1 "\\|")
-                         "\\)"))
-                '(2 'my/org-simple-headline t))
-          org-font-lock-extra-keywords)))
-
-(add-hook 'org-font-lock-set-keywords-hook #'my/org-fontify-simple-headlines)
-
-#+end_src
-
-**** Feature: always show drawers
-
-#+begin_src emacs-lisp
-
-(defvar my/org-cycle-hide-drawers t
-  "Whether to hide drawers on org-cycle.")
-
-(defun org-cycle-hide-drawers (state)
-  "Like the default function, but checks a variable
-to confirm wether to automatically hide drawers."
-  (when (derived-mode-p 'org-mode)
-    (cond ((not (memq state '(overview folded contents)))
-           (let* ((global? (eq state 'all))
-                  (beg (if global? (point-min) (line-beginning-position)))
-                  (end (cond (global? (point-max))
-                             ((eq state 'children) (org-entry-end-position))
-                             (t (save-excursion (org-end-of-subtree t t))))))
-             (when my/org-cycle-hide-drawers
-               (org--hide-drawers beg end))
-             ))
-          ((memq state '(overview contents))
-           ;; Hide drawers before first heading.
-           (let ((beg (point-min))
-                 (end (save-excursion
-                        (goto-char (point-min))
-                        (if (org-before-first-heading-p)
-                            (org-entry-end-position)
-                          (point-min)))))
-             (when (< beg end)
-               (org--hide-drawers beg end)))))))
-
-#+end_src
-
-**** Notes and basic usage
-
-Emphasis: when to use = or ~
-~ is for code, functions, or things that can be executed
-= is for general emphasis
 
 *** Modal editing
 **** REVIEW Package: ryo-modal
@@ -5032,7 +5087,7 @@ show a different main hydra, depending on major mode
   (:color teal :quit-key "q" :title "Packages Hydra")
   ("Package Manager"
    (("i" straight-use-package "install package (for this session only)")
-    ("u" straight-rebuild-all "update all packages"))
+    ("u" my/straight-update "update all packages"))
    ))
 
 #+end_src
@@ -5048,9 +5103,9 @@ show a different main hydra, depending on major mode
     ("r" restart-emacs "Restart emacs"))
    "Session"
    (("l" my/desktop-enable "Quick load last session")
-    ;; ("L" desktop-read "Restore session from file")
+    ("L" desktop+load "Restore session from file, indentified by name")
     ("s" desktop-save-in-desktop-dir "Quick save current session")
-    ;; ("S" desktop-save "Save session to file")
+    ("S" desktop+create "Save session to file and give it a name")
     )
    ))
 
@@ -5158,8 +5213,8 @@ show a different main hydra, depending on major mode
 (pretty-hydra-define hydra-window
   (:color teal :quit-key "q" :title "Window Hydra")
   ("Create"
-   (("h" my/split-window-horizontally-and-follow "Split window horizontally")
-    ("v" my/split-window-vertically-and-follow "Split window vertically"))
+   (("h" my/split-window-horizontally-and-follow "Expand horizontally")
+    ("v" my/split-window-vertically-and-follow "Expand vertically"))
    "Delete"
    (("w" delete-other-windows "Other windows")
     ("d" delete-window "Current window"))
@@ -5896,6 +5951,30 @@ Another alternative is the =transpose-frame= package.
 
 #+end_src
 
+**** Package: desktop+
+
+#+begin_src emacs-lisp
+
+(use-package desktop+
+  :commands (desktop+load desktop+create)
+  :config
+  (setq desktop+-base-dir (no-littering-expand-var-file-name "desktops/")))
+
+#+end_src
+
+**** Package: dimmer                                            :notangle:
+
+#+begin_src emacs-lisp
+
+(use-package dimmer
+  :config
+  (dimmer-mode t)
+  (setq dimmer-fraction 0.3)
+  (setq dimmer-adjustment-mode :foreground)
+  (setq dimmer-use-colorspace :rgb))
+
+#+end_src
+
 ** Language Modes
 
 Add support for programming and markup languages in the form of syntax highlighting, code completion, linters, etc.
@@ -6000,7 +6079,20 @@ Basics:
   - [ ] linting
   - [ ] code completion
 
-**** Package: gitconfig-mode
+**** Package: git-modes
+
+#+begin_src emacs-lisp
+
+(use-package git-modes)
+
+;; (use-package git-modes
+;;   :mode (("/\\.gitconfig\\'" "/\\.git/config\\'" "/git/config\\'" "/\\.gitmodules\\'") . gitconfig-mode)
+;;   :mode (("/\\.gitignore\\'" "/\\.git/info/exclude\\'" "/git/ignore\\'" "ignore\\'") . gitignore-mode)
+;;   :mode (("/\\.gitattributes\\'") . gitattributes-mode))
+
+#+end_src
+
+**** Package: gitconfig-mode                                    :notangle:
 
 #+begin_src emacs-lisp
 
@@ -6010,7 +6102,7 @@ Basics:
 
 #+end_src
 
-**** Package: gitignore-mode
+**** Package: gitignore-mode                                    :notangle:
 
 #+begin_src emacs-lisp
 
@@ -6019,7 +6111,7 @@ Basics:
 
 #+end_src
 
-**** Package: gitattributes-mode
+**** Package: gitattributes-mode                                :notangle:
 
 #+begin_src emacs-lisp
 
@@ -6991,6 +7083,35 @@ How to edit a theme:
   (setq org-startup-truncated nil)
   :config
   (load "org-phscroll.el"))
+
+#+end_src
+
+*** desktop+ - save named desktops                               :notangle:
+
+#+begin_src emacs-lisp
+
+(use-package desktop+
+  :init
+  ;; list of special buffer types which should be handled specially. The default value contains all known types.
+  ;; remove items from the list if you don't want a specific special buffer type to be handled.
+  ;; The value of this variable should be changed before `desktop+` is loaded.
+  (setq desktop+-special-buffer-handlers
+        '(term-mode
+          compilation-mode
+          org-agenda-mode
+          indirect-buffer
+          Man-mode
+          shell-mode))
+
+  :config
+  ;; directory where all information about desktop sessions are stored
+  (setq desktop+-base-dir (no-littering-expand-var-file-name "desktops/"))
+
+  ;; function called to get the new frame title format when the session changes. This function must take the desktop session name as a string argument and return a frame title format suitable for setting frame-title-format.
+  (defun my/desktop-frame-title-function (desktop-name)
+    (list (concat "%b - Emacs [" desktop-name "]")))
+  (setq desktop+-frame-title-function
+        'my/desktop-frame-title-function))
 
 #+end_src
 

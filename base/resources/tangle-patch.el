@@ -3,10 +3,18 @@
 ;;; Commentary:
 ;;; Allows excluding org headings and trees from being tangled, by using the =notangle= tag.
 
+;; Notes: so that this can work even before the first setup, it should use the default org
+;; version, instead of the one that is downloaded from melpa
+;;
+;; Changes made:
+;;   - added (tags (org-get-tags))
+;;   - added (member "notangle" tags)
+
 ;;; Code:
 
+;; loading org-element is necessary to avoid an error related to org-persist
+(require 'org-element)
 (require 'ob-tangle)
-(load-file "/home/kyukee/.emacs.d/straight/repos/org/lisp/ob-tangle.el")
 
 (defun *org-babel-tangle-collect-blocks (&optional lang-re tangle-file)
   "Like `org-babel-tangle-collect-blocks', but will ignore blocks that are in trees with the :notangle: tag."
@@ -40,6 +48,7 @@
     ;; Ensure blocks are in the correct order.
     (mapcar (lambda (b) (cons (car b) (nreverse (cdr b))))
 	          (nreverse blocks))))
+
 
 (advice-add 'org-babel-tangle-collect-blocks :override
              #'*org-babel-tangle-collect-blocks)
