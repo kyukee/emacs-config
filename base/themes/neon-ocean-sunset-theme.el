@@ -107,6 +107,7 @@
    '(highlight                        ((t (:background "#1B2530"))))
    `(hl-line                          ((t (:inherit (highlight) :extend t))))
    '(italic                           ((t (:slant italic :underline nil))))
+   `(tooltip                          ((t (:background ,bg_1 :foreground ,fg_1))))
 
    ;; defaults - programming
    `(font-lock-keyword-face           ((t (:foreground "#21D7D7"))))
@@ -194,7 +195,8 @@
    ;; default modeline
    '(mode-line                        ((t (:background "#251F33" :foreground "gray60" :box (:line-width -1 :color "#14141D")))))
    '(mode-line-inactive               ((t (:background "#221d2b" :foreground "gray40" :box (:line-width -1 :color "#14141D")))))
-   '(mode-line-highlight              ((t (:box (:line-width 2 :color "gray70")))))
+   ;; '(mode-line-highlight              ((t (:box (:line-width 2 :color "gray70")))))
+   `(mode-line-highlight              ((t (:foreground ,green_1 :weight bold))))
    '(mode-line-buffer-id              ((t (:foreground "gray70"))))
    `(mode-line-emphasis               ((t (:foreground ,green_1 :weight bold))))
 
@@ -273,7 +275,10 @@
    '(vr/match-1                       ((t (:background "#8b4887" :foreground "white"))))
 
    ;; company
-   `(company-tooltip                  ((t (:background ,bg_2))))
+   `(company-tooltip                  ((t (:background ,bg_4))))
+   `(company-tooltip-selection        ((t (:background "#405a72"))))
+   `(company-tooltip-scrollbar-thumb  ((t (:background "#3a5166"))))
+   `(company-tooltip-annotation       ((t (:foreground "#a3a374"))))
 
    ;; yascroll
    `(yascroll:thumb-text-area         ((t (:background "#454259"))))

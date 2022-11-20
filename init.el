@@ -11,7 +11,9 @@
 (defvar *config-file-tangled* (expand-file-name "config.el" user-emacs-directory)
   "The configuration file, after being tangled.")
 
-(load-file (expand-file-name "base/resources/tangle-patch.el" user-emacs-directory))
+;; since this will load the built-in version of org-mode, avoid using it other than when strictly necessary
+(when (not (file-exists-p *config-file-tangled*))
+    (load-file (expand-file-name "base/resources/tangle-patch.el" user-emacs-directory)))
 
 ;; If tangled elisp exists then load it, otherwise tangle the Org file and load it
 (if (file-exists-p *config-file-tangled*)

@@ -18,7 +18,7 @@
              (setq gc-cons-threshold (* 16 8 1024 1024) ; 16MB
                    file-name-handler-alist file-name-handler-alist-original)))
 
-;; Disable default package.el package manager
+;; Disbale default package.el package manager
 (setq package-enable-at-startup nil)
 
 ;; Only show cursor in the active window.
@@ -49,6 +49,9 @@
 ;; Do not resize the frame at this early stage.
 (setq frame-inhibit-implied-resize t)
 
+;; remove the "Package cl is deprecated" warning
+(setq byte-compile-warnings '(not obsolete))
+
 ;; ;; Set eln-cache dir (this is the official way to do it. should work on emacs 29)
 ;; (when (boundp 'native-comp-eln-load-path)
 ;;   (startup-redirect-eln-cache (expand-file-name "var/eln-cache/" user-emacs-directory)))
@@ -56,8 +59,5 @@
 ;; Workaround for emacs 28
 (when (boundp 'native-comp-eln-load-path)
   (setcar native-comp-eln-load-path (expand-file-name "var/eln-cache/" user-emacs-directory)))
-
-;; prevent 'emacs -q' from using auto-save
-(setq auto-save-default nil)
 
 ;;; early-init.el ends here
